@@ -54,16 +54,16 @@ export default function HomePage() {
   // Filter products
   const filteredProducts = products.filter(p => {
     // Search filter
-    const matchesSearch = !search || 
+    const matchesSearch = !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.description || '').toLowerCase().includes(search.toLowerCase());
-    
+
     // Category filter
     const matchesCategory = validCat === 'all' || p.category === validCat;
-    
+
     // Market filter
     const matchesMarket = isLocal ? true : !p.isLocal;
-    
+
     return matchesSearch && matchesCategory && matchesMarket;
   });
 
@@ -90,7 +90,7 @@ export default function HomePage() {
 
   return (
     <div style={styles.page}>
-      {/* Hero Section - Simplified */}
+      {/* Hero Section */}
       <section style={styles.hero}>
         <div style={styles.heroContent}>
           <h1 style={styles.title}>
@@ -137,7 +137,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Category Bar - Clean & Simple */}
+      {/* Category Bar */}
       <div style={styles.catBar}>
         <div style={styles.catContainer}>
           {categories.map(cat => (
@@ -162,7 +162,7 @@ export default function HomePage() {
           <p style={styles.stats}>
             {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} found
           </p>
-          
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -218,11 +218,11 @@ export default function HomePage() {
 
             {/* Recently Viewed Section */}
             {(() => {
-              const validRecent = recentlyViewed.filter(rp => 
+              const validRecent = recentlyViewed.filter(rp =>
                 products.some(p => p._id === rp._id)
               );
               if (validRecent.length === 0) return null;
-              
+
               return (
                 <div style={styles.recentSection}>
                   <h3 style={styles.recentTitle}>
@@ -248,22 +248,28 @@ export default function HomePage() {
         )}
       </main>
 
+      {/* ✅ ALL animations defined here — no module-level document.head injection */}
       <style>{`
         * {
           margin: 0;
           padding: 0;
           box-sizing: border-box;
         }
-        
+
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+
         .product-grid > * {
           animation: fadeIn 0.3s ease-out;
         }
@@ -277,7 +283,7 @@ const styles = {
     minHeight: '100vh',
     background: '#f8fafc',
   },
-  
+
   // Hero Section
   hero: {
     background: 'linear-gradient(135deg, #0a3622 0%, #064e3b 100%)',
@@ -345,7 +351,7 @@ const styles = {
     outline: 'none',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
   },
-  
+
   // Category Bar
   catBar: {
     background: '#fff',
@@ -380,7 +386,7 @@ const styles = {
     borderColor: '#059669',
     color: '#fff',
   },
-  
+
   // Main Content
   main: {
     maxWidth: '1280px',
@@ -408,7 +414,7 @@ const styles = {
     background: '#fff',
     cursor: 'pointer',
   },
-  
+
   // Grid Layout
   grid: {
     display: 'grid',
@@ -416,7 +422,7 @@ const styles = {
     gap: '24px',
     marginBottom: '48px',
   },
-  
+
   // Loading Skeleton
   loadingGrid: {
     display: 'grid',
@@ -430,7 +436,7 @@ const styles = {
     border: '1px solid #eef2f6',
     animation: 'pulse 1.5s ease-in-out infinite',
   },
-  
+
   // Empty State
   emptyState: {
     textAlign: 'center',
@@ -463,7 +469,7 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
   },
-  
+
   // Recently Viewed
   recentSection: {
     marginTop: '32px',
@@ -493,13 +499,3 @@ const styles = {
     gap: '24px',
   },
 };
-
-// Add pulse animation to global styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-`;
-document.head.appendChild(styleSheet);
