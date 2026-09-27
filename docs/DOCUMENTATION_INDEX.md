@@ -19,6 +19,7 @@ This index explains which document answers which project question.
 | Release checklist | [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) | Merge, APK, and production sign-off |
 | Security policy | [`../SECURITY.md`](../SECURITY.md) | Secret handling and vulnerability reporting |
 | Contribution guide | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Branches, validation, pull requests, and safe documentation |
+| GitHub and cost guide | [`GITHUB_AND_COST_GUIDE.md`](./GITHUB_AND_COST_GUIDE.md) | Repository settings, low-cost hosting, Actions, and release strategy |
 | Legal drafts | [`PRIVACY_POLICY.md`](./PRIVACY_POLICY.md), [`TERMS_OF_SERVICE.md`](./TERMS_OF_SERVICE.md), [`RETURNS_AND_REFUNDS.md`](./RETURNS_AND_REFUNDS.md) | Draft customer policies requiring business/legal review |
 
 ## Documentation maintenance rule

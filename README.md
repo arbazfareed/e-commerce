@@ -23,6 +23,7 @@
 - **[Production Deployment](./docs/PRODUCTION_DEPLOYMENT.md)** — launch checklist and limitations
 - **[Contributing](./CONTRIBUTING.md)** — validation and pull request guidelines
 - **[Security Policy](./SECURITY.md)** — safe secret handling and vulnerability reporting
+- **[GitHub and Cost Guide](./docs/GITHUB_AND_COST_GUIDE.md)** — repository settings, low-cost hosting, and release strategy
 
 IndusCart is an e-commerce application with:
 
