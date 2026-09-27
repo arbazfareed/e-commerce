@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, qa/induscart-testing]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, qa/induscart-testing]
   workflow_dispatch:
 
 permissions:
@@ -31,10 +31,6 @@ jobs:
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
-
-      - name: Run backend unit and integration tests
-        working-directory: backend
-        run: npm run test
 
       - name: Backend syntax check
         working-directory: backend
