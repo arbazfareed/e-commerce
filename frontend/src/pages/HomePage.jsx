@@ -598,7 +598,7 @@ export default function HomePage() {
               <span style={styles.titleAccent}>softer, richer living.</span>
             </h1>
             <p style={styles.subtitle}>
-              Discover refined skincare, body rituals, and elevated home essentials crafted to calm the senses and enrich everyday routines—luxury care for skin, space, and self.
+              Thoughtful finds for a slower, richer life—discover refined skincare, body rituals, and elevated home essentials crafted to calm the senses and enrich everyday routines.
             </p>
             <div className="hero-actions" style={styles.heroActions}>
               <button
