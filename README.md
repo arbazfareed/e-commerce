@@ -12,6 +12,7 @@
 ### Explore the project
 
 - **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
+- **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
 - **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
 - **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows
@@ -325,13 +326,8 @@ encrypted backups of the keystore and its passwords; Google Play updates must
 continue using the same signing identity.
 
 The Android project is generated from the web build and is not required for
-normal browser development. On GitHub, open **Actions → Build Android APK →
-Run workflow**. Download the `induscart-debug-apk` artifact after the job
-finishes. Pushing a tag such as `v1.0.0` triggers the same workflow.
-
-GitHub Actions runs the same backend checks and frontend production build on
-pushes and pull requests. It does not require MongoDB credentials or expose
-local `.env` files.
+normal browser development. Build it locally by following the
+[Android Guide](./docs/ANDROID_GUIDE.md).
 
 ### Database backup and migration
 
