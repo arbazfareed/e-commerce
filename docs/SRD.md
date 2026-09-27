@@ -64,7 +64,236 @@ but the complete external integration or operational behavior is missing.
 - Public production hosting, object storage, monitoring, and legal sign-off
 - Multi-vendor settlement, reviews, wishlists, coupons, and advanced marketing
 
-## 4. Functional requirements
+## 4. SRS visual models
+
+These diagrams are intentionally based on the implemented repository. They use
+GitHub-compatible Mermaid and should be updated when requirements or routes
+change. UML guidance separates structural views such as class/component models
+from behavioral views such as use case, activity, sequence, and state models;
+the data-flow view below documents movement between actors, processes, and
+stores.
+
+### 4.1 Use-case view
+
+```mermaid
+flowchart LR
+      Customer([Customer])
+      Guest([Guest])
+      Admin([Administrator])
+      Courier([Future courier provider])
+      Payment([Future payment provider])
+
+      subgraph IndusCart[IndusCart system]
+            Browse((Browse catalog))
+            Account((Register / sign in))
+            Cart((Manage cart))
+            Order((Place and view orders))
+            Support((Submit support ticket))
+            Manage((Manage products and stock))
+            Fulfill((Update order status))
+            Analyze((View sales analytics))
+            Configure((Configure COD and courier settings))
+            Capture((Capture online payment))
+            Dispatch((Book shipment and track delivery))
+      end
+
+      Guest --> Browse
+      Guest --> Account
+      Guest --> Support
+      Customer --> Browse
+      Customer --> Account
+      Customer --> Cart
+      Customer --> Order
+      Customer --> Support
+      Admin --> Manage
+      Admin --> Fulfill
+      Admin --> Analyze
+      Admin --> Configure
+      Payment -. planned integration .-> Capture
+      Courier -. planned integration .-> Dispatch
+```
+
+`Capture` and `Dispatch` are deliberately shown as future integrations, not
+as completed capabilities.
+
+### 4.2 Checkout activity diagram
+
+```mermaid
+flowchart TD
+      Start((Start)) --> Cart[Customer opens cart]
+      Cart --> Auth{Authenticated?}
+      Auth -- No --> Login[Register or sign in]
+      Auth -- Yes --> Address[Enter street, city, country]
+      Login --> Address
+      Address --> Items[Submit products, variants, and payment method]
+      Items --> Validate[API validates request]
+      Validate --> Available{Products visible,<br/>variants valid,<br/>stock available?}
+      Available -- No --> Reject[Return validation error]
+      Available -- Yes --> Price[Reload database prices and calculate discount]
+      Price --> Market{Local product allowed<br/>for destination?}
+      Market -- No --> Reject
+      Market -- Yes --> Shipping[Calculate country/city zone shipping]
+      Shipping --> COD{COD selected and enabled?}
+      COD -- Yes --> CODFee[Calculate configured COD fee]
+      COD -- No --> Total[Calculate final total]
+      CODFee --> Total
+      Total --> Reserve[Decrement stock and create order]
+      Reserve --> Dispatch[Attempt optional courier dispatch asynchronously]
+      Dispatch --> Confirm[Return order confirmation]
+      Reject --> End((End))
+      Confirm --> End
+```
+
+### 4.3 Checkout sequence diagram
+
+```mermaid
+sequenceDiagram
+      actor Customer
+      participant UI as React cart
+      participant API as Express orders API
+      participant Product as Product model
+      participant Settings as System settings
+      participant Order as Order model
+      participant Courier as Courier service
+
+      Customer->>UI: Submit address, items, variants, payment method
+      UI->>API: POST /api/orders with JWT
+      API->>Product: Reload each product
+      Product-->>API: Visibility, stock, price, variants, weight
+      API->>Settings: Read COD configuration
+      Settings-->>API: COD availability and fee rules
+      API->>API: Validate market, calculate discount, shipping, total
+      API->>Product: Decrement stock
+      API->>Order: Create order snapshot
+      Order-->>API: Persisted order
+      API--)Courier: Attempt optional dispatch
+      API-->>UI: 201 order confirmation
+      UI-->>Customer: Show order status
+```
+
+### 4.4 Domain class model
+
+```mermaid
+classDiagram
+      class User {
+         +ObjectId id
+         +String name
+         +String username
+         +String email
+         +String passwordHash
+         +Boolean isAdmin
+      }
+      class Product {
+         +ObjectId id
+         +String name
+         +String category
+         +Number pricePKR
+         +Number priceUSD
+         +Number discountPercent
+         +Boolean isVisible
+         +Boolean isLocal
+         +Number stock
+         +Number weightKg
+      }
+      class Order {
+         +ObjectId id
+         +ObjectId user
+         +Number productTotal
+         +Number shippingFee
+         +Number codFee
+         +Number totalPrice
+         +String paymentMethod
+         +String status
+      }
+      class OrderItem {
+         +ObjectId product
+         +String name
+         +Number price
+         +Number quantity
+         +String selectedColor
+         +String selectedSize
+      }
+      class SupportTicket {
+         +ObjectId id
+         +ObjectId user
+         +String status
+         +String message
+         +String adminReply
+      }
+      class SystemSettings {
+         +String key
+         +Boolean codEnabled
+         +String codFeeMode
+         +Number codFee
+         +String courierProvider
+      }
+      User "1" --> "many" Order : places
+      Order "1" *-- "many" OrderItem : contains
+      Product "1" <-- "many" OrderItem : snapshot source
+      User "1" --> "many" SupportTicket : creates
+      SystemSettings "1" --> "many" Order : pricing rules
+```
+
+### 4.5 Level-1 data-flow diagram
+
+```mermaid
+flowchart LR
+      Customer[Customer / guest]
+      Admin[Administrator]
+      Browser[React browser or Android WebView]
+      API((Express API processes))
+      Auth[(JWT identity)]
+      Mongo[(MongoDB collections)]
+      Files[(Uploads storage)]
+      Config[(Environment and store settings)]
+      FuturePay[Future payment gateway]
+      FutureCourier[Future courier API]
+
+      Customer -->|catalog, account, cart, order, support data| Browser
+      Admin -->|management commands and reports| Browser
+      Browser -->|REST requests and JWT| API
+      API -->|verify token and admin role| Auth
+      API -->|users, products, orders, tickets| Mongo
+      API -->|product image files| Files
+      API -->|environment/COD settings| Config
+      API -. planned payment requests .-> FuturePay
+      API -. planned shipment requests .-> FutureCourier
+      API -->|JSON responses and health status| Browser
+```
+
+### 4.6 Order state diagram
+
+```mermaid
+stateDiagram-v2
+      [*] --> Pending
+      Pending --> Processing: admin accepts
+      Pending --> Cancelled: admin cancels
+      Processing --> Shipped: fulfillment dispatched
+      Processing --> Cancelled: admin cancels
+      Shipped --> Delivered: delivery completed
+      Shipped --> Cancelled: exceptional cancellation
+      Delivered --> [*]
+      Cancelled --> [*]
+```
+
+### 4.7 Diagram coverage and missing views
+
+| View | Status | Notes |
+|---|---|---|
+| Use case | Added | Actors and implemented/planned interactions |
+| Activity | Added | Checkout validation and order creation |
+| Sequence | Added | Browser-to-API checkout collaboration |
+| Class/domain | Added | Mongoose domain model relationships |
+| ER/data model | Added | See `ARCHITECTURE.md` |
+| Data flow | Added | Level-1 actors, processes, stores, integrations |
+| State machine | Added | Order lifecycle |
+| Component/deployment | Added | See `ARCHITECTURE.md` |
+| Timing diagram | Not needed yet | Add only when latency/SLA timing becomes a requirement |
+| Communication diagram | Not needed yet | Sequence diagram currently communicates the same integration path |
+| Payment/courier detailed flows | Missing | Add after real providers and webhooks are selected |
+| Returns/refunds activity | Missing | Add when the returns domain model and workflow are implemented |
+
+## 5. Functional requirements
 
 | ID | Requirement | Status | Acceptance summary |
 |---|---|---|---|
@@ -94,7 +323,7 @@ but the complete external integration or operational behavior is missing.
 | FR-24 | Returns/refunds workflow | Planned | Requires model, API, UI, eligibility, approval, refund, and stock rules |
 | FR-25 | Notifications | Planned | Requires email/SMS/push provider, templates, retry, and preferences |
 
-## 5. Core business rules
+## 6. Core business rules
 
 1. Hidden products remain in the admin catalog but are excluded from public
    product responses.
@@ -113,7 +342,7 @@ but the complete external integration or operational behavior is missing.
 9. Payment method selection is not payment settlement. Non-COD methods must not
    be described as captured payments until a provider is integrated.
 
-## 6. Non-functional requirements
+## 7. Non-functional requirements
 
 | Area | Current behavior | Production target |
 |---|---|---|
@@ -125,7 +354,7 @@ but the complete external integration or operational behavior is missing.
 | Mobile | Capacitor Android wrapper | Public HTTPS API, signed release, device matrix, offline/error UX |
 | Observability | Console errors and health endpoints | Central logs, error tracking, metrics, alerting, sensitive-data filtering |
 
-## 7. Environments
+## 8. Environments
 
 | Environment | Frontend API URL | Data | Purpose |
 |---|---|---|---|
@@ -134,7 +363,7 @@ but the complete external integration or operational behavior is missing.
 | CI | Repository variable for APK; no production secrets in normal CI | Ephemeral | Validation/build artifacts |
 | Production | Public `https://api.example.com` placeholder | Managed MongoDB | Real customers after release sign-off |
 
-## 8. Release gates
+## 9. Release gates
 
 The release must not be called production-ready until:
 
@@ -147,7 +376,7 @@ The release must not be called production-ready until:
 - Android release is signed, tested on real devices, and built with public API.
 - CI checks and required human review pass for the `main` branch.
 
-## 9. Traceability and evidence
+## 10. Traceability and evidence
 
 - API entry point: `backend/server.js`
 - Routes: `backend/routes/`
