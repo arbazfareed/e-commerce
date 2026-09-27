@@ -24,7 +24,7 @@ Now it has:
 - Secure environment-based admin creation.
 - MongoDB backup and restore commands.
 - Docker Compose support.
-- Health checks and automated CI checks.
+- Health checks and local validation commands.
 
 ## How a normal person runs it
 
@@ -95,7 +95,7 @@ The other developer should:
 3. Create private `.env` files from the examples.
 4. Run the backend checks and frontend build.
 5. Use the health endpoints to confirm API availability.
-6. Review the CI workflow before merging changes.
+6. Review the architecture and release documentation before sharing changes.
 
 The code structure, package manifests, environment examples, tests, Docker
 files, and README give an automated tool enough information to identify the
@@ -113,7 +113,7 @@ not included in the repository.
 - Backend health/readiness checks.
 - Backend automated tests.
 - Frontend production build.
-- GitHub Actions validation.
+- Local backend checks and frontend production builds.
 
 ## What is not included yet
 
