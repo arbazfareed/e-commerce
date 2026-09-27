@@ -1,7 +1,19 @@
 import axios from 'axios';
 
+// Set VITE_API_URL to the address reachable by browsers on other machines
+// (for example, http://192.168.1.20:5000). Keep the default for local development.
+const configuredApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const API_BASE = configuredApiUrl.replace(/\/+$/, '');
+
+export const assetUrl = (assetPath) => {
+  if (!assetPath) return '';
+  if (/^https?:\/\//i.test(assetPath)) return assetPath;
+  const cleanPath = assetPath.replace(/^\/+/, '');
+  return `${API_BASE}/${cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`}`;
+};
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: API_BASE,
 });
 
 // Attach JWT token automatically on every request
@@ -20,7 +32,9 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const requestUrl = err.config?.url || '';
+    const isAuthRequest = requestUrl.includes('/api/auth/login') || requestUrl.includes('/api/auth/register');
+    if (err.response?.status === 401 && !isAuthRequest && localStorage.getItem('user')) {
       localStorage.removeItem('user');
       window.location.href = '/login';
     }

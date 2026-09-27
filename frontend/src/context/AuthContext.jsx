@@ -1,4 +1,4 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
 import API from '../utils/axiosConfig';
 
 const AuthContext = createContext();
@@ -9,7 +9,44 @@ export const AuthProvider = ({ children }) => {
     catch { return null; }
   });
 
-  const persist = (data) => { setUser(data); localStorage.setItem('user', JSON.stringify(data)); };
+  const [authReady, setAuthReady] = useState(false);
+
+  const persist = (data) => {
+    const normalized = { ...data, city: data?.city || '' };
+    setUser(normalized);
+    localStorage.setItem('user', JSON.stringify(normalized));
+    localStorage.removeItem('checkout_address');
+  };
+
+  useEffect(() => {
+    let active = true;
+    const stored = localStorage.getItem('user');
+    if (!stored) {
+      setAuthReady(true);
+      return () => { active = false; };
+    }
+
+    let storedUser;
+    try { storedUser = JSON.parse(stored); }
+    catch {
+      localStorage.removeItem('user');
+      setAuthReady(true);
+      return () => { active = false; };
+    }
+
+    API.get('/api/auth/session')
+      .then(({ data }) => {
+        if (active) persist({ ...data.user, token: storedUser.token });
+      })
+      .catch(() => {
+        if (!active) return;
+        setUser(null);
+        localStorage.removeItem('user');
+      })
+      .finally(() => { if (active) setAuthReady(true); });
+
+    return () => { active = false; };
+  }, []);
 
   const register = async (fields) => {
     const { data } = await API.post('/api/auth/register', fields);
@@ -17,11 +54,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const { data } = await API.post('/api/auth/login', { email, password });
+    const { data } = await API.post('/api/auth/login', { email: email.trim(), password });
     persist(data); return data;
   };
 
   const logout = () => { setUser(null); localStorage.removeItem('user'); };
+
+  if (!authReady) return null;
 
   return (
     <AuthContext.Provider value={{ user, register, login, logout }}>

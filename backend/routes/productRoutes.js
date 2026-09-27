@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const multer  = require('multer');
 const path    = require('path');
+const fs      = require('fs');
 
 const {
   getProducts,
@@ -14,9 +15,14 @@ const {
 
 const { protect, admin } = require('../middleware/authMiddleware');
 
+// Always resolve storage from this file, not the process working directory.
+// This keeps uploads and the static directory aligned when started from any folder.
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 // ─── Multer: save to uploads/, accept multiple images ─────────
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, uploadsDir),
   filename:    (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random()*1e6) + path.extname(file.originalname)),
 });
 

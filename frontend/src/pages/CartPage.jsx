@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart }  from '../context/CartContext';
 import { useAuth }  from '../context/AuthContext';
-import API from '../utils/axiosConfig';
-import { formatPKR, formatUSD, calcZoneShipping, getUSDRate } from '../utils/priceUtils';
+import API, { assetUrl } from '../utils/axiosConfig';
+import { formatPKR, formatUSD, calcZoneShipping, getActiveDiscountPercent, getDiscountedPrice, getUSDRate } from '../utils/priceUtils';
 
-const BASE = 'http://localhost:5000';
 
 const PAYMENTS = [
   { id:'COD',       icon:'💵', label:'Cash on Delivery',    desc:'Pay when order arrives' },
@@ -23,6 +22,9 @@ export default function CartPage() {
 
   const isPak = !user || user.country === 'Pakistan';
   const fmt   = (n) => isPak ? formatPKR(n ?? 0) : formatUSD(n ?? 0);
+  const getItemPrice = (item) => isPak
+    ? getDiscountedPrice(item.pricePKR, getActiveDiscountPercent(item), 'PKR')
+    : getDiscountedPrice(item.priceUSD, getActiveDiscountPercent(item), 'USD');
 
   const [step,    setStep]    = useState('cart');
   const [addr,    setAddr]    = useState({
@@ -34,10 +36,27 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false);
   const [error,   setError]   = useState('');
   const [orderId, setOrderId] = useState(null);
+  const [checkoutSettings, setCheckoutSettings] = useState(null);
+
+  useEffect(() => {
+    API.get('/api/settings/public')
+      .then(({ data }) => setCheckoutSettings(data))
+      .catch(() => setCheckoutSettings(null));
+  }, []);
+
+  useEffect(() => {
+    if (checkoutSettings && !checkoutSettings.codEnabled && payment === 'COD') {
+      setPayment('JazzCash');
+    }
+  }, [checkoutSettings, payment]);
+
+  useEffect(() => {
+    setAddr(prev => ({ ...prev, city: '', country: user?.country || 'Pakistan' }));
+  }, [user?._id]);
 
   // Safe totals — always work even if items is []
   const safeItems  = Array.isArray(items) ? items : [];
-  const subTotal   = safeItems.reduce((s, i) => s + (isPak ? (i.pricePKR||0) : (i.priceUSD||0)) * (i.quantity||1), 0);
+  const subTotal   = safeItems.reduce((s, i) => s + getItemPrice(i) * (i.quantity||1), 0);
   // ✅ Zone-based shipping: detects domestic (Multan→Karachi), Middle East, US, etc.
   //    Items with no weight (glasses, fruit, etc.) incur only the base/flat rate.
   const shipCalc    = calcZoneShipping(safeItems, addr.country, addr.city);
@@ -46,7 +65,15 @@ export default function CartPage() {
   // For display & grand total: convert ship fee to the user's currency
   const USD_RATE    = getUSDRate();  // reads from localStorage (admin-configurable)
   const shipFee     = isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2));
-  const grandTotal  = subTotal + shipFee;
+  const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+  const codWaived = codSettings.codThreshold > 0 && subTotal >= codSettings.codThreshold;
+  const codFeePKR = payment === 'COD' && !codWaived
+    ? codSettings.codFeeMode === 'percentage'
+      ? Math.round(subTotal * (Number(codSettings.codFee || 0) / 100))
+      : Number(codSettings.codFee || 0)
+    : 0;
+  const codFee = isPak ? codFeePKR : parseFloat((codFeePKR / USD_RATE).toFixed(2));
+  const grandTotal  = subTotal + shipFee + codFee;
   const totalQty    = safeItems.reduce((a, i) => a + (i.quantity||1), 0);
 
   const handlePlaceOrder = async () => {
@@ -58,9 +85,11 @@ export default function CartPage() {
       const orderItems = safeItems.map(i => ({
         product:  i._id,
         name:     i.name,
-        price:    isPak ? (i.pricePKR||0) : (i.priceUSD||0),
+        price:    getItemPrice(i),
         quantity: i.quantity || 1,
         image:    i.images?.[0] || '',
+        selectedColor: i.selectedColor || '',
+        selectedSize: i.selectedSize || '',
       }));
       const { data } = await API.post('/api/orders', {
         products:      orderItems,
@@ -77,7 +106,7 @@ export default function CartPage() {
 
   // ── Success ───────────────────────────────────────────────
   if (step === 'success') return (
-    <div style={S.page}>
+    <div className="responsive-page cart-page" style={S.page}>
       <div style={S.successCard}>
         <div style={{ fontSize:'72px', lineHeight:1, marginBottom:'4px' }}>🎉</div>
         <h2 style={{ margin:'16px 0 10px', fontSize:'26px', fontWeight:'900', color:'#0f172a' }}>Order Confirmed!</h2>
@@ -101,7 +130,7 @@ export default function CartPage() {
 
   // ── Empty cart ────────────────────────────────────────────
   if (!safeItems.length) return (
-    <div style={S.page}>
+    <div className="responsive-page cart-page" style={S.page}>
       <div style={S.emptyCard}>
         <p style={{ fontSize:'64px', margin:0 }}>🛒</p>
         <h2 style={{ margin:'16px 0 8px', color:'#1e293b', fontSize:'22px' }}>Your cart is empty</h2>
@@ -113,9 +142,9 @@ export default function CartPage() {
 
   // ── Cart / Checkout ───────────────────────────────────────
   return (
-    <div style={S.page}>
+    <div className="responsive-page cart-page" style={S.page}>
       {/* Page header */}
-      <div style={S.topBar}>
+      <div className="cart-topbar" style={S.topBar}>
         <div>
           <h1 style={{ margin:0, fontSize:'26px', fontWeight:'900', color:'#0f172a' }}>
             {step === 'cart' ? '🛒 Your Cart' : '📋 Checkout'}
@@ -138,24 +167,26 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div style={S.layout}>
+      <div className="cart-layout" style={S.layout}>
 
         {/* ── LEFT COLUMN ──────────────────────────────────── */}
-        <div style={{ flex:1, minWidth:'280px' }}>
+        <div className="cart-main-column" style={{ flex:1, minWidth:'280px' }}>
 
           {/* CART STEP */}
           {step === 'cart' && (
             <div style={S.card}>
               {safeItems.map(item => {
-                const price = isPak ? (item.pricePKR||0) : (item.priceUSD||0);
+                const price = getItemPrice(item);
+                const originalPrice = isPak ? (item.pricePKR || 0) : (item.priceUSD || 0);
+                const discount = getActiveDiscountPercent(item);
                 const img   = item.images?.[0];
                 return (
-                  <div key={item._id} style={S.itemRow}>
+                  <div key={item._id} className="item-row" style={S.itemRow}>
                     {/* Product image */}
                     <div style={S.itemImgBox}>
                       {img
                         ? <img
-                            src={`${BASE}/uploads/${img}`}
+                            src={assetUrl(img)}
                             alt={item.name}
                             style={{ width:'100%', height:'100%', objectFit:'cover' }}
                             onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
@@ -170,14 +201,22 @@ export default function CartPage() {
                       <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
                         {item.category}
                       </p>
-                      <p style={{ margin:0, fontSize:'13px', color:'#64748b' }}>{fmt(price)} each</p>
+                      {(item.selectedColor || item.selectedSize) && (
+                        <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#047857', fontWeight:'700' }}>
+                          {[item.selectedColor && `Colour: ${item.selectedColor}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                      <p style={{ margin:0, fontSize:'13px', color:'#64748b' }}>
+                        {fmt(price)} each {discount > 0 && <del className="cart-original-price">{fmt(originalPrice)}</del>}
+                      </p>
+                      {discount > 0 && <span className="cart-discount-note">You save {discount}%</span>}
                     </div>
 
                     {/* Quantity controls */}
                     <div style={S.qtyBox}>
-                      <button style={S.qtyBtn} onClick={() => updateQty(item._id, item.quantity - 1)}>−</button>
+                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity - 1)}>−</button>
                       <span style={S.qtyNum}>{item.quantity}</span>
-                      <button style={S.qtyBtn} onClick={() => updateQty(item._id, item.quantity + 1)}>+</button>
+                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)}>+</button>
                     </div>
 
                     {/* Subtotal */}
@@ -187,7 +226,7 @@ export default function CartPage() {
                       </p>
                       <button
                         style={{ background:'none', border:'none', color:'#ef4444', fontSize:'12px', cursor:'pointer', fontWeight:'600', padding:0 }}
-                        onClick={() => removeFromCart(item._id)}
+                        onClick={() => removeFromCart(item)}
                       >
                         Remove
                       </button>
@@ -209,6 +248,7 @@ export default function CartPage() {
                   <label style={S.lbl}>Street / Area *</label>
                   <input style={S.inp}
                     placeholder="e.g. House 12, Block B, DHA Phase 5"
+                    autoComplete="street-address"
                     value={addr.street}
                     onChange={e => setAddr(a => ({ ...a, street: e.target.value }))}
                   />
@@ -218,6 +258,7 @@ export default function CartPage() {
                   <input style={S.inp}
                     placeholder="Lahore"
                     value={addr.city}
+                    autoComplete="off"
                     onChange={e => setAddr(a => ({ ...a, city: e.target.value }))}
                   />
                 </div>
@@ -230,7 +271,7 @@ export default function CartPage() {
 
               <h3 style={{ ...S.secTitle, marginTop:'24px' }}>💳 Payment Method</h3>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                {PAYMENTS.map(pm => (
+                {PAYMENTS.filter(pm => pm.id !== 'COD' || codSettings.codEnabled).map(pm => (
                   <label key={pm.id} style={{ ...S.payOpt, ...(payment === pm.id ? S.payOn : {}) }}>
                     <input type="radio" name="pm" style={{ display:'none' }}
                       checked={payment === pm.id} onChange={() => setPayment(pm.id)} />
@@ -247,7 +288,7 @@ export default function CartPage() {
         </div>
 
         {/* ── ORDER SUMMARY SIDEBAR ────────────────────────── */}
-        <div style={S.summary}>
+        <div className="cart-summary" style={S.summary}>
           <h3 style={S.secTitle}>Order Summary</h3>
 
           {/* Mini item list */}
@@ -256,7 +297,7 @@ export default function CartPage() {
               <div key={item._id} style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px' }}>
                 <div style={{ width:'38px', height:'38px', borderRadius:'8px', overflow:'hidden', flexShrink:0, border:'1px solid #e2e8f0', background:'#f8fafc' }}>
                   {item.images?.[0]
-                    ? <img src={`${BASE}/uploads/${item.images[0]}`} alt=""
+                            ? <img src={assetUrl(item.images[0])} alt={item.name}
                         style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                     : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', color:'#10b981' }}>
                         {item.name[0]}
@@ -267,7 +308,7 @@ export default function CartPage() {
                   <p style={{ margin:0, fontSize:'11px', color:'#94a3b8' }}>×{item.quantity}</p>
                 </div>
                 <span style={{ fontSize:'12px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
-                  {fmt((isPak ? (item.pricePKR||0) : (item.priceUSD||0)) * item.quantity)}
+                  {fmt(getItemPrice(item) * item.quantity)}
                 </span>
               </div>
             ))}
@@ -279,6 +320,15 @@ export default function CartPage() {
             <span style={S.sumLbl}>Subtotal ({totalQty} items)</span>
             <span style={S.sumVal}>{fmt(subTotal)}</span>
           </div>
+          {payment === 'COD' && (
+            <div style={S.sumRow}>
+              <span style={S.sumLbl}>
+                COD fee
+                {codWaived && <small style={{ display:'block', color:'#059669' }}>Free on this order</small>}
+              </span>
+              <span style={S.sumVal}>{codFee ? fmt(codFee) : 'Free'}</span>
+            </div>
+          )}
           <div style={S.sumRow}>
             <span style={S.sumLbl}>
               Shipping

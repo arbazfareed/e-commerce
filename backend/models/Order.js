@@ -5,13 +5,17 @@ const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true,
+    default: null,
   },
   name:     { type: String,  required: true },
   price:    { type: Number,  required: true },
+  originalPrice: { type: Number, default: 0 },
+  discountPercent: { type: Number, default: 0, min: 0, max: 100 },
   quantity: { type: Number,  required: true, default: 1 },
   image:    { type: String },
-  weightKg: { type: Number,  default: 0 },  // 0 = no per-kg charge (glasses, accessories, etc.)
+  selectedColor: { type: String, default: '' },
+  selectedSize: { type: String, default: '' },
+  weightKg: { type: Number, default: 0 },  // 0 = no per-kg charge (glasses, accessories, etc.)
 });
 
 const orderSchema = new mongoose.Schema(
@@ -26,6 +30,7 @@ const orderSchema = new mongoose.Schema(
     // ─── Pricing (from SRS Section 3.5 & Section 7) ───────────
     productTotal: { type: Number, required: true },   // sum(price × qty)
     shippingFee:  { type: Number, required: true },   // zone-based shipping fee
+    codFee:       { type: Number, default: 0 },
     totalWeight:  { type: Number, default: 0 },       // total cart weight in kg
     shippingZone: { type: String, default: 'domestic_pak' }, // detected zone
     totalPrice:   { type: Number, required: true },   // productTotal + shippingFee
@@ -40,11 +45,20 @@ const orderSchema = new mongoose.Schema(
     // ─── Payment ──────────────────────────────────────────────
     paymentMethod: {
       type: String,
-      enum: ['JazzCash', 'EasyPaisa', 'COD', 'Stripe', 'PayPal'],
+      enum: ['JazzCash', 'EasyPaisa', 'COD', 'Cash', 'Manual Cash', 'Stripe', 'PayPal'],
       required: true,
+    },
+    paymentChannel: {
+      type: String,
+      enum: ['cash', 'online'],
+      default: 'online',
     },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
+    isManualCash: { type: Boolean, default: false },
+    cashCollectedAt: { type: Date },
+    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    notes: { type: String, default: '' },
 
     // ─── Order Status ─────────────────────────────────────────
     status: {

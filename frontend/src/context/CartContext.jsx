@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext(null);
 
+export const getCartItemKey = (item) =>
+  `${item?._id || ''}|${item?.selectedColor || ''}|${item?.selectedSize || ''}`;
+
 export const CartProvider = ({ children }) => {
   // ✅ Recently viewed products (last 8) — filter out any stale/deleted entries
   const [recentlyViewed, setRecentlyViewed] = useState(() => {
@@ -40,19 +43,30 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product) =>
+  const addToCart = (product, quantity = 1, options = {}) =>
     setItems(prev => {
-      const exists = prev.find(i => i._id === product._id);
+      const variantKey = `${product._id}|${options.color || ''}|${options.size || ''}`;
+      const exists = prev.find(i => getCartItemKey(i) === variantKey);
       return exists
-        ? prev.map(i => i._id === product._id ? { ...i, quantity: i.quantity + 1 } : i)
-        : [...prev, { ...product, quantity: 1 }];
+        ? prev.map(i => getCartItemKey(i) === variantKey ? { ...i, quantity: i.quantity + quantity } : i)
+        : [...prev, { ...product, quantity, selectedColor: options.color || '', selectedSize: options.size || '' }];
     });
 
-  const removeFromCart = (id) => setItems(prev => prev.filter(i => i._id !== id));
+  const removeFromCart = (itemOrId, options = {}) => {
+    const key = typeof itemOrId === 'object'
+      ? getCartItemKey(itemOrId)
+      : `${itemOrId}|${options.color || ''}|${options.size || ''}`;
+    setItems(prev => prev.filter(item => getCartItemKey(item) !== key));
+  };
 
-  const updateQty = (id, qty) => {
-    if (qty < 1) { removeFromCart(id); return; }
-    setItems(prev => prev.map(i => i._id === id ? { ...i, quantity: qty } : i));
+  const updateQty = (itemOrId, qty, options = {}) => {
+    const item = typeof itemOrId === 'object' ? itemOrId : { _id: itemOrId, ...options };
+    const key = getCartItemKey(item);
+    if (qty < 1) {
+      setItems(prev => prev.filter(i => getCartItemKey(i) !== key));
+      return;
+    }
+    setItems(prev => prev.map(i => getCartItemKey(i) === key ? { ...i, quantity: qty } : i));
   };
 
   const clearCart = () => setItems([]);

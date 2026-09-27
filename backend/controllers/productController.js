@@ -2,13 +2,27 @@ const Product = require('../models/Product');
 const path    = require('path');
 const fs      = require('fs');
 
+const parseList = (value) => {
+  if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+  if (typeof value !== 'string') return [];
+  return value.split(',').map(v => v.trim()).filter(Boolean);
+};
+
+const isValidDateOnly = (value) => {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
+};
+
 // ─── @GET /api/products ────────────────────────────────────────
 const getProducts = async (req, res) => {
   try {
-    const { category, isLocal } = req.query;
+    const { category, isLocal, includeHidden } = req.query;
     let filter = {};
     if (category) filter.category = category;
     if (isLocal === 'true') filter.isLocal = true;
+    if (includeHidden !== 'true') filter.isVisible = { $ne: false };
     const products = await Product.find(filter).sort({ createdAt: -1 });
     res.json(products);
   } catch (error) {
@@ -20,7 +34,7 @@ const getProducts = async (req, res) => {
 // ✅ FIX: This route was missing — AdminPage fetches this on load
 const getCategories = async (req, res) => {
   try {
-    const categories = await Product.distinct('category');
+    const categories = await Product.distinct('category', req.query.includeHidden === 'true' ? {} : { isVisible: { $ne: false } });
     res.json(categories.filter(Boolean).sort());
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -31,7 +45,7 @@ const getCategories = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (product) {
+    if (product && product.isVisible !== false) {
       res.json(product);
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -46,7 +60,7 @@ const getProductById = async (req, res) => {
 // ✅ FIX 2: uses req.files (plural) for multiple image uploads
 const createProduct = async (req, res) => {
   try {
-    const { name, pricePKR, priceUSD, category, description, isLocal, stock, weightKg } = req.body;
+    const { name, pricePKR, priceUSD, discountPercent = 0, discountStartDate = '', discountEndDate = '', category, subcategory, brand, model, colors, sizes, isVisible, description, isLocal, stock, weightKg } = req.body;
 
     // Validate required fields
     if (!name || !category) {
@@ -54,6 +68,13 @@ const createProduct = async (req, res) => {
     }
     if (!pricePKR || !priceUSD) {
       return res.status(400).json({ message: 'Both PKR and USD prices are required.' });
+    }
+    const discount = Number(discountPercent);
+    if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+      return res.status(400).json({ message: 'Discount must be between 0 and 100 percent.' });
+    }
+    if (!isValidDateOnly(discountStartDate) || !isValidDateOnly(discountEndDate) || (discountStartDate && discountEndDate && discountStartDate > discountEndDate)) {
+      return res.status(400).json({ message: 'Enter valid discount dates and ensure the end date is not before the start date.' });
     }
 
     // ✅ FIX: req.files gives array from multer .array('images')
@@ -63,7 +84,16 @@ const createProduct = async (req, res) => {
       name:        name.trim(),
       pricePKR:    Number(pricePKR),
       priceUSD:    Number(priceUSD),
+      discountPercent: discount,
+      discountStartDate,
+      discountEndDate,
       category:    category.trim(),
+      subcategory: subcategory ? subcategory.trim() : '',
+      brand:       brand ? brand.trim() : '',
+      model:       model ? model.trim() : '',
+      colors:      parseList(colors),
+      sizes:       parseList(sizes),
+      isVisible:   isVisible !== 'false' && isVisible !== false,
       description: description ? description.trim() : '',
       isLocal:     isLocal === 'true' || isLocal === true,
       stock:       Number(stock)    || 0,
@@ -91,7 +121,27 @@ const updateProduct = async (req, res) => {
     product.name        = req.body.name        ?? product.name;
     product.pricePKR    = req.body.pricePKR    !== undefined ? Number(req.body.pricePKR)   : product.pricePKR;
     product.priceUSD    = req.body.priceUSD    !== undefined ? Number(req.body.priceUSD)   : product.priceUSD;
+    if (req.body.discountPercent !== undefined) {
+      const discount = Number(req.body.discountPercent);
+      if (!Number.isFinite(discount) || discount < 0 || discount > 100) {
+        return res.status(400).json({ message: 'Discount must be between 0 and 100 percent.' });
+      }
+      product.discountPercent = discount;
+    }
+    const discountStartDate = req.body.discountStartDate !== undefined ? String(req.body.discountStartDate).trim() : (product.discountStartDate || '');
+    const discountEndDate = req.body.discountEndDate !== undefined ? String(req.body.discountEndDate).trim() : (product.discountEndDate || '');
+    if (!isValidDateOnly(discountStartDate) || !isValidDateOnly(discountEndDate) || (discountStartDate && discountEndDate && discountStartDate > discountEndDate)) {
+      return res.status(400).json({ message: 'Enter valid discount dates and ensure the end date is not before the start date.' });
+    }
+    product.discountStartDate = discountStartDate;
+    product.discountEndDate = discountEndDate;
     product.category    = req.body.category    ?? product.category;
+    product.subcategory = req.body.subcategory ?? product.subcategory;
+    product.brand       = req.body.brand ?? product.brand;
+    product.model       = req.body.model ?? product.model;
+    product.colors      = req.body.colors !== undefined ? parseList(req.body.colors) : product.colors;
+    product.sizes       = req.body.sizes !== undefined ? parseList(req.body.sizes) : product.sizes;
+    product.isVisible   = req.body.isVisible !== undefined ? req.body.isVisible !== 'false' && req.body.isVisible !== false : product.isVisible;
     product.description = req.body.description ?? product.description;
     product.isLocal     = req.body.isLocal !== undefined ? (req.body.isLocal === 'true' || req.body.isLocal === true) : product.isLocal;
     product.stock       = req.body.stock     !== undefined ? Number(req.body.stock)     : product.stock;

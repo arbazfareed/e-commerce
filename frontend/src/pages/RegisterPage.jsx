@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandMark from '../components/BrandMark';
 
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda',
@@ -103,33 +104,123 @@ export default function RegisterPage() {
   const isPak = form.country === 'Pakistan';
 
   return (
-    <div style={S.page}>
+    <div className="responsive-page register-page" style={S.page}>
       <style>{`
         @keyframes fadeIn  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         @keyframes spin    { to { transform:rotate(360deg); } }
-        .inp:focus { border-color:#10b981 !important; background:#fff !important;
-                     box-shadow:0 0 0 3px rgba(16,185,129,0.12) !important; outline:none; }
-        .inp { transition:all 0.15s; }
+        .inp:focus { border-color:#16845d !important; background:#fff !important;
+               box-shadow:0 0 0 4px rgba(22,132,93,0.12), 0 3px 10px rgba(13,92,66,0.06) !important; outline:none; }
+        .inp:hover:not(:focus) { border-color:#b8d1c1 !important; background:#fff !important; }
+        .inp { transition:border-color .18s ease, box-shadow .18s ease, background .18s ease; }
         .reg-btn:hover:not(:disabled) { opacity:0.92; transform:translateY(-1px); }
         .reg-btn { transition:all 0.15s; }
         .back-btn:hover { background:#f1f5f9 !important; }
         .back-btn { transition:background 0.15s; }
+        .register-shell {
+          width:min(100%, 980px);
+          display:grid;
+          grid-template-columns:minmax(0,.86fr) minmax(430px,.9fr);
+          border-radius:30px;
+          overflow:hidden;
+          background:#fff;
+          box-shadow:0 24px 80px rgba(15,23,42,.16);
+          position:relative;
+          z-index:1;
+        }
+        .register-shell > div {
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+        }
+        .register-visual {
+          min-height:650px;
+          position:relative;
+          background:#78350f;
+          overflow:hidden;
+        }
+        .register-visual::after {
+          content:'';
+          position:absolute;
+          inset:0;
+          background:linear-gradient(145deg,rgba(69,26,3,.08),rgba(69,26,3,.72));
+          pointer-events:none;
+        }
+        .register-visual .auth-visual-image {
+          object-position:center;
+        }
+        .register-visual-content {
+          position:absolute;
+          inset:auto 32px 34px;
+          color:#fff;
+          z-index:1;
+        }
+        .register-visual-kicker {
+          color:#fef3c7;
+          font-size:10px;
+          font-weight:800;
+          letter-spacing:1.7px;
+        }
+        .register-visual h1 {
+          margin:12px 0;
+          font-family:'Sora',sans-serif;
+          font-size:32px;
+          line-height:1.12;
+          letter-spacing:-1px;
+        }
+        .register-visual h1 em { color:#fcd34d; font-style:normal; }
+        .register-visual p {
+          max-width:315px;
+          margin:0;
+          color:rgba(255,255,255,.8);
+          font-size:13px;
+          line-height:1.6;
+        }
+        .register-note {
+          display:inline-flex;
+          margin-top:20px;
+          padding:8px 12px;
+          border:1px solid rgba(255,255,255,.24);
+          border-radius:99px;
+          background:rgba(255,255,255,.1);
+          font-size:10px;
+          font-weight:700;
+        }
+        @media (max-width:760px) {
+          .register-page { padding:14px !important; align-items:flex-start !important; }
+          .register-shell { display:block; max-width:440px; border-radius:22px; }
+          .register-shell > div { display:block; }
+          .register-form-card { padding:28px 22px 24px !important; border:0 !important; }
+          .register-visual { min-height:180px; background-position:center; }
+          .register-visual-content { inset:22px 22px auto; }
+          .register-visual h1 { font-size:24px; margin:7px 0; }
+          .register-visual p { font-size:11px; max-width:290px; }
+          .register-note { display:none; }
+        }
       `}</style>
 
       <div style={S.blob1} />
       <div style={S.blob2} />
 
-      <div style={S.card}>
+      <div className="register-shell">
+        <section className="register-visual">
+          <img className="auth-visual-image" src="/honey-register.svg" alt="Honey and handcrafted goods from Pakistan" />
+          <div className="register-visual-content">
+            <span className="register-visual-kicker">JOIN THE INDUSCART COMMUNITY</span>
+            <h1>Create your<br /><em>everyday story.</em></h1>
+            <p>Save your favorite finds, checkout faster, and discover makers worth supporting.</p>
+            <span className="register-note">✦ Your new collection starts here</span>
+          </div>
+        </section>
+        <div className="register-form-card" style={S.card}>
 
         {/* ── Header ── */}
         <div style={S.header}>
-          <div style={S.logoMark}>IC</div>
+          <BrandMark size={48} style={{ filter:'drop-shadow(0 6px 10px rgba(13,92,66,.2))' }} />
           <div>
             <h1 style={S.brand}><span style={{ color:'#10b981' }}>Indus</span>Cart 🇵🇰</h1>
             <p style={S.brandSub}>Create your free account</p>
+            </div>
           </div>
-        </div>
-
         {/* ── Step indicator ── */}
         <div style={S.stepRow}>
           {[1, 2].map(n => (
@@ -160,32 +251,36 @@ export default function RegisterPage() {
         {step === 1 && (
           <form onSubmit={goNext} noValidate style={{ animation:'fadeIn 0.3s ease' }}>
             <div style={S.fg}>
-              <label style={S.lbl}>Full Name *</label>
+              <label htmlFor="register-name" style={S.lbl}>Full Name *</label>
               <input
                 className="inp" style={S.inp}
+                id="register-name"
                 placeholder="e.g. Muhammad Ali"
                 value={form.name} onChange={set('name')} required
               />
             </div>
 
             <div style={S.fg}>
-              <label style={S.lbl}>Email Address *</label>
+              <label htmlFor="register-email" style={S.lbl}>Email Address *</label>
               <input
                 className="inp" style={S.inp}
+                id="register-email"
                 type="email" placeholder="you@example.com"
                 value={form.email} onChange={set('email')} required
               />
             </div>
 
             <div style={{ ...S.fg, marginBottom:'24px' }}>
-              <label style={S.lbl}>
+              <label htmlFor="register-phone" style={S.lbl}>
                 Phone Number
                 <span style={S.optTag}>(optional)</span>
               </label>
               <input
                 className="inp" style={S.inp}
+                id="register-phone"
+                type="tel"
                 placeholder="+92 300 1234567"
-                value={form.phone} onChange={set('phone')}
+                value={form.phone} onChange={set('phone')} autoComplete="tel"
               />
             </div>
 
@@ -202,20 +297,21 @@ export default function RegisterPage() {
             {/* Country + City */}
             <div style={S.twoCol}>
               <div style={S.fg}>
-                <label style={S.lbl}>Country *</label>
-                <select className="inp" style={S.inp} value={form.country} onChange={set('country')} required>
+                <label htmlFor="register-country" style={S.lbl}>Country *</label>
+                <select id="register-country" className="inp" style={S.inp} value={form.country} onChange={set('country')} required>
                   {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div style={S.fg}>
-                <label style={S.lbl}>
+                <label htmlFor="register-city" style={S.lbl}>
                   City
                   <span style={S.optTag}>(optional)</span>
                 </label>
                 <input
                   className="inp" style={S.inp}
+                  id="register-city"
                   placeholder={isPak ? 'e.g. Karachi' : 'e.g. London'}
-                  value={form.city} onChange={set('city')}
+                  value={form.city} onChange={set('city')} autoComplete="off"
                 />
               </div>
             </div>
@@ -234,9 +330,10 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div style={S.fg}>
-              <label style={S.lbl}>Password *</label>
+              <label htmlFor="register-password" style={S.lbl}>Password *</label>
               <input
                 className="inp" style={S.inp}
+                id="register-password"
                 type="password" placeholder="At least 6 characters"
                 value={form.password} onChange={set('password')} required
               />
@@ -244,9 +341,10 @@ export default function RegisterPage() {
 
             {/* Confirm */}
             <div style={{ ...S.fg, marginBottom:'22px' }}>
-              <label style={S.lbl}>Confirm Password *</label>
+              <label htmlFor="register-confirm-password" style={S.lbl}>Confirm Password *</label>
               <input
                 className="inp" style={S.inp}
+                id="register-confirm-password"
                 type="password" placeholder="Re-enter your password"
                 value={form.confirm} onChange={set('confirm')} required
               />
@@ -283,6 +381,7 @@ export default function RegisterPage() {
           <Link to="/login" style={S.link}>Sign in →</Link>
         </p>
       </div>
+      </div>
     </div>
   );
 }
@@ -291,7 +390,7 @@ export default function RegisterPage() {
 const S = {
   page: {
     minHeight:'100vh',
-    background:'linear-gradient(145deg,#f0fdf4 0%,#ecfdf5 40%,#eff6ff 100%)',
+    background:'linear-gradient(145deg,#f7f4eb 0%,#f1f8f3 52%,#eef5f1 100%)',
     display:'flex', alignItems:'center', justifyContent:'center',
     padding:'24px', fontFamily:"'DM Sans','Segoe UI',sans-serif",
     position:'relative', overflow:'hidden',
@@ -307,21 +406,14 @@ const S = {
     bottom:'-120px', left:'-80px', pointerEvents:'none',
   },
   card: {
-    background:'#fff', borderRadius:'24px', padding:'40px 36px',
+    background:'#fff', borderRadius:0, padding:'40px 36px',
     width:'100%', maxWidth:'480px',
-    boxShadow:'0 8px 60px rgba(0,0,0,0.10)',
+    boxShadow:'none',
     border:'1px solid rgba(16,185,129,0.10)',
     position:'relative', zIndex:1,
     animation:'fadeIn 0.4s ease',
   },
   header:  { display:'flex', alignItems:'center', gap:'14px', marginBottom:'24px' },
-  logoMark: {
-    width:'48px', height:'48px', borderRadius:'14px',
-    background:'linear-gradient(135deg,#10b981,#059669)',
-    display:'flex', alignItems:'center', justifyContent:'center',
-    fontSize:'16px', fontWeight:'900', color:'#fff', flexShrink:0,
-    boxShadow:'0 6px 20px rgba(16,185,129,0.3)',
-  },
   brand:    { margin:0, fontSize:'22px', fontWeight:'900', color:'#0f172a', letterSpacing:'-0.5px' },
   brandSub: { margin:'2px 0 0', fontSize:'13px', color:'#64748b' },
 
@@ -352,17 +444,18 @@ const S = {
     marginBottom:'20px', display:'flex', alignItems:'center', gap:'8px',
   },
 
-  fg:     { marginBottom:'14px' },
+  fg:     { marginBottom:'16px' },
   twoCol: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' },
   lbl:    {
-    display:'block', fontSize:'11px', fontWeight:'800', color:'#475569',
-    marginBottom:'6px', letterSpacing:'0.4px', textTransform:'uppercase',
+    display:'block', fontSize:'10px', fontWeight:'800', color:'#40594a',
+    marginBottom:'8px', letterSpacing:'0.7px', textTransform:'uppercase',
   },
   optTag: { color:'#94a3b8', fontWeight:'500', marginLeft:'6px', fontSize:'11px' },
   inp: {
-    width:'100%', padding:'12px 14px', border:'1.5px solid #e2e8f0',
-    borderRadius:'11px', fontSize:'14px', boxSizing:'border-box',
-    color:'#1e293b', background:'#f8fafc',
+    width:'100%', minHeight:'50px', padding:'13px 15px', border:'1px solid #d8e5dc',
+    borderRadius:'13px', fontSize:'14px', boxSizing:'border-box',
+    color:'#18372a', background:'linear-gradient(180deg,#ffffff 0%,#f9fcfa 100%)',
+    boxShadow:'0 1px 2px rgba(10,61,47,.035)',
     fontFamily:"'DM Sans','Segoe UI',sans-serif", fontWeight:'500',
   },
   infoBadge: {
