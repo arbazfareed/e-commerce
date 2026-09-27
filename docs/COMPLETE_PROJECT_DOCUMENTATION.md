@@ -171,7 +171,9 @@ The debug APK is written to
 `frontend/android/app/build/outputs/apk/debug/app-debug.apk`.
 
 For a signed release, configure `android/keystore.properties` privately and
-follow [Android Guide](./ANDROID_GUIDE.md).
+follow [Android Guide](./ANDROID_GUIDE.md). GitHub Actions can build an
+installable debug APK when the repository variable `VITE_API_URL` contains the
+public HTTPS API URL.
 
 ## 10. Validation
 
@@ -218,7 +220,33 @@ reviews enabled if human approval is part of your release policy.
 - The DOCX copy in the repository should be regenerated from this Markdown
   document when a DOCX export tool is available.
 
-## 13. Documentation index
+## 13. Future improvement roadmap
+
+### Priority 1 — required for real customers
+
+1. Deploy the API to a public HTTPS host and set `VITE_API_URL` to it.
+2. Move product images from local disk to S3-compatible storage or Cloudinary.
+3. Add a real payment provider with server-side webhooks and refunds.
+4. Configure managed MongoDB backups, restore drills, and monitoring.
+5. Replace draft legal pages with reviewed production policies.
+
+### Priority 2 — reliability and growth
+
+1. Add API request validation with a schema library and consistent error codes.
+2. Add pagination and database indexes for products, orders, and analytics.
+3. Add automated end-to-end checkout tests using a test payment provider.
+4. Add error tracking with sensitive-data filtering.
+5. Add role-based admin permissions instead of one administrator flag.
+
+### Priority 3 — product experience
+
+1. Add product reviews, wishlists, coupons, and abandoned-cart recovery.
+2. Add courier tracking webhooks and customer delivery notifications.
+3. Add image optimization, lazy loading, and CDN caching.
+4. Add accessibility audits and localization beyond PKR/USD.
+5. Publish a signed Android release through Google Play after security review.
+
+## 14. Documentation index
 
 - [README](../README.md)
 - [Project Showcase](./PROJECT_SHOWCASE.md)

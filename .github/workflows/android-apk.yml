@@ -1,0 +1,70 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build installable debug APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Require a public HTTPS API URL
+        env:
+          API_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          test -n "$API_URL" || { echo "Set the repository variable VITE_API_URL first."; exit 1; }
+          case "$API_URL" in
+            https://*) ;;
+            *) echo "VITE_API_URL must use public HTTPS for phone installs."; exit 1 ;;
+          esac
+
+      - name: Build web application
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: npm run build
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Synchronize Capacitor project
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: frontend/android
+        run: chmod +x gradlew && ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: induscart-debug-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -53,3 +53,22 @@ for Google Play production release. A release build still needs:
 - App icon and splash branding
 - Privacy policy and store listing
 - Play App Signing configuration
+
+## GitHub APK build
+
+The repository includes `.github/workflows/android-apk.yml`. First deploy the
+backend to a public HTTPS URL, then add this repository variable under
+**Settings → Secrets and variables → Actions → Variables**:
+
+```text
+VITE_API_URL=https://api.example.com
+```
+
+Run **Actions → Build Android APK → Run workflow**, or push a version tag such
+as `v1.0.0`. Download the `induscart-debug-apk` artifact and install
+`app-debug.apk` on the phone.
+
+The workflow rejects `localhost` and LAN URLs intentionally. An installed APK
+cannot reach the developer computer once it leaves the local network. The API
+must remain publicly reachable over HTTPS for the app to work without running
+the project locally.

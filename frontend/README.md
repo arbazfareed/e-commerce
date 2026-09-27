@@ -16,7 +16,7 @@ use a backend running on another machine, create `.env` before `npm start` or
 `npm run build`:
 
 ```env
-VITE_API_URL=http://192.168.1.20:5000
+VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 This value also controls product image URLs. Uploaded files live in the

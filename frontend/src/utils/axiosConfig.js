@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set VITE_API_URL to the address reachable by browsers on other machines
-// (for example, http://192.168.1.20:5000). Keep the default for local development.
+// (for example, http://YOUR_COMPUTER_IP:5000). Keep the default for local development.
 const configuredApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export const API_BASE = configuredApiUrl.replace(/\/+$/, '');
 

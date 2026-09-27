@@ -18,6 +18,8 @@
 - **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows
 - **[Local Run Guide](./docs/LOCAL_RUN_GUIDE.md)** — desktop, phone, and Android instructions
 - **[Production Deployment](./docs/PRODUCTION_DEPLOYMENT.md)** — launch checklist and limitations
+- **[Contributing](./CONTRIBUTING.md)** — validation and pull request guidelines
+- **[Security Policy](./SECURITY.md)** — safe secret handling and vulnerability reporting
 
 IndusCart is an e-commerce application with:
 
@@ -167,7 +169,7 @@ then configure the frontend with the backend computer address:
 
 ```env
 # frontend/.env
-VITE_API_URL=http://192.168.1.226:5000
+VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 Start both services so they listen on the network:
@@ -184,7 +186,7 @@ npm.cmd start -- --host 0.0.0.0
 
 Open this single link on the phone (replace the IP if yours differs):
 
-<http://192.168.1.226:3000>
+<http://YOUR_COMPUTER_IP:3000>
 
 If Windows Firewall blocks the phone, run PowerShell as Administrator and allow
 TCP ports 3000 and 5000. Both terminals must remain open while testing.
@@ -436,7 +438,7 @@ from another PC, create `frontend/.env` before building/running it and point
 the browser to the backend machine's reachable address:
 
 ```env
-VITE_API_URL=http://192.168.1.20:5000
+VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 The same `VITE_API_URL` is used for API calls and `/uploads/...` image URLs, so

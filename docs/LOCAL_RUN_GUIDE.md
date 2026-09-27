@@ -4,10 +4,10 @@ This guide explains how to run IndusCart in Chrome on the computer, open it on a
 
 ## Current computer address
 
-The active Wi-Fi IPv4 address is:
+Use your computer's Wi-Fi IPv4 address as a placeholder in the examples below:
 
 ```text
-192.168.1.226
+YOUR_COMPUTER_IP
 ```
 
 If the computer changes networks, check the address again with:
@@ -32,7 +32,7 @@ The API should report that MongoDB connected and that it is running on port `500
 Test it in Chrome:
 
 - Computer: <http://localhost:5000/health/live>
-- Same Wi-Fi device: <http://192.168.1.226:5000/health/live>
+- Same Wi-Fi device: <http://YOUR_COMPUTER_IP:5000/health/live>
 
 A successful response contains `"status":"ok"`.
 
@@ -51,11 +51,11 @@ Open the website in Chrome on the computer:
 
 Open the website from a phone on the same Wi-Fi:
 
-<http://192.168.1.226:3000>
+<http://YOUR_COMPUTER_IP:3000>
 
 Download the signed Android release APK from the same phone:
 
-<http://192.168.1.226:3000/IndusCart-release.apk>
+<http://YOUR_COMPUTER_IP:3000/IndusCart-release.apk>
 
 Keep both terminals open while using the local website. Stop either service with `Ctrl+C`.
 
@@ -83,15 +83,15 @@ Check these items:
 - `frontend/.env` contains the computer's LAN API address:
 
 ```env
-VITE_API_URL=http://192.168.1.226:5000
+VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 - The backend terminal is still running.
 - Windows Firewall allows inbound TCP ports `3000` and `5000`.
 - Test the API URL from the phone first:
-  <http://192.168.1.226:5000/health/live>
+  <http://YOUR_COMPUTER_IP:5000/health/live>
 - If that health URL works but products do not load, test the product endpoint:
-  <http://192.168.1.226:5000/api/products>
+  <http://YOUR_COMPUTER_IP:5000/api/products>
 
 If Windows Firewall blocks access, allow Node.js on private networks or create inbound rules for TCP ports `3000` and `5000` using Windows Firewall settings.
 
@@ -107,7 +107,7 @@ New-NetFirewallRule -DisplayName "IndusCart API 5000" -Direction Inbound -Protoc
 The APK uses the `VITE_API_URL` value that exists when the web assets are built. For local phone testing, set:
 
 ```env
-VITE_API_URL=http://192.168.1.226:5000
+VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 Build the signed release APK:
@@ -134,7 +134,7 @@ The APK is version `1.0.0`, uses the new package ID `com.induscart.mobile`, and 
 
 ## 6. Production website and APK
 
-The local IP `192.168.1.226` is only for the same Wi-Fi network. It is not a public production address.
+The local IP represented by `YOUR_COMPUTER_IP` is only for the same Wi-Fi network. It is not a public production address.
 
 For public production:
 
@@ -156,10 +156,10 @@ The production website output is `frontend/dist`. It can be served by the includ
 | Purpose | URL |
 | --- | --- |
 | Website on computer | <http://localhost:3000> |
-| Website on same Wi-Fi | <http://192.168.1.226:3000> |
-| Android APK download | <http://192.168.1.226:3000/IndusCart-release.apk> |
+| Website on same Wi-Fi | <http://YOUR_COMPUTER_IP:3000> |
+| Android APK download | <http://YOUR_COMPUTER_IP:3000/IndusCart-release.apk> |
 | API health on computer | <http://localhost:5000/health/live> |
-| API health on same Wi-Fi | <http://192.168.1.226:5000/health/live> |
+| API health on same Wi-Fi | <http://YOUR_COMPUTER_IP:5000/health/live> |
 | Sign in | <http://localhost:3000/login> |
 | Sign up | <http://localhost:3000/register> |
 | Admin | <http://localhost:3000/admin> |
