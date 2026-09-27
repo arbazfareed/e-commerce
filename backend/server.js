@@ -40,6 +40,10 @@ app.get('/health/ready', (req, res) => {
   });
 });
 
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found.' });
+});
+
 app.use((error, req, res, next) => {
   console.error(`${req.method} ${req.originalUrl}:`, error.message);
   if (res.headersSent) return next(error);
@@ -57,5 +61,14 @@ const startServer = async () => {
 if (require.main === module) {
   startServer();
 }
+
+const shutdown = async (signal) => {
+  console.log(`${signal} received. Closing database connection.`);
+  await mongoose.connection.close(false);
+  process.exit(0);
+};
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));
 
 module.exports = { app, startServer };

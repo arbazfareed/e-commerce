@@ -211,6 +211,8 @@ const getSalesAnalytics = async (req, res) => {
 const recordManualCashSale = async (req, res) => {
   try {
     const { products, amount, notes, paidAt } = req.body || {};
+    if (amount !== undefined && (!Number.isFinite(Number(amount)) || Number(amount) < 0))
+      return res.status(400).json({ message: 'Manual cash amount must be a non-negative number.' });
     const items = Array.isArray(products) && products.length ? products : [{
       name: 'Manual cash sale',
       quantity: 1,
@@ -263,8 +265,10 @@ const updateOrderStatus = async (req, res) => {
     if (req.body.status && !ORDER_STATUSES.has(req.body.status))
       return res.status(400).json({ message: 'Invalid order status.' });
     if (req.body.status === 'Cancelled' && o.status !== 'Cancelled')
-      for (const item of o.products)
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+      for (const item of o.products) {
+        if (item.product)
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+      }
     o.status = req.body.status || o.status;
     if (req.body.status === 'Delivered') { o.isPaid = true; o.paidAt = new Date(); }
     res.json(await o.save());
