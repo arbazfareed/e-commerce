@@ -13,7 +13,10 @@ const request = (server, path) => new Promise((resolve, reject) => {
   const req = http.get({ host: '127.0.0.1', port: address.port, path }, response => {
     let body = '';
     response.on('data', chunk => { body += chunk; });
-    response.on('end', () => resolve({ status: response.statusCode, body: JSON.parse(body) }));
+    response.on('end', () => {
+      req.destroy();
+      resolve({ status: response.statusCode, body: JSON.parse(body) });
+    });
   });
   req.on('error', reject);
 });
