@@ -24,4 +24,18 @@ const admin = (req, res, next) => {
   res.status(403).json({ message: 'Not authorized as admin' });
 };
 
-module.exports = { protect, admin };
+// Attach a valid user when a bearer token is present, but keep public routes public.
+// This lets catalog routes expose hidden records only to authenticated admins.
+const optionalProtect = async (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return next();
+  try {
+    const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select('-password');
+  } catch {
+    // Invalid optional credentials do not turn a public catalog request into a 401.
+  }
+  return next();
+};
+
+module.exports = { protect, admin, optionalProtect };

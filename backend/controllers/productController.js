@@ -22,7 +22,8 @@ const getProducts = async (req, res) => {
     let filter = {};
     if (category) filter.category = category;
     if (isLocal === 'true') filter.isLocal = true;
-    if (includeHidden !== 'true') filter.isVisible = { $ne: false };
+    const canIncludeHidden = includeHidden === 'true' && req.user?.isAdmin;
+    if (!canIncludeHidden) filter.isVisible = { $ne: false };
     const products = await Product.find(filter).sort({ createdAt: -1 });
     res.json(products);
   } catch (error) {
@@ -34,7 +35,8 @@ const getProducts = async (req, res) => {
 // ✅ FIX: This route was missing — AdminPage fetches this on load
 const getCategories = async (req, res) => {
   try {
-    const categories = await Product.distinct('category', req.query.includeHidden === 'true' ? {} : { isVisible: { $ne: false } });
+    const canIncludeHidden = req.query.includeHidden === 'true' && req.user?.isAdmin;
+    const categories = await Product.distinct('category', canIncludeHidden ? {} : { isVisible: { $ne: false } });
     res.json(categories.filter(Boolean).sort());
   } catch (error) {
     res.status(500).json({ message: error.message });

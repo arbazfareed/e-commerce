@@ -333,13 +333,15 @@ stateDiagram-v2
 4. Discounts are active only within their optional inclusive date range.
 5. The API calculates order prices from the database and does not trust browser
    prices.
-6. COD can be disabled and can use a flat or percentage fee with an optional
+6. Public catalog requests cannot reveal hidden products; hidden catalog data is
+   available only to authenticated administrators.
+7. COD can be disabled and can use a flat or percentage fee with an optional
    product-total threshold.
-7. Cancelling an order restores stock; other concurrent stock reservations need
+8. Cancelling an order restores stock; other concurrent stock reservations need
    a transaction/atomic update improvement before high-volume production.
-8. A courier failure must not fail order creation; the current service reports
+9. A courier failure must not fail order creation; the current service reports
    `not_configured` or `provider_not_supported`.
-9. Payment method selection is not payment settlement. Non-COD methods must not
+10. Payment method selection is not payment settlement. Non-COD methods must not
    be described as captured payments until a provider is integrated.
 
 ## 7. Non-functional requirements

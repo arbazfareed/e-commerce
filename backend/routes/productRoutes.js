@@ -13,7 +13,7 @@ const {
   deleteProduct,
 } = require('../controllers/productController');
 
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
 
 // Always resolve storage from this file, not the process working directory.
 // This keeps uploads and the static directory aligned when started from any folder.
@@ -40,10 +40,10 @@ const upload = multer({
 // ✅ FIX: /categories MUST come before /:id — otherwise Express
 //    treats "categories" as an :id param and it never matches
 // GET /api/products/categories → list all distinct categories
-router.get('/categories', getCategories);
+router.get('/categories', optionalProtect, getCategories);
 
 // GET  /api/products          → all products (public)
-router.get('/',    getProducts);
+router.get('/',    optionalProtect, getProducts);
 
 // GET  /api/products/:id      → single product (public)
 router.get('/:id', getProductById);

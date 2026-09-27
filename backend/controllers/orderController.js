@@ -85,6 +85,7 @@ const calcZoneShipping = (items, toCountry, toCity) => {
 };
 
 const placeOrder = async (req, res) => {
+  const reservedItems = [];
   try {
     const { products, address, paymentMethod } = req.body;
     if (!products || products.length === 0)
@@ -137,8 +138,19 @@ const placeOrder = async (req, res) => {
     if (paymentMethod === 'COD' && !settings.codEnabled)
       return res.status(400).json({ message: 'Cash on delivery is currently unavailable.' });
 
-    for (const item of enrichedItems)
-      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+    for (const item of enrichedItems) {
+      const reserved = await Product.findOneAndUpdate(
+        { _id: item.product, isVisible: { $ne: false }, stock: { $gte: item.quantity } },
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      );
+      if (!reserved) {
+        const error = new Error(`Stock changed while ordering "${item.name}". Please review your cart and try again.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      reservedItems.push(item);
+    }
 
     // ✅ Zone-based shipping — correct for Multan→Karachi, Pakistan→Dubai, etc.
     const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city);
@@ -159,7 +171,12 @@ const placeOrder = async (req, res) => {
     });
     dispatchOrder(order).catch((error) => console.error('Courier dispatch failed:', error.message));
     res.status(201).json(order);
-  } catch (e) { console.error(e); res.status(500).json({ message: e.message }); }
+  } catch (e) {
+    for (const item of reservedItems)
+      await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+    console.error(e);
+    res.status(e.statusCode || 500).json({ message: e.message });
+  }
 };
 
 const getMyOrders = async (req, res) => {

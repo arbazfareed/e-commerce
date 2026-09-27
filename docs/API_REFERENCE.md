@@ -34,8 +34,8 @@ must use stronger operational policy than the minimum application rule.
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| GET | `/api/products` | Public | Lists visible products; supports `category`, `isLocal`, and admin-only-style `includeHidden` query behavior |
-| GET | `/api/products/categories` | Public | Lists distinct categories; `includeHidden=true` includes hidden records |
+| GET | `/api/products` | Public/admin optional | Lists visible products; supports `category` and `isLocal`. Only an authenticated admin's `includeHidden=true` is honored |
+| GET | `/api/products/categories` | Public/admin optional | Lists distinct visible categories; only an authenticated admin can include hidden records |
 | GET | `/api/products/:id` | Public | Returns one visible product |
 | POST | `/api/products` | Admin | Creates product with multipart `images` uploads |
 | PUT | `/api/products/:id` | Admin | Updates product and optionally replaces/extends images |
@@ -103,6 +103,7 @@ Typical responses are JSON objects with a `message` field. Common status codes:
 - `401` missing/invalid JWT or missing user
 - `403` authenticated user lacks permission
 - `404` product, order, or ticket does not exist
+- `409` checkout stock changed during reservation; refresh the cart and retry
 - `500` unexpected server error
 
 ## Source of truth
