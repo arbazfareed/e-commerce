@@ -25,6 +25,17 @@ function AdminSupportView() {
   const [filter,      setFilter]      = useState('All');
   const [search,      setSearch]      = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
+  const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+
+  useEffect(() => {
+    const syncTheme = () => setThemeMode(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const isDark = themeMode === 'dark';
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -76,16 +87,16 @@ function AdminSupportView() {
   };
 
   return (
-    <div style={A.page}>
+    <div className="responsive-page support-admin-page" style={{ ...A.page, background: isDark ? 'linear-gradient(145deg, #0b1510 0%, #0d1a16 100%)' : '#f1f5f9' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
         @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
         @keyframes spin   { to{transform:rotate(360deg)} }
-        .tkt-row:hover { background:#f8fafc !important; }
+        .tkt-row:hover { background:${isDark ? '#16241e !important' : '#f8fafc !important'}; }
         .pill-btn:hover { opacity:.85; }
         .action-btn:hover { opacity:.8; }
         ::-webkit-scrollbar { width:4px; height:4px; }
-        ::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:99px; }
+        ::-webkit-scrollbar-thumb { background:${isDark ? '#3b4d45' : '#e2e8f0'}; border-radius:99px; }
       `}</style>
 
       {/* Header */}
@@ -110,15 +121,15 @@ function AdminSupportView() {
         {/* KPI row */}
         <div style={A.kpiRow}>
           {[
-            { label: 'Total Tickets', val: tickets.length,  color: '#6366f1', bg: 'linear-gradient(135deg,#eef2ff,#e0e7ff)', border: '#c7d2fe', icon: '🗂️' },
-            { label: 'Open',          val: openCount,        color: '#d97706', bg: 'linear-gradient(135deg,#fffbeb,#fef3c7)', border: '#fde68a', icon: '🟡' },
-            { label: 'Resolved',      val: resolvedCount,    color: '#059669', bg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '#bbf7d0', icon: '✅' },
+            { label: 'Total Tickets', val: tickets.length,  color: isDark ? '#dfeafc' : '#6366f1', bg: isDark ? 'linear-gradient(135deg,#18212c,#111827)' : 'linear-gradient(135deg,#eef2ff,#e0e7ff)', border: isDark ? '#3f4a62' : '#c7d2fe', icon: '🗂️' },
+            { label: 'Open',          val: openCount,        color: isDark ? '#ffe0b5' : '#d97706', bg: isDark ? 'linear-gradient(135deg,#352a1a,#221b14)' : 'linear-gradient(135deg,#fffbeb,#fef3c7)', border: isDark ? '#7b5b3f' : '#fde68a', icon: '🟡' },
+            { label: 'Resolved',      val: resolvedCount,    color: isDark ? '#a7f3d0' : '#059669', bg: isDark ? 'linear-gradient(135deg,#183327,#10281f)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: isDark ? '#3c735f' : '#bbf7d0', icon: '✅' },
           ].map(k => (
-            <div key={k.label} style={{ ...A.kpiCard, background: k.bg, border: `1.5px solid ${k.border}` }}>
+            <div key={k.label} style={{ ...A.kpiCard, background: k.bg, border: `1.5px solid ${k.border}`, boxShadow: isDark ? '0 10px 24px rgba(0,0,0,0.18)' : '0 2px 10px rgba(0,0,0,.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: k.color, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Sora',sans-serif" }}>{k.label}</p>
-                  <p style={{ margin: 0, fontSize: 32, fontWeight: 900, color: k.color, lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{k.val}</p>
+                  <p style={{ margin: 0, fontSize: 32, fontWeight: 900, color: isDark ? '#f8fbfa' : k.color, lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{k.val}</p>
                 </div>
                 <span style={{ fontSize: 26 }}>{k.icon}</span>
               </div>
@@ -129,20 +140,26 @@ function AdminSupportView() {
         {/* Filter + Search */}
         <div style={A.toolbar}>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            {['All', 'Open', 'Resolved'].map(f => (
-              <button key={f} className="pill-btn" onClick={() => setFilter(f)} style={{
-                padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                border: `1.5px solid ${filter === f ? (f === 'Open' ? '#f59e0b' : f === 'Resolved' ? '#10b981' : '#6366f1') : '#e2e8f0'}`,
-                background: filter === f ? (f === 'Open' ? '#fef3c7' : f === 'Resolved' ? '#d1fae5' : '#e0e7ff') : '#fff',
-                color: filter === f ? (f === 'Open' ? '#d97706' : f === 'Resolved' ? '#059669' : '#4f46e5') : '#64748b',
-                fontFamily: "'Sora',sans-serif", transition: 'all .15s',
-              }}>
-                {f} ({f === 'All' ? tickets.length : f === 'Open' ? openCount : resolvedCount})
-              </button>
-            ))}
+            {['All', 'Open', 'Resolved'].map(f => {
+              const isActive = filter === f;
+              const activeColor = isDark ? '#f8fbfa' : '#fff';
+              const activeBg = f === 'Open' ? (isDark ? '#3d2f21' : '#fef3c7') : f === 'Resolved' ? (isDark ? '#1f3a31' : '#d1fae5') : (isDark ? '#1f2d3a' : '#e0e7ff');
+              const activeBorder = f === 'Open' ? (isDark ? '#7f5a3d' : '#f59e0b') : f === 'Resolved' ? (isDark ? '#4b8267' : '#10b981') : (isDark ? '#4b6981' : '#6366f1');
+              return (
+                <button key={f} className="pill-btn" onClick={() => setFilter(f)} style={{
+                  padding: '8px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                  border: `1.5px solid ${isActive ? activeBorder : isDark ? '#33473f' : '#e2e8f0'}`,
+                  background: isActive ? activeBg : isDark ? '#111915' : '#fff',
+                  color: isActive ? activeColor : isDark ? '#e2efe8' : '#64748b',
+                  fontFamily: "'Sora',sans-serif", transition: 'all .15s',
+                }}>
+                  {f} ({f === 'All' ? tickets.length : f === 'Open' ? openCount : resolvedCount})
+                </button>
+              );
+            })}
           </div>
           <input
-            style={A.searchBox}
+            style={{ ...A.searchBox, background: isDark ? '#0d1714' : '#fff', borderColor: isDark ? '#33473f' : '#e2e8f0', color: isDark ? '#edf7f2' : '#1e293b' }}
             placeholder="🔍  Search by name, email, subject, order ID…"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -159,12 +176,12 @@ function AdminSupportView() {
 
         {/* Empty */}
         {!loading && visible.length === 0 && (
-          <div style={A.empty}>
+          <div style={{ ...A.empty, background: isDark ? '#101915' : '#fff', borderColor: isDark ? '#33473f' : '#e2e8f0', boxShadow: isDark ? '0 10px 24px rgba(0,0,0,0.18)' : '0 2px 8px rgba(0,0,0,0.04)' }}>
             <p style={{ fontSize: '52px', margin: '0 0 12px' }}>{tickets.length === 0 ? '📭' : '🔍'}</p>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#334155', fontFamily: "'Sora',sans-serif" }}>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: isDark ? '#edf7f2' : '#334155', fontFamily: "'Sora',sans-serif" }}>
               {tickets.length === 0 ? 'No tickets yet' : 'No tickets match your filter'}
             </p>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94a3b8', fontFamily: "'Sora',sans-serif" }}>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: isDark ? '#a7b8b0' : '#94a3b8', fontFamily: "'Sora',sans-serif" }}>
               {tickets.length === 0 ? 'Customer support requests will appear here once submitted' : 'Try changing the filter or clearing the search'}
             </p>
           </div>
@@ -177,6 +194,7 @@ function AdminSupportView() {
               <AdminTicketCard
                 key={ticket._id}
                 ticket={ticket}
+                darkMode={isDark}
                 onStatusChange={(status) => handleStatusChange(ticket._id, status)}
                 onReply={(text) => handleReply(ticket._id, text)}
               />
@@ -208,11 +226,27 @@ function AdminSupportView() {
 }
 
 /* ─── Admin ticket card with live reply ─────────────────────── */
-function AdminTicketCard({ ticket, onStatusChange, onReply }) {
+function AdminTicketCard({ ticket, onStatusChange, onReply, darkMode = false }) {
   const [showReply, setShowReply] = useState(false);
   const [reply,     setReply]     = useState(ticket.adminReply || '');
   const [saving,    setSaving]    = useState(false);
   const [saved,     setSaved]     = useState(false);
+
+  const cardBg = darkMode ? '#101a17' : '#fff';
+  const borderColor = darkMode ? (ticket.status === 'Open' ? '#5f4c36' : '#2d584b') : (ticket.status === 'Open' ? '#fde68a' : '#bbf7d0');
+  const textColor = darkMode ? '#edf7f2' : '#0f172a';
+  const subText = darkMode ? '#b8c9c3' : '#64748b';
+  const muted = darkMode ? '#8fa59c' : '#94a3b8';
+  const tagBg = darkMode ? '#162922' : '#f1f5f9';
+  const tagText = darkMode ? '#d9f8eb' : '#6366f1';
+  const panelBg = darkMode ? '#162d27' : '#f0fdf4';
+  const panelBorder = darkMode ? '#2d584b' : '#bbf7d0';
+  const panelText = darkMode ? '#daf2e6' : '#334155';
+  const textareaBg = darkMode ? '#0c1715' : '#f8fafc';
+  const textareaBorder = darkMode ? '#324c45' : '#e2e8f0';
+  const actionBg = darkMode ? '#171f1d' : '#f8fafc';
+  const actionText = darkMode ? '#dcefe8' : '#64748b';
+  const actionBorder = darkMode ? '#32443f' : '#e2e8f0';
 
   const submitReply = async () => {
     if (!reply.trim()) return;
@@ -225,9 +259,9 @@ function AdminTicketCard({ ticket, onStatusChange, onReply }) {
 
   return (
     <div className="tkt-row" style={{
-      background: '#fff', borderRadius: 16,
-      border: `1.5px solid ${ticket.status === 'Open' ? '#fde68a' : '#bbf7d0'}`,
-      padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,.04)', transition: 'background .15s',
+      background: cardBg, borderRadius: 16,
+      border: `1.5px solid ${borderColor}`,
+      padding: '20px 24px', boxShadow: darkMode ? '0 10px 24px rgba(0,0,0,.15)' : '0 2px 8px rgba(0,0,0,.04)', transition: 'background .15s',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
 
@@ -237,36 +271,36 @@ function AdminTicketCard({ ticket, onStatusChange, onReply }) {
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{ticket.name?.[0]?.toUpperCase() || '?'}</span>
             </div>
-            <span style={{ fontSize: 14, fontWeight: 900, color: '#0f172a', fontFamily: "'Sora',sans-serif" }}>{ticket.name}</span>
-            <span style={{ fontSize: 12, color: '#64748b' }}>{ticket.email}</span>
+            <span style={{ fontSize: 14, fontWeight: 900, color: textColor, fontFamily: "'Sora',sans-serif" }}>{ticket.name}</span>
+            <span style={{ fontSize: 12, color: subText }}>{ticket.email}</span>
 
             {ticket.user ? (
-              <span style={{ fontSize: 10, background: '#ecfdf5', color: '#059669', padding: '3px 9px', borderRadius: 999, fontWeight: 800, border: '1px solid #bbf7d0', fontFamily: "'Sora',sans-serif" }}>👤 Registered</span>
+              <span style={{ fontSize: 10, background: darkMode ? '#17382d' : '#ecfdf5', color: darkMode ? '#a9f0c7' : '#059669', padding: '3px 9px', borderRadius: 999, fontWeight: 800, border: darkMode ? '1px solid #2a5b4c' : '1px solid #bbf7d0', fontFamily: "'Sora',sans-serif" }}>👤 Registered</span>
             ) : (
-              <span style={{ fontSize: 10, background: '#f8fafc', color: '#94a3b8', padding: '3px 9px', borderRadius: 999, fontWeight: 700, border: '1px solid #e2e8f0', fontFamily: "'Sora',sans-serif" }}>👻 Guest</span>
+              <span style={{ fontSize: 10, background: darkMode ? '#1b2320' : '#f8fafc', color: darkMode ? '#c3d5cf' : '#94a3b8', padding: '3px 9px', borderRadius: 999, fontWeight: 700, border: darkMode ? '1px solid #33463e' : '1px solid #e2e8f0', fontFamily: "'Sora',sans-serif" }}>👻 Guest</span>
             )}
 
             {ticket.orderId && (
-              <span style={{ fontSize: 11, background: '#eff6ff', color: '#2563eb', padding: '3px 10px', borderRadius: 999, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
+              <span style={{ fontSize: 11, background: darkMode ? '#1d2c38' : '#eff6ff', color: darkMode ? '#c7defd' : '#2563eb', padding: '3px 10px', borderRadius: 999, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace" }}>
                 Order #{ticket.orderId.slice(-8).toUpperCase()}
               </span>
             )}
           </div>
 
-          <p style={{ margin: '0 0 5px', fontSize: 13, fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ background: '#f1f5f9', borderRadius: 6, padding: '2px 8px', fontSize: 11, color: '#6366f1', fontWeight: 700 }}>{ticket.subject || 'General'}</span>
+          <p style={{ margin: '0 0 5px', fontSize: 13, fontWeight: 800, color: darkMode ? '#dfeae4' : '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ background: tagBg, borderRadius: 6, padding: '2px 8px', fontSize: 11, color: tagText, fontWeight: 700 }}>{ticket.subject || 'General'}</span>
           </p>
-          <p style={{ margin: '0 0 8px', fontSize: 13, color: '#475569', lineHeight: 1.65, fontFamily: "'Sora',sans-serif" }}>{ticket.message}</p>
-          <p style={{ margin: 0, fontSize: 11, color: '#94a3b8', fontFamily: "'JetBrains Mono',monospace" }}>
+          <p style={{ margin: '0 0 8px', fontSize: 13, color: subText, lineHeight: 1.65, fontFamily: "'Sora',sans-serif" }}>{ticket.message}</p>
+          <p style={{ margin: 0, fontSize: 11, color: muted, fontFamily: "'JetBrains Mono',monospace" }}>
             Submitted: {new Date(ticket.createdAt).toLocaleString('en-PK')}
-            {ticket.resolvedAt && <span style={{ color: '#10b981' }}> · Resolved: {new Date(ticket.resolvedAt).toLocaleString('en-PK')}</span>}
+            {ticket.resolvedAt && <span style={{ color: darkMode ? '#a7f3d0' : '#10b981' }}> · Resolved: {new Date(ticket.resolvedAt).toLocaleString('en-PK')}</span>}
           </p>
 
           {/* Existing reply display */}
           {ticket.adminReply && !showReply && (
-            <div style={{ marginTop: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px' }}>
-              <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.5px' }}>✍️ Your Reply (visible to user)</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#334155', lineHeight: 1.6 }}>{ticket.adminReply}</p>
+            <div style={{ marginTop: 10, background: panelBg, border: `1px solid ${panelBorder}`, borderRadius: 10, padding: '10px 14px' }}>
+              <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 800, color: darkMode ? '#a7f3d0' : '#059669', textTransform: 'uppercase', letterSpacing: '0.5px' }}>✍️ Your Reply (visible to user)</p>
+              <p style={{ margin: 0, fontSize: 12, color: panelText, lineHeight: 1.6 }}>{ticket.adminReply}</p>
             </div>
           )}
 
@@ -274,7 +308,7 @@ function AdminTicketCard({ ticket, onStatusChange, onReply }) {
           {showReply && (
             <div style={{ marginTop: 12 }}>
               <textarea
-                style={{ width: '100%', padding: '10px 13px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: "'Sora',sans-serif", color: '#1e293b', boxSizing: 'border-box', resize: 'vertical', minHeight: 80, background: '#f8fafc' }}
+                style={{ width: '100%', padding: '10px 13px', border: `1.5px solid ${textareaBorder}`, borderRadius: 10, fontSize: 13, fontFamily: "'Sora',sans-serif", color: darkMode ? '#edf7f2' : '#1e293b', boxSizing: 'border-box', resize: 'vertical', minHeight: 80, background: textareaBg }}
                 placeholder="Type your reply to the customer… (they will see this on their ticket)"
                 value={reply}
                 onChange={e => setReply(e.target.value)}
@@ -285,7 +319,7 @@ function AdminTicketCard({ ticket, onStatusChange, onReply }) {
                   {saved ? '✓ Sent!' : saving ? 'Saving…' : '💬 Send Reply'}
                 </button>
                 <button onClick={() => setShowReply(false)}
-                  style={{ padding: '7px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ padding: '7px 14px', background: actionBg, border: `1px solid ${actionBorder}`, color: actionText, borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   Cancel
                 </button>
               </div>
@@ -297,15 +331,15 @@ function AdminTicketCard({ ticket, onStatusChange, onReply }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
           <span style={{
             padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 800,
-            background: ticket.status === 'Open' ? '#fef3c7' : '#f0fdf4',
-            color:      ticket.status === 'Open' ? '#d97706'  : '#059669',
+            background: ticket.status === 'Open' ? (darkMode ? '#3d2f21' : '#fef3c7') : (darkMode ? '#17382d' : '#f0fdf4'),
+            color:      ticket.status === 'Open' ? (darkMode ? '#ffe0b5' : '#d97706') : (darkMode ? '#a7f3d0' : '#059669'),
             fontFamily: "'Sora',sans-serif",
           }}>
             {ticket.status === 'Open' ? '🟡 Open' : '✅ Resolved'}
           </span>
 
           <button className="action-btn" onClick={() => setShowReply(r => !r)}
-            style={{ padding: '7px 16px', background: '#f0f0ff', color: '#4f46e5', border: '1px solid #c7d2fe', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Sora',sans-serif" }}>
+            style={{ padding: '7px 16px', background: darkMode ? '#191f1d' : '#f0f0ff', color: darkMode ? '#dfeafc' : '#4f46e5', border: `1px solid ${darkMode ? '#364740' : '#c7d2fe'}`, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Sora',sans-serif" }}>
             {showReply ? '✕ Cancel' : '💬 Reply'}
           </button>
 
@@ -477,7 +511,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div style={S.page}>
+    <div className="responsive-page support-page" style={S.page}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
@@ -487,15 +521,83 @@ export default function SupportPage() {
         .ci { transition:all 0.15s; }
         .ch:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,0.1) !important; }
         .ch { transition:all 0.2s; }
+        .support-hero {
+          max-width:1060px;
+          margin:0 auto;
+          display:grid;
+          grid-template-columns:minmax(0,1fr) 320px;
+          align-items:center;
+          gap:36px;
+        }
+        .support-hero-art {
+          min-height:190px;
+          position:relative;
+          border:1px solid rgba(167,243,208,.2);
+          border-radius:28px;
+          background:rgba(2,44,34,.28);
+          overflow:hidden;
+        }
+        .support-hero-art:before,
+        .support-hero-art:after {
+          content:'';
+          position:absolute;
+          border-radius:50%;
+          border:1px solid rgba(167,243,208,.25);
+        }
+        .support-hero-art:before { width:220px; height:220px; top:-80px; right:-40px; }
+        .support-hero-art:after { width:150px; height:150px; bottom:-80px; left:-30px; }
+        .support-orbit {
+          position:absolute;
+          inset:34px 50px;
+          border:1px dashed rgba(255,255,255,.28);
+          border-radius:50%;
+          transform:rotate(-18deg);
+        }
+        .support-orbit span {
+          position:absolute;
+          width:54px; height:54px;
+          display:flex; align-items:center; justify-content:center;
+          border-radius:18px;
+          background:#10b981;
+          box-shadow:0 10px 24px rgba(0,0,0,.2);
+          font-size:25px;
+        }
+        .support-orbit span:first-child { top:-18px; left:18px; }
+        .support-orbit span:last-child { right:-10px; bottom:0; background:#f59e0b; }
+        .support-headset {
+          position:absolute;
+          left:50%; top:50%;
+          transform:translate(-50%,-50%);
+          width:92px; height:92px;
+          display:flex; align-items:center; justify-content:center;
+          border:10px solid #d1fae5;
+          border-bottom-color:transparent;
+          border-radius:50%;
+          color:#fff;
+          font-size:30px;
+        }
+        @media (max-width:760px) {
+          .support-hero { display:block; }
+          .support-hero-art { display:none; }
+        }
       `}</style>
 
       {/* Hero */}
       <div style={S.hero}>
         <div style={S.heroBg} />
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-          <div style={{ fontSize: '52px', marginBottom: '14px' }}>🎧</div>
-          <h1 style={S.heroTitle}>How can we help you?</h1>
-          <p style={S.heroSub}>Our support team is here for you — reach out anytime</p>
+        <div className="support-hero">
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <span style={{ display:'inline-flex', padding:'7px 11px', borderRadius:999, background:'rgba(167,243,208,.12)', border:'1px solid rgba(167,243,208,.25)', color:'#a7f3d0', fontSize:10, fontWeight:800, letterSpacing:'1.3px' }}>INDUSCART CARE</span>
+            <h1 style={{ ...S.heroTitle, marginTop:14 }}>We’re here to help.</h1>
+            <p style={{ ...S.heroSub, maxWidth:470 }}>Questions about an order, delivery, or your account? Our support team is ready to guide you.</p>
+            <div style={{ display:'flex', gap:18, flexWrap:'wrap', color:'rgba(255,255,255,.72)', fontSize:11, fontWeight:700 }}>
+              <span>✓ Fast replies</span><span>✓ Order guidance</span><span>✓ Human support</span>
+            </div>
+          </div>
+          <div className="support-hero-art" aria-hidden="true">
+            <div className="support-orbit"><span>💬</span><span>✓</span></div>
+            <div className="support-headset">🎧</div>
+          </div>
         </div>
       </div>
 
@@ -508,7 +610,7 @@ export default function SupportPage() {
             { icon: '📱', label: 'WhatsApp',   value: '+92 300 000 0000',      sub: 'Mon–Sat, 9am–6pm PKT',  color: '#22c55e', bg: '#f0fdf4' },
             { icon: '📦', label: 'Order Help', value: 'Track & manage orders', sub: 'View orders page',      color: '#f59e0b', bg: '#fffbeb', link: '/orders' },
           ].map(ch => (
-            <div key={ch.label} className="ch" style={{ ...S.channelCard, border: '1.5px solid ' + ch.bg }}>
+            <div key={ch.label} className="ch support-channel-card" style={{ ...S.channelCard, border: '1.5px solid ' + ch.bg }}>
               <div style={{ ...S.channelIcon, background: ch.bg, color: ch.color }}>{ch.icon}</div>
               <div>
                 <p style={{ margin: '0 0 2px', fontWeight: '800', fontSize: '14px', color: '#0f172a' }}>{ch.label}</p>
@@ -531,12 +633,12 @@ export default function SupportPage() {
             <h2 style={S.secTitle}>❓ Frequently Asked Questions</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {FAQS.map((faq, i) => (
-                <div key={i} className="faq-row" style={{ ...S.faqRow, background: openFaq === i ? '#f0fdf4' : '#fff' }}>
-                  <button style={S.faqQ} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                <div key={i} className={`faq-row support-faq-row${openFaq === i ? ' is-open' : ''}`} style={{ ...S.faqRow, background: openFaq === i ? '#f0fdf4' : '#fff' }}>
+                  <button className="support-faq-question" style={S.faqQ} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
                     <span style={{ flex: 1, textAlign: 'left' }}>{faq.q}</span>
                     <span style={{ fontSize: '18px', color: '#10b981', fontWeight: '700', transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>+</span>
                   </button>
-                  {openFaq === i && <p style={S.faqA}>{faq.a}</p>}
+                  {openFaq === i && <p className="support-faq-answer" style={S.faqA}>{faq.a}</p>}
                 </div>
               ))}
             </div>
@@ -546,7 +648,7 @@ export default function SupportPage() {
           <div>
             <h2 style={S.secTitle}>✉️ Send Us a Message</h2>
             {sent ? (
-              <div style={{ ...S.formCard, textAlign: 'center', padding: '40px 24px' }}>
+              <div className="support-form-card" style={{ ...S.formCard, textAlign: 'center', padding: '40px 24px' }}>
                 <p style={{ fontSize: '56px', margin: '0 0 16px' }}>✅</p>
                 <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>Ticket Submitted!</h3>
                 <p style={{ margin: '0 0 6px', color: '#64748b', fontSize: '14px' }}>
@@ -562,7 +664,7 @@ export default function SupportPage() {
                 </button>
               </div>
             ) : (
-              <div style={S.formCard}>
+              <div className="support-form-card" style={S.formCard}>
                 {err && (
                   <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '16px' }}>
                     ⚠️ {err}
@@ -571,7 +673,7 @@ export default function SupportPage() {
 
                 {/* Login nudge for guests */}
                 {!user && (
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#1d4ed8', fontWeight: 600 }}>
+                  <div className="support-login-nudge" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#1d4ed8', fontWeight: 600 }}>
                     💡 <Link to="/login" style={{ color: '#2563eb', fontWeight: 800 }}>Log in</Link> to track your ticket status and see replies from our team.
                   </div>
                 )}
@@ -615,7 +717,7 @@ export default function SupportPage() {
                       ))}
                     </select>
                   ) : (
-                    <div style={{ ...S.inp, color: '#94a3b8', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div className="support-order-placeholder" style={{ ...S.inp, color: '#94a3b8', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
                       📭 {user ? 'No orders found — leave blank if not order-related' : 'Login to link an order'}
                     </div>
                   )}
@@ -639,7 +741,7 @@ export default function SupportPage() {
         </div>
 
         {/* Quick links */}
-        <div style={S.quickLinks}>
+        <div className="support-quick-links" style={S.quickLinks}>
           <p style={{ margin: '0 0 16px', fontWeight: '800', fontSize: '15px', color: '#0f172a', textAlign: 'center' }}>Quick Links</p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
             {[
@@ -648,7 +750,7 @@ export default function SupportPage() {
               { to: '/cart',     label: '🛒 Cart'      },
               { to: '/register', label: '👤 Register'  },
             ].map(l => (
-              <Link key={l.to} to={l.to} style={S.quickLink}>{l.label}</Link>
+              <Link key={l.to} to={l.to} className="quickLink" style={S.quickLink}>{l.label}</Link>
             ))}
           </div>
         </div>

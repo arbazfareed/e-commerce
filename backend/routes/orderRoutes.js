@@ -6,6 +6,8 @@ const {
   getMyOrders,
   getOrderById,
   getAllOrders,
+  getSalesAnalytics,
+  recordManualCashSale,
   updateOrderStatus,
 } = require('../controllers/orderController');
 
@@ -16,6 +18,12 @@ router.post('/',              protect, placeOrder);
 
 // GET  /api/orders/my         → my order history (logged in)
 router.get('/my',             protect, getMyOrders);
+
+// GET  /api/orders/analytics  → admin: sales history and channel breakdown
+router.get('/analytics',      protect, admin, getSalesAnalytics);
+
+// POST /api/orders/manual-cash → admin: record manual cash collected at delivery
+router.post('/manual-cash',   protect, admin, recordManualCashSale);
 
 // GET  /api/orders            → admin: all orders
 router.get('/',               protect, admin, getAllOrders);

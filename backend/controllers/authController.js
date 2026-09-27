@@ -9,23 +9,38 @@ const generateToken = (id) => {
 // ─── @POST /api/auth/register ──────────────────────────────────
 const registerUser = async (req, res) => {
   // ✅ Now destructures ALL fields sent from RegisterPage
-  const { name, email, password, phone, country, city } = req.body;
+  const { name, username, email, password, phone, country, city } = req.body;
 
   try {
-    if (!name || !email || !password) {
+    if (typeof name !== 'string' || !name.trim() || typeof email !== 'string' || !email.trim() || !password) {
       return res.status(400).json({ message: 'Name, email and password are required.' });
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      return res.status(400).json({ message: 'Please provide a valid email address.' });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
     // Check if user already exists
-    const exists = await User.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedUsername = username ? String(username).trim().toLowerCase() : undefined;
+    const exists = await User.findOne({
+      $or: [{ email: normalizedEmail }, ...(normalizedUsername ? [{ username: normalizedUsername }] : [])],
+    }).collation({ locale: 'en', strength: 2 });
     if (exists) {
-      return res.status(400).json({ message: 'An account with this email already exists.' });
+      return res.status(400).json({
+        message: exists.email === normalizedEmail
+          ? 'An account with this email already exists.'
+          : 'That username is already in use.',
+      });
     }
 
     // Create user — phone/country/city saved if User model has those fields
     const user = await User.create({
       name:    name.trim(),
-      email:   email.trim().toLowerCase(),
+      username: normalizedUsername,
+      email:   normalizedEmail,
       password,
       phone:   phone   || '',
       country: country || 'Pakistan',
@@ -35,6 +50,7 @@ const registerUser = async (req, res) => {
     res.status(201).json({
       _id:     user._id,
       name:    user.name,
+      username: user.username,
       email:   user.email,
       phone:   user.phone,
       country: user.country,
@@ -51,19 +67,24 @@ const registerUser = async (req, res) => {
 
 // ─── @POST /api/auth/login ─────────────────────────────────────
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const identifier = req.body.identifier ?? req.body.login ?? req.body.email ?? req.body.username;
+  const password = req.body.password;
 
   try {
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required.' });
+    if (typeof identifier !== 'string' || !identifier.trim() || typeof password !== 'string' || !password) {
+      return res.status(400).json({ message: 'Username/email and password are required.' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    const user = await User.findOne({
+      $or: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
+    }).collation({ locale: 'en', strength: 2 });
 
     if (user && (await user.matchPassword(password))) {
       res.json({
         _id:     user._id,
         name:    user.name,
+        username: user.username,
         email:   user.email,
         phone:   user.phone,
         country: user.country,
@@ -72,7 +93,7 @@ const loginUser = async (req, res) => {
         token:   generateToken(user._id),
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password.' });
+      res.status(401).json({ message: 'Invalid username/email or password.' });
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -94,4 +115,6 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+const verifySession = (req, res) => res.json({ valid: true, user: req.user });
+
+module.exports = { registerUser, loginUser, getUserProfile, verifySession };

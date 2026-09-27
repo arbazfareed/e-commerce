@@ -1,5 +1,9 @@
 const Order   = require('../models/Order');
 const Product = require('../models/Product');
+const { getActiveDiscountPercent, getDiscountedUnitPrice } = require('../utils/discountPricing');
+const { buildSalesAnalytics } = require('../utils/salesAnalytics');
+const SystemSettings = require('../models/SystemSettings');
+const { dispatchOrder } = require('../services/courierService');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -14,6 +18,9 @@ const DEFAULT_ZONE_RATES = {
   australia:     { baseRate:2000,  perKg: 450,  minFee:2000  },
   rest_of_world: { baseRate:2500,  perKg: 600,  minFee:2500  },
 };
+
+const PAYMENT_METHODS = new Set(['COD', 'Cash', 'Manual Cash', 'JazzCash', 'EasyPaisa', 'Stripe', 'PayPal']);
+const ORDER_STATUSES = new Set(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']);
 
 const ZONE_MAP = {
   india:'south_asia', bangladesh:'south_asia', 'sri lanka':'south_asia',
@@ -82,6 +89,11 @@ const placeOrder = async (req, res) => {
     const { products, address, paymentMethod } = req.body;
     if (!products || products.length === 0)
       return res.status(400).json({ message: 'No products in order.' });
+    if (!PAYMENT_METHODS.has(paymentMethod))
+      return res.status(400).json({ message: 'Please choose a supported payment method.' });
+    const paymentChannel = paymentMethod === 'COD' || paymentMethod === 'Cash' || paymentMethod === 'Manual Cash' ? 'cash' : 'online';
+    if (!address?.street?.trim() || !address?.city?.trim() || !address?.country?.trim())
+      return res.status(400).json({ message: 'Complete delivery address is required.' });
 
     const country       = address?.country || 'Pakistan';
     const city          = address?.city    || '';
@@ -90,27 +102,62 @@ const placeOrder = async (req, res) => {
     for (const item of products) {
       const db = await Product.findById(item.product || item._id);
       if (!db) return res.status(404).json({ message: `Product not found: ${item.name}` });
+      if (db.isVisible === false)
+        return res.status(400).json({ message: `"${db.name}" is no longer available.` });
       if (db.isLocal && country !== 'Pakistan')
         return res.status(400).json({ message: `"${db.name}" is only available within Pakistan.` });
-      if (db.stock < item.quantity)
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(quantity) || quantity < 1)
+        return res.status(400).json({ message: `Invalid quantity for "${db.name}".` });
+      if (db.stock < quantity)
         return res.status(400).json({ message: `Only ${db.stock} unit(s) of "${db.name}" available.` });
+      if (item.selectedColor && !db.colors.includes(item.selectedColor))
+        return res.status(400).json({ message: `Selected colour is unavailable for "${db.name}".` });
+      if (item.selectedSize && !db.sizes.includes(item.selectedSize))
+        return res.status(400).json({ message: `Selected size or variant is unavailable for "${db.name}".` });
       // ✅ Use actual weightKg from DB (0 = weightless — no per-kg charge)
-      enrichedItems.push({ ...item, weightKg: db.weightKg ?? 0 });
+      const originalPrice = country === 'Pakistan' ? db.pricePKR : db.priceUSD;
+      const discountPercent = getActiveDiscountPercent(db);
+      const price = getDiscountedUnitPrice(originalPrice, discountPercent, country === 'Pakistan' ? 'PKR' : 'USD');
+      enrichedItems.push({
+        product: db._id,
+        name: db.name,
+        price,
+        originalPrice,
+        discountPercent,
+        quantity,
+        image: db.images?.[0] || '',
+        selectedColor: item.selectedColor || '',
+        selectedSize: item.selectedSize || '',
+        weightKg: db.weightKg ?? 0,
+      });
     }
 
-    for (const item of products)
-      await Product.findByIdAndUpdate(item.product||item._id, { $inc: { stock: -item.quantity } });
+    const settings = await SystemSettings.findOne({ key: 'global' }).lean() || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+    if (paymentMethod === 'COD' && !settings.codEnabled)
+      return res.status(400).json({ message: 'Cash on delivery is currently unavailable.' });
+
+    for (const item of enrichedItems)
+      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
 
     // ✅ Zone-based shipping — correct for Multan→Karachi, Pakistan→Dubai, etc.
     const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city);
-    const productTotal = products.reduce((s,i) => s + i.price * i.quantity, 0);
-    const totalPrice   = productTotal + shippingFee;
+    const productTotal = enrichedItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    let codFee = 0;
+    if (paymentMethod === 'COD' && (!settings.codThreshold || productTotal < settings.codThreshold))
+      codFee = settings.codFeeMode === 'percentage'
+        ? Math.round(productTotal * Number(settings.codFee) / 100)
+        : Number(settings.codFee) || 0;
+    const totalPrice   = productTotal + shippingFee + codFee;
 
     const order = await Order.create({
       user: req.user._id, products: enrichedItems,
-      productTotal, shippingFee, totalWeight, shippingZone, totalPrice,
-      address, paymentMethod,
+      productTotal, shippingFee, codFee, totalWeight, shippingZone, totalPrice,
+      address, paymentMethod, paymentChannel,
+      isPaid: paymentChannel === 'cash' || paymentMethod === 'COD',
+      paidAt: paymentChannel === 'cash' || paymentMethod === 'COD' ? new Date() : null,
     });
+    dispatchOrder(order).catch((error) => console.error('Courier dispatch failed:', error.message));
     res.status(201).json(order);
   } catch (e) { console.error(e); res.status(500).json({ message: e.message }); }
 };
@@ -135,10 +182,69 @@ const getAllOrders = async (req, res) => {
   catch (e) { res.status(500).json({ message: e.message }); }
 };
 
+const getSalesAnalytics = async (req, res) => {
+  try {
+    const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 });
+    res.json(buildSalesAnalytics(orders, new Date(), [3, 6, 9, 12]));
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+const recordManualCashSale = async (req, res) => {
+  try {
+    const { products, amount, notes, paidAt } = req.body || {};
+    const items = Array.isArray(products) && products.length ? products : [{
+      name: 'Manual cash sale',
+      quantity: 1,
+      price: Number(amount) || 0,
+    }];
+    const totalAmount = Number(amount) || items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+
+    const manualOrder = await Order.create({
+      user: req.user._id,
+      products: items.map((item) => ({
+        product: null,
+        name: item.name || 'Manual cash sale',
+        price: Number(item.price || 0),
+        originalPrice: Number(item.price || 0),
+        discountPercent: 0,
+        quantity: Number(item.quantity || 1),
+        image: '',
+        selectedColor: '',
+        selectedSize: '',
+        weightKg: 0,
+      })),
+      productTotal: totalAmount,
+      shippingFee: 0,
+      codFee: 0,
+      totalWeight: 0,
+      shippingZone: 'domestic_pak',
+      totalPrice: totalAmount,
+      address: { street: 'Manual cash collection', city: 'Manual', country: 'Pakistan' },
+      paymentMethod: 'Cash',
+      paymentChannel: 'cash',
+      isPaid: true,
+      paidAt: paidAt ? new Date(paidAt) : new Date(),
+      isManualCash: true,
+      cashCollectedAt: paidAt ? new Date(paidAt) : new Date(),
+      recordedBy: req.user._id,
+      notes: notes || 'Cash sale recorded manually by admin.',
+      status: 'Delivered',
+    });
+
+    res.status(201).json(manualOrder);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
 const updateOrderStatus = async (req, res) => {
   try {
     const o = await Order.findById(req.params.id);
     if (!o) return res.status(404).json({ message: 'Order not found.' });
+    if (req.body.status && !ORDER_STATUSES.has(req.body.status))
+      return res.status(400).json({ message: 'Invalid order status.' });
     if (req.body.status === 'Cancelled' && o.status !== 'Cancelled')
       for (const item of o.products)
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
@@ -148,4 +254,12 @@ const updateOrderStatus = async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 
-module.exports = { placeOrder, getMyOrders, getOrderById, getAllOrders, updateOrderStatus };
+module.exports = {
+  placeOrder,
+  getMyOrders,
+  getOrderById,
+  getAllOrders,
+  getSalesAnalytics,
+  recordManualCashSale,
+  updateOrderStatus,
+};

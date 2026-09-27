@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-label="Pakistani artisan basket and pottery">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#064e3b"/>
+      <stop offset=".55" stop-color="#047857"/>
+      <stop offset="1" stop-color="#134e4a"/>
+    </linearGradient>
+    <linearGradient id="basket" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <radialGradient id="light"><stop stop-color="#d1fae5" stop-opacity=".55"/><stop offset="1" stop-color="#d1fae5" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="900" height="1100" fill="url(#bg)"/>
+  <circle cx="680" cy="170" r="330" fill="url(#light)"/>
+  <path d="M0 900c180-90 310-75 450 0 150 82 273 75 450-20v220H0z" fill="#022c22" opacity=".72"/>
+  <g transform="translate(100 150)">
+    <path d="M220 300c0-170 170-170 170 0" fill="none" stroke="#fde68a" stroke-width="25" stroke-linecap="round"/>
+    <path d="M105 300h400l-48 430H153z" fill="url(#basket)" stroke="#fef3c7" stroke-opacity=".55" stroke-width="8"/>
+    <path d="M125 375h360M117 455h378M109 535h386M101 615h394" stroke="#78350f" stroke-opacity=".5" stroke-width="12"/>
+    <path d="M175 310l-28 410M255 305l-10 435M335 305l10 435M415 310l28 410" stroke="#fffbeb" stroke-opacity=".35" stroke-width="10"/>
+    <path d="M105 300h400" stroke="#fef3c7" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(575 650)">
+    <path d="M25 110c0-72 180-72 180 0v115c0 70-180 70-180 0z" fill="#f97316"/>
+    <path d="M25 135c55 35 125 35 180 0M35 185c50 30 110 30 160 0" fill="none" stroke="#fed7aa" stroke-width="9" opacity=".7"/>
+    <ellipse cx="115" cy="108" rx="90" ry="27" fill="#fb923c"/>
+    <path d="M70 82c10-80 80-80 90 0" fill="none" stroke="#fed7aa" stroke-width="9" opacity=".7"/>
+  </g>
+  <g fill="#fef3c7" opacity=".85">
+    <circle cx="115" cy="160" r="7"/><circle cx="155" cy="115" r="4"/><circle cx="745" cy="450" r="7"/><circle cx="790" cy="400" r="4"/>
+  </g>
+</svg>

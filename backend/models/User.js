@@ -4,6 +4,7 @@ const bcrypt   = require('bcryptjs');
 const userSchema = new mongoose.Schema(
   {
     name:     { type: String, required: [true, 'Name is required'], trim: true },
+    username: { type: String, trim: true, lowercase: true, unique: true, sparse: true },
     email:    { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true },
     password: { type: String, required: [true, 'Password is required'], minlength: 6 },
     phone:    { type: String, default: '', trim: true },
@@ -21,7 +22,8 @@ userSchema.pre('save', async function () {
 });
 
 userSchema.methods.matchPassword = async function (entered) {
-  return bcrypt.compare(entered, this.password);
+  if (!entered || !this.password) return false;
+  return bcrypt.compare(String(entered), this.password);
 };
 
 module.exports = mongoose.model('User', userSchema);

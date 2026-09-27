@@ -1,18 +1,20 @@
 // frontend/src/components/ProductCard.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { formatPKR, formatUSD } from '../utils/priceUtils';
-
-const BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
+import { assetUrl } from '../utils/axiosConfig';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProductCard({ product: p, onAddToCart }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isPak = !user || user.country === 'Pakistan';
 
   const imgs = Array.isArray(p.images) && p.images.length > 0 ? p.images : [];
   const multi = imgs.length > 1;
   const [idx, setIdx] = useState(0);
   const [imgErrors, setImgErrors] = useState({});
+  const touchStartX = useRef(null);
 
   // Reset index when product changes
   useEffect(() => {
@@ -30,6 +32,19 @@ export default function ProductCard({ product: p, onAddToCart }) {
     setIdx(i => (i + 1) % imgs.length);
   };
 
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current == null || !multi) return;
+    const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+    const delta = endX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 35) return;
+    setIdx(i => delta < 0 ? (i + 1) % imgs.length : (i - 1 + imgs.length) % imgs.length);
+  };
+
   const handleImageError = (imgIndex) => {
     setImgErrors(prev => ({ ...prev, [imgIndex]: true }));
   };
@@ -37,22 +52,44 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const isLow = p.stock > 0 && p.stock < 5;
   const isOut = p.stock === 0;
   const isRestricted = p.isLocal && !isPak;
+  const configuredDiscountPercent = Math.min(100, Math.max(0, Number(p.discountPercent) || 0));
+  const discountPercent = getActiveDiscountPercent(p);
+  const today = new Date().toISOString().slice(0, 10);
+  const hasUpcomingDiscount = configuredDiscountPercent > 0 && discountPercent === 0 && p.discountStartDate && today < p.discountStartDate;
+  const upcomingDateLabel = hasUpcomingDiscount
+    ? new Date(`${p.discountStartDate}T00:00:00Z`).toLocaleDateString('en', { month:'short', day:'numeric', timeZone:'UTC' }).toUpperCase()
+    : '';
+  const originalPrice = Number(isPak ? p.pricePKR : p.priceUSD) || 0;
+  const currentPrice = getDiscountedPrice(originalPrice, discountPercent, isPak ? 'PKR' : 'USD');
+  const alternatePrice = isPak
+    ? getDiscountedPrice(p.priceUSD, discountPercent, 'USD')
+    : getDiscountedPrice(p.pricePKR, discountPercent, 'PKR');
 
   // Get current image URL
   const getCurrentImageUrl = () => {
     if (!imgs.length || imgErrors[idx]) return null;
-    const imgPath = imgs[idx];
-    // Handle both formats: with or without uploads/ prefix
-    const cleanPath = imgPath.startsWith('uploads/') ? imgPath : `uploads/${imgPath}`;
-    return `${BASE}/${cleanPath}`;
+    return assetUrl(imgs[idx]);
   };
 
   const currentImageUrl = getCurrentImageUrl();
 
   return (
-    <div style={styles.card}>
+    <div
+      className="product-card"
+      style={styles.card}
+      role="link"
+      tabIndex={0}
+      aria-label={`View ${p.name}`}
+      onClick={() => navigate(`/products/${p._id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/products/${p._id}`); }}
+    >
       {/* Image Section */}
-      <div style={styles.imageWrapper}>
+      <div
+        className="product-card-image"
+        style={styles.imageWrapper}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {currentImageUrl ? (
           <img
             key={`${p._id}-${idx}`}
@@ -68,10 +105,15 @@ export default function ProductCard({ product: p, onAddToCart }) {
           </div>
         )}
 
+        <div style={styles.imageOverlay} />
+
         {/* Image Navigation Buttons - Only show if multiple images */}
         {multi && imgs.length > 1 && !imgErrors[idx] && (
           <>
             <button 
+              type="button"
+              className="product-image-nav"
+              aria-label={`Previous image for ${p.name}`}
               style={{ ...styles.navBtn, left: 6 }} 
               onClick={prev}
               onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
@@ -80,6 +122,9 @@ export default function ProductCard({ product: p, onAddToCart }) {
               ‹
             </button>
             <button 
+              type="button"
+              className="product-image-nav"
+              aria-label={`Next image for ${p.name}`}
               style={{ ...styles.navBtn, right: 6 }} 
               onClick={next}
               onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
@@ -99,6 +144,9 @@ export default function ProductCard({ product: p, onAddToCart }) {
             {imgs.map((_, i) => (
               <button
                 key={i}
+                type="button"
+                className="product-image-dot"
+                aria-label={`Show image ${i + 1} of ${p.name}`}
                 style={{
                   ...styles.dot,
                   ...(i === idx ? styles.dotActive : {})
@@ -112,8 +160,14 @@ export default function ProductCard({ product: p, onAddToCart }) {
           </div>
         )}
 
+        {p.category && (
+          <span className="product-category-badge" style={styles.categoryBadge}>{p.category}</span>
+        )}
+
         {/* Badges */}
         <div style={styles.badges}>
+          {discountPercent > 0 && <span style={styles.badgeDiscount}>SAVE {discountPercent}%</span>}
+          {hasUpcomingDiscount && <span className="product-discount-upcoming" style={styles.badgeDiscountUpcoming} title={`Promotion starts ${p.discountStartDate}`}>{configuredDiscountPercent}% OFF · {upcomingDateLabel}</span>}
           {p.isLocal && !isRestricted && (
             <span style={styles.badgeLocal}>🇵🇰 Local</span>
           )}
@@ -130,30 +184,38 @@ export default function ProductCard({ product: p, onAddToCart }) {
       </div>
 
       {/* Content Section */}
-      <div style={styles.content}>
-        <p style={styles.category}>{p.category}</p>
+      <div className="product-card-content" style={styles.content}>
         <h3 style={styles.name}>{p.name}</h3>
+        {(p.subcategory || p.brand || p.model) && (
+          <p style={styles.productMeta}>
+            {[p.subcategory, p.brand, p.model].filter(Boolean).join(' · ')}
+          </p>
+        )}
         {p.description && (
           <p style={styles.description}>
             {p.description.length > 60 ? p.description.slice(0, 60) + '...' : p.description}
           </p>
         )}
-        
+
         <div style={styles.priceRow}>
-          <span style={styles.price}>
-            {isPak ? formatPKR(p.pricePKR) : formatUSD(p.priceUSD)}
+          <span className={`product-card-price${discountPercent > 0 ? ' has-discount' : ''}`} style={styles.price}>
+            {isPak ? formatPKR(currentPrice) : formatUSD(currentPrice)}
           </span>
-          <span style={styles.priceAlt}>
-            {isPak ? `$${(p.priceUSD || 0).toFixed(2)}` : formatPKR(p.pricePKR)}
-          </span>
+          {discountPercent > 0 && <del className="product-card-original" style={styles.originalPrice}>{isPak ? formatPKR(originalPrice) : formatUSD(originalPrice)}</del>}
         </div>
+        <span className="product-card-price-alt" style={styles.priceAlt}>
+          Approx. {isPak ? formatUSD(alternatePrice) : formatPKR(alternatePrice)}
+        </span>
 
         <button
           style={{
             ...styles.addButton,
             ...((isOut || isRestricted) ? styles.addButtonDisabled : {})
           }}
-          onClick={() => !isOut && !isRestricted && onAddToCart(p)}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isOut && !isRestricted) onAddToCart(p);
+          }}
           disabled={isOut || isRestricted}
         >
           {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
@@ -161,12 +223,52 @@ export default function ProductCard({ product: p, onAddToCart }) {
       </div>
 
       <style>{`
+        .product-image-nav {
+          min-width: 32px !important;
+          min-height: 32px !important;
+          width: 32px !important;
+          height: 32px !important;
+          max-width: 32px !important;
+          max-height: 32px !important;
+          line-height: 30px !important;
+          padding: 0 !important;
+          font-family: Arial, sans-serif !important;
+          font-size: 25px !important;
+          font-weight: 400 !important;
+          text-align: center !important;
+          appearance: none !important;
+        }
+        .product-image-dot {
+          min-width: 0 !important;
+          min-height: 0 !important;
+          max-width: none !important;
+          max-height: none !important;
+          display: block !important;
+          line-height: 0 !important;
+          appearance: none !important;
+        }
         .product-card {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .product-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+          transform: translateY(-6px);
+          box-shadow: 0 18px 38px rgba(15,23,42,0.12);
+          border-color: rgba(16,185,129,0.3);
+        }
+        .product-card:hover img {
+          transform: scale(1.06);
+        }
+        .product-card:hover button:not(:disabled) {
+          background: linear-gradient(135deg,#059669,#047857) !important;
+        }
+        .product-card:hover .product-image-nav {
+          background: rgba(0,0,0,0.72) !important;
+          transform: translateY(-50%) !important;
+        }
+        @media (max-width: 760px) {
+          .product-image-nav {
+            opacity: .92 !important;
+          }
         }
       `}</style>
     </div>
@@ -175,29 +277,38 @@ export default function ProductCard({ product: p, onAddToCart }) {
 
 const styles = {
   card: {
-    background: '#fff',
-    borderRadius: '12px',
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,252,250,0.98) 100%)',
+    borderRadius: '20px',
     overflow: 'hidden',
-    border: '1px solid #eef2f6',
-    transition: 'all 0.2s ease',
+    border: '1px solid rgba(20,100,70,0.12)',
+    transition: 'all 0.22s ease',
     cursor: 'pointer',
-    height: '380px',
+    minHeight: '366px',
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
+    boxShadow: '0 22px 34px rgba(11, 58, 42, 0.08)',
+    backdropFilter: 'blur(10px)',
   },
   imageWrapper: {
     position: 'relative',
-    height: '200px',
-    backgroundColor: '#f8fafc',
+    height: '190px',
+    backgroundColor: '#edf7f1',
     overflow: 'hidden',
     flexShrink: 0,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background: 'linear-gradient(180deg, rgba(16, 39, 28, 0.04) 0%, rgba(16, 39, 28, 0.18) 100%)',
+    pointerEvents: 'none',
   },
   image: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    transition: 'transform 0.3s ease',
+    transition: 'transform 0.45s cubic-bezier(.2,.8,.2,1)',
+    display: 'block',
   },
   placeholder: {
     width: '100%',
@@ -271,10 +382,31 @@ const styles = {
   badges: {
     position: 'absolute',
     top: '8px',
-    left: '8px',
+    right: '8px',
     display: 'flex',
     gap: '6px',
     flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    zIndex: 10,
+  },
+  categoryBadge: {
+    position: 'absolute',
+    top: '8px',
+    left: '8px',
+    maxWidth: '55%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.96), rgba(231,255,242,0.92))',
+    color: '#0d5c42',
+    fontSize: '10px',
+    fontWeight: '800',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    padding: '6px 10px',
+    borderRadius: '20px',
+    border: '1px solid rgba(15, 118, 110, 0.18)',
+    boxShadow: '0 4px 12px rgba(15,23,42,0.14)',
     zIndex: 10,
   },
   badgeLocal: {
@@ -284,6 +416,28 @@ const styles = {
     fontWeight: '600',
     padding: '3px 10px',
     borderRadius: '20px',
+  },
+  badgeDiscount: {
+    background: 'linear-gradient(135deg,#b95f3b,#963f35)',
+    color: '#fff',
+    fontSize: '10px',
+    fontWeight: '800',
+    letterSpacing: '.3px',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    boxShadow: '0 4px 12px rgba(111,46,31,.24)',
+  },
+  badgeDiscountUpcoming: {
+    background: 'linear-gradient(135deg,#543d24,#795322)',
+    border: '1px solid rgba(255,239,201,.45)',
+    color: '#fff4d6',
+    fontSize: '9px',
+    fontWeight: '900',
+    letterSpacing: '.25px',
+    padding: '4px 8px',
+    borderRadius: '20px',
+    boxShadow: '0 4px 12px rgba(73,48,19,.24)',
+    whiteSpace: 'nowrap',
   },
   badgeRestricted: {
     background: '#7c3aed',
@@ -310,35 +464,38 @@ const styles = {
     borderRadius: '20px',
   },
   content: {
-    padding: '12px 14px',
-    flex: 1,
+    padding: '14px 15px 15px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-  },
-  category: {
-    margin: '0 0 4px',
-    fontSize: '10px',
-    fontWeight: '600',
-    color: '#10b981',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    flex: 1,
   },
   name: {
     margin: '0 0 6px',
-    fontSize: '15px',
-    fontWeight: '700',
-    color: '#1e293b',
-    lineHeight: '1.3',
+    fontSize: '16px',
+    fontWeight: '800',
+    color: '#0f172a',
+    lineHeight: '1.2',
+    letterSpacing: '-0.03em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   description: {
     margin: '0 0 10px',
-    fontSize: '11px',
+    fontSize: '12px',
     color: '#64748b',
-    lineHeight: '1.4',
+    lineHeight: '1.45',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  productMeta: {
+    margin: '-2px 0 8px',
+    fontSize: '12px',
+    color: '#64748b',
+    fontWeight: '700',
+    letterSpacing: '0.02em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -350,30 +507,41 @@ const styles = {
     marginBottom: '12px',
   },
   price: {
-    fontSize: '17px',
+    fontSize: '20px',
     fontWeight: '800',
-    color: '#059669',
+    color: '#0f172a',
+    letterSpacing: '-0.04em',
   },
   priceAlt: {
     fontSize: '11px',
     color: '#94a3b8',
-    fontWeight: '500',
+    fontWeight: '600',
+    marginTop: '-8px',
+    marginBottom: '10px',
+  },
+  originalPrice: {
+    fontSize: '12px',
+    color: '#829087',
+    fontWeight: '600',
   },
   addButton: {
-    background: '#059669',
+    background: 'linear-gradient(135deg,#19a76d,#0d5c42)',
     color: '#fff',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '12px',
     padding: '10px 12px',
     fontSize: '12px',
-    fontWeight: '600',
+    fontWeight: '700',
     cursor: 'pointer',
-    transition: 'all 0.2s',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 14px 24px rgba(13,92,66,0.18)',
     marginTop: 'auto',
+    letterSpacing: '0.2px',
   },
   addButtonDisabled: {
     background: '#e2e8f0',
     color: '#94a3b8',
     cursor: 'not-allowed',
+    boxShadow: 'none',
   },
 };

@@ -10,6 +10,7 @@ import OrdersPage      from './pages/OrdersPage';
 import OrderTrackPage  from './pages/OrderTrackPage';
 import AdminPage       from './pages/AdminPage';
 import SupportPage     from './pages/SupportPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 /* Redirect logged-in users away from guest-only pages */
 const GuestRoute = ({ children }) => {
@@ -44,12 +45,14 @@ const AppRoutes = () => (
     <Navbar />
     <Routes>
       <Route path="/"               element={<RootRoute />} />
+      <Route path="/products/:id"   element={<ProductDetailPage />} />
       <Route path="/login"          element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register"       element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path="/cart"           element={<PrivateRoute><CartPage /></PrivateRoute>} />
       <Route path="/orders"         element={<PrivateRoute><OrdersPage /></PrivateRoute>} />
       <Route path="/orders/:id"     element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
       <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
+      <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/support"        element={<SupportPage />} />
       <Route path="*"               element={<Navigate to="/" replace />} />
     </Routes>

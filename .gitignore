@@ -2,3 +2,13 @@ node_modules/
 build/
 dist/
 .env
+backend/.env
+frontend/.env
+backend/backups/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/keystore.properties
+frontend/android/*.keystore
+frontend/android/*.jks
+frontend/public/*.apk
