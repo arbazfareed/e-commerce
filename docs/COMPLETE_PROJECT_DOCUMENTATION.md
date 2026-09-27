@@ -250,6 +250,9 @@ reviews enabled if human approval is part of your release policy.
 
 - [README](../README.md)
 - [Project Showcase](./PROJECT_SHOWCASE.md)
+- [Documentation Index](./DOCUMENTATION_INDEX.md)
+- [Software Requirements Document](./SRD.md)
+- [API Reference](./API_REFERENCE.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Technical Guide](./TECHNICAL_GUIDE.md)
 - [User Guide](./USER_GUIDE.md)

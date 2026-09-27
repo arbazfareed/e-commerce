@@ -13,6 +13,9 @@
 
 - **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
 - **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
+- **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** — SRD, API, architecture, testing, deployment, and policy documents
+- **[Software Requirements Document](./docs/SRD.md)** — scope, requirements, acceptance criteria, and release gates
+- **[API Reference](./docs/API_REFERENCE.md)** — implemented routes, auth levels, fields, and limitations
 - **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
 - **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows

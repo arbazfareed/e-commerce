@@ -115,7 +115,10 @@ require an administrator account.
 ## Recommended GitHub reading order
 
 1. [`README.md`](../README.md) for setup and common commands.
-2. [`ARCHITECTURE.md`](./ARCHITECTURE.md) for system diagrams.
-3. [`USER_GUIDE.md`](./USER_GUIDE.md) for customer and admin workflows.
-4. [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) for browser, phone, and APK use.
-5. [`PRODUCTION_DEPLOYMENT.md`](./PRODUCTION_DEPLOYMENT.md) before a public launch.
+2. [`DOCUMENTATION_INDEX.md`](./DOCUMENTATION_INDEX.md) for the document map.
+3. [`SRD.md`](./SRD.md) for requirements and release status.
+4. [`ARCHITECTURE.md`](./ARCHITECTURE.md) for system diagrams.
+5. [`API_REFERENCE.md`](./API_REFERENCE.md) for implemented backend routes.
+6. [`USER_GUIDE.md`](./USER_GUIDE.md) for customer and admin workflows.
+7. [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) for browser, phone, and APK use.
+8. [`PRODUCTION_DEPLOYMENT.md`](./PRODUCTION_DEPLOYMENT.md) before a public launch.
