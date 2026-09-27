@@ -7,8 +7,7 @@ This PR adds QA coverage, CI validation, and Android release preparation for the
 - Added backend unit and integration tests
 - Added frontend UI and route validation
 - Added browser smoke test scaffolding
-- Added GitHub Actions CI workflow
-- Added Android APK build workflow
+- Added or updated local validation documentation
 - Added QA and release documentation
 
 ## Why
@@ -21,7 +20,7 @@ This PR adds QA coverage, CI validation, and Android release preparation for the
 
 - Backend tests pass
 - Frontend build and tests are run in CI
-- Android workflow builds the APK artifact for testing
+- Android build instructions are documented for local execution
 
 ## Release checklist
 

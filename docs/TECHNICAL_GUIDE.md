@@ -26,7 +26,7 @@ The frontend calls the backend through `VITE_API_URL`. The backend reads
 | Uploads | Multer and `backend/uploads/` |
 | Container runtime | Docker Compose |
 | Web server | Nginx for the production frontend container |
-| CI | GitHub Actions |
+| Validation | Local npm checks and manual QA |
 
 ## 3. Important request flow
 
@@ -102,13 +102,7 @@ Health endpoints:
 - `/health/live`: process is running.
 - `/health/ready`: process is running and MongoDB is connected.
 
-## 8. CI behavior
-
-GitHub Actions installs both lockfiles, checks backend syntax, runs backend
-tests, and builds the frontend on pushes and pull requests. CI does not need
-production credentials or a live MongoDB database.
-
-## 9. Known limitations and next production work
+## 8. Known limitations and next production work
 
 - Docker Desktop is required to execute Compose locally.
 - Product uploads are local files; production should use object storage such as

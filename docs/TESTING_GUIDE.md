@@ -98,8 +98,12 @@ Use the checklist below before sign-off:
 - Admin route remains protected for non-admin users
 - Mobile browser view works on the local network IP
 
-## 8. GitHub / CI readiness
+## 8. Local validation
 
-A QA workflow can be run in GitHub Actions to execute the automated checks on each push or pull request.
+Run the relevant checks locally before sharing a change. GitHub Actions also
+runs backend syntax validation and frontend tests/builds on pushes and pull
+requests.
 
-This project keeps the tests in the existing repo structure and avoids rewriting business logic while still improving coverage for the main user journeys.
+This project keeps the tests in the existing repo structure and avoids
+rewriting business logic while still improving coverage for the main user
+journeys.

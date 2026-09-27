@@ -5,7 +5,7 @@
 - [ ] Backend tests pass
 - [ ] Frontend tests pass
 - [ ] Frontend production build passes
-- [ ] GitHub Actions workflow is green
+- [ ] Local validation checks are complete
 - [ ] PR review is complete
 - [ ] QA checklist is signed off
 

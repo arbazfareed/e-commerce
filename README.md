@@ -1,5 +1,24 @@
 # IndusCart
 
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=20232a)](./frontend/package.json)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](./frontend/package.json)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](./backend/package.json)
+[![MongoDB](https://img.shields.io/badge/MongoDB-ready-47A248?logo=mongodb&logoColor=white)](./docker-compose.yml)
+[![License](https://img.shields.io/badge/license-ISC-blue)](./backend/package.json)
+
+> A full-stack storefront for discovering, managing, and selling products with
+> customer accounts, admin operations, local/global markets, and Android support.
+
+### Explore the project
+
+- **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
+- **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
+- **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
+- **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
+- **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows
+- **[Local Run Guide](./docs/LOCAL_RUN_GUIDE.md)** — desktop, phone, and Android instructions
+- **[Production Deployment](./docs/PRODUCTION_DEPLOYMENT.md)** — launch checklist and limitations
+
 IndusCart is an e-commerce application with:
 
 - A Vite + React frontend in [`frontend/`](./frontend/)
@@ -8,14 +27,10 @@ IndusCart is an e-commerce application with:
 
 Additional documentation:
 
-- [Technical Guide](./docs/TECHNICAL_GUIDE.md)
-- [User Guide](./docs/USER_GUIDE.md)
-- [Local Run Guide](./docs/LOCAL_RUN_GUIDE.md) — exact Chrome, phone, API, and APK URLs
-- [Production Deployment](./docs/PRODUCTION_DEPLOYMENT.md) — HTTPS, payments, storage, backups, monitoring, and APK release
 - [Customer Policy Drafts](./docs/PRIVACY_POLICY.md) — privacy, terms, and returns documents
 
-Android APK support is included through Capacitor. GitHub Actions can build a
-debug APK artifact manually or when a version tag such as `v1.0.0` is pushed.
+Android APK support is included through Capacitor. Build the APK locally using
+the steps in the [Android Guide](./docs/ANDROID_GUIDE.md).
 
 ## Prerequisites
 
@@ -311,13 +326,8 @@ encrypted backups of the keystore and its passwords; Google Play updates must
 continue using the same signing identity.
 
 The Android project is generated from the web build and is not required for
-normal browser development. On GitHub, open **Actions → Build Android APK →
-Run workflow**. Download the `induscart-debug-apk` artifact after the job
-finishes. Pushing a tag such as `v1.0.0` triggers the same workflow.
-
-GitHub Actions runs the same backend checks and frontend production build on
-pushes and pull requests. It does not require MongoDB credentials or expose
-local `.env` files.
+normal browser development. Build it locally by following the
+[Android Guide](./docs/ANDROID_GUIDE.md).
 
 ### Database backup and migration
 
