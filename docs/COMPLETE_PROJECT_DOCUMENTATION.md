@@ -187,8 +187,15 @@ npm test
 npm run build
 ```
 
-The repository currently does not run GitHub Actions workflows. Test files are
-kept for local validation and future automation if CI is reintroduced.
+GitHub Actions runs backend syntax validation and frontend tests/builds on
+pushes and pull requests. Test files are also kept for local validation.
+Pull requests from the same repository targeting `main` are configured for
+squash auto-merge after required checks pass; fork pull requests are excluded.
+
+For auto-merge to complete, enable **Allow auto-merge** in the repository's
+GitHub settings and configure a `main` branch protection rule requiring the
+checks **Backend validation** and **Frontend validation**. Keep required
+reviews enabled if human approval is part of your release policy.
 
 ## 11. Security and operational requirements
 

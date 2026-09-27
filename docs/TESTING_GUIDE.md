@@ -100,8 +100,9 @@ Use the checklist below before sign-off:
 
 ## 8. Local validation
 
-Run the relevant checks locally before sharing a change. The repository does
-not currently run GitHub Actions workflows.
+Run the relevant checks locally before sharing a change. GitHub Actions also
+runs backend syntax validation and frontend tests/builds on pushes and pull
+requests.
 
 This project keeps the tests in the existing repo structure and avoids
 rewriting business logic while still improving coverage for the main user
