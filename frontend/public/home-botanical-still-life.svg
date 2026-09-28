@@ -1,0 +1,35 @@
+<svg width="1600" height="760" viewBox="0 0 1600 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="180" y1="40" x2="1470" y2="760" gradientUnits="userSpaceOnUse"><stop stop-color="#0C2822"/><stop offset=".55" stop-color="#164135"/><stop offset="1" stop-color="#3B3520"/></linearGradient>
+    <radialGradient id="warmGlow" cx="0" cy="0" r="1" gradientTransform="matrix(-390 310 -305 -383 1360 150)" gradientUnits="userSpaceOnUse"><stop stop-color="#D8B977" stop-opacity=".36"/><stop offset="1" stop-color="#D8B977" stop-opacity="0"/></radialGradient>
+    <linearGradient id="amberGlass" x1="1050" y1="260" x2="1290" y2="600" gradientUnits="userSpaceOnUse"><stop stop-color="#D9B977" stop-opacity=".88"/><stop offset=".38" stop-color="#80643C" stop-opacity=".94"/><stop offset="1" stop-color="#21392D"/></linearGradient>
+    <linearGradient id="paper" x1="1080" y1="390" x2="1260" y2="530" gradientUnits="userSpaceOnUse"><stop stop-color="#F1E4C6"/><stop offset="1" stop-color="#D9C28F"/></linearGradient>
+    <filter id="shadow" x="880" y="520" width="560" height="180" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="25"/></filter>
+  </defs>
+  <rect width="1600" height="760" fill="url(#bg)"/>
+  <rect width="1600" height="760" fill="url(#warmGlow)"/>
+  <path d="M0 650C260 580 442 710 675 642C900 576 1070 670 1290 604C1425 564 1535 586 1600 558V760H0V650Z" fill="#071F1A" fill-opacity=".66"/>
+  <path d="M0 688C250 620 448 742 690 674C920 610 1090 702 1310 636C1440 598 1538 620 1600 592" stroke="#D8B977" stroke-opacity=".28" stroke-width="2"/>
+  <ellipse cx="1165" cy="626" rx="210" ry="42" fill="#020B09" fill-opacity=".62" filter="url(#shadow)"/>
+  <g opacity=".82">
+    <path d="M1365 90C1230 104 1164 193 1188 290C1292 264 1354 204 1365 90Z" fill="#6D9975" fill-opacity=".8"/>
+    <path d="M1360 101C1317 155 1268 208 1199 279" stroke="#C3D2A6" stroke-opacity=".54" stroke-width="4"/>
+    <path d="M1467 172C1364 174 1297 235 1282 322C1374 313 1441 267 1467 172Z" fill="#3D704F" fill-opacity=".9"/>
+    <path d="M1457 184C1406 227 1355 269 1290 315" stroke="#B4CC9B" stroke-opacity=".46" stroke-width="3"/>
+    <path d="M1050 135C1120 143 1164 196 1164 264C1098 245 1060 201 1050 135Z" fill="#54836A" fill-opacity=".78"/>
+    <path d="M1054 142C1090 180 1120 212 1158 257" stroke="#C0D4AB" stroke-opacity=".46" stroke-width="3"/>
+  </g>
+  <path d="M1070 318C1070 288 1094 264 1124 264H1218C1248 264 1272 288 1272 318V568C1272 595 1250 617 1223 617H1119C1092 617 1070 595 1070 568V318Z" fill="url(#amberGlass)" stroke="#DDE8CF" stroke-opacity=".44" stroke-width="3"/>
+  <path d="M1092 328C1092 311 1106 297 1123 297H1138V583H1120C1104 583 1092 570 1092 554V328Z" fill="#E2F0D7" fill-opacity=".2"/>
+  <rect x="1102" y="236" width="138" height="36" rx="12" fill="#C9B176" stroke="#F0E2BC" stroke-opacity=".42" stroke-width="2"/>
+  <rect x="1140" y="204" width="64" height="35" rx="9" fill="#D8C69C"/>
+  <rect x="1154" y="180" width="36" height="26" rx="7" fill="#E8DAB7"/>
+  <path d="M1104 370C1104 359 1113 350 1124 350H1218C1229 350 1238 359 1238 370V516H1104V370Z" fill="url(#paper)"/>
+  <path d="M1134 405H1208" stroke="#6B7252" stroke-opacity=".6" stroke-width="3"/>
+  <path d="M1151 448C1164 427 1189 427 1202 448C1189 469 1164 469 1151 448Z" fill="#63835D"/>
+  <text x="1171" y="491" fill="#354A37" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2" text-anchor="middle">BOTANICAL OIL</text>
+  <circle cx="1390" cy="570" r="63" fill="#D8B977" fill-opacity=".86"/>
+  <circle cx="1390" cy="570" r="47" fill="#E8CF8D" fill-opacity=".82"/>
+  <circle cx="1390" cy="570" r="7" fill="#F4E7C4"/>
+  <path d="M1390 529V563M1390 577V611M1349 570H1383M1397 570H1431M1361 541L1385 565M1395 575L1419 599M1419 541L1395 565M1385 575L1361 599" stroke="#F5E8C4" stroke-width="4" stroke-linecap="round"/>
+</svg>

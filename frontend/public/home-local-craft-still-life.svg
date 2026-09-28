@@ -1,0 +1,32 @@
+<svg width="1600" height="760" viewBox="0 0 1600 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="100" y1="0" x2="1490" y2="760" gradientUnits="userSpaceOnUse"><stop stop-color="#0B2823"/><stop offset=".56" stop-color="#174238"/><stop offset="1" stop-color="#40371F"/></linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(-430 350 -330 -406 1370 140)" gradientUnits="userSpaceOnUse"><stop stop-color="#D8B977" stop-opacity=".32"/><stop offset="1" stop-color="#D8B977" stop-opacity="0"/></radialGradient>
+    <linearGradient id="pottery" x1="1065" y1="270" x2="1310" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#DDBF8C"/><stop offset=".46" stop-color="#A9754D"/><stop offset="1" stop-color="#624936"/></linearGradient>
+    <linearGradient id="basket" x1="1320" y1="390" x2="1530" y2="620" gradientUnits="userSpaceOnUse"><stop stop-color="#C9A96F"/><stop offset="1" stop-color="#80613F"/></linearGradient>
+    <pattern id="weave" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(24)"><path d="M0 5H22M0 16H22" stroke="#F0D7A7" stroke-opacity=".32" stroke-width="3"/><path d="M5 0V22M16 0V22" stroke="#563E2A" stroke-opacity=".28" stroke-width="3"/></pattern>
+    <filter id="shadow" x="900" y="535" width="670" height="175" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="24"/></filter>
+  </defs>
+  <rect width="1600" height="760" fill="url(#bg)"/>
+  <rect width="1600" height="760" fill="url(#glow)"/>
+  <path d="M0 646C252 578 445 707 685 641C903 582 1093 671 1300 609C1432 570 1536 591 1600 560V760H0V646Z" fill="#08221C" fill-opacity=".68"/>
+  <path d="M0 687C257 621 456 739 695 674C926 611 1104 701 1316 640C1446 602 1537 620 1600 592" stroke="#D8B977" stroke-opacity=".3" stroke-width="2"/>
+  <ellipse cx="1240" cy="633" rx="302" ry="40" fill="#030D0A" fill-opacity=".66" filter="url(#shadow)"/>
+  <g opacity=".88">
+    <path d="M1434 93C1308 103 1242 181 1252 280C1352 261 1417 204 1434 93Z" fill="#648B68"/>
+    <path d="M1428 107C1382 161 1329 211 1262 272" stroke="#C8D2A5" stroke-opacity=".55" stroke-width="4"/>
+    <path d="M1510 176C1409 182 1349 241 1340 324C1433 315 1488 269 1510 176Z" fill="#35664C"/>
+    <path d="M1504 187C1454 229 1404 270 1347 316" stroke="#B8CA9C" stroke-opacity=".48" stroke-width="3"/>
+  </g>
+  <path d="M1072 366C1072 329 1102 299 1139 299H1222C1259 299 1289 329 1289 366V543C1289 589 1252 626 1206 626H1155C1109 626 1072 589 1072 543V366Z" fill="url(#pottery)" stroke="#F1D8AE" stroke-opacity=".46" stroke-width="4"/>
+  <path d="M1080 365C1116 384 1246 384 1281 365" stroke="#583E2C" stroke-opacity=".62" stroke-width="12"/>
+  <path d="M1080 423C1124 445 1237 445 1281 423" stroke="#E5C99A" stroke-opacity=".72" stroke-width="7"/>
+  <path d="M1084 486C1124 508 1237 508 1277 486" stroke="#624632" stroke-opacity=".56" stroke-width="10"/>
+  <path d="M1133 302C1137 239 1169 207 1180 167C1192 207 1224 239 1228 302" stroke="#D8C08E" stroke-width="13" stroke-linecap="round"/>
+  <path d="M1322 465C1322 432 1349 405 1382 405H1476C1509 405 1536 432 1536 465V576C1536 603 1514 625 1487 625H1371C1344 625 1322 603 1322 576V465Z" fill="url(#basket)" stroke="#E8D2A6" stroke-opacity=".52" stroke-width="3"/>
+  <path d="M1370 408C1375 330 1414 291 1429 253C1445 291 1483 330 1488 408" stroke="#B9945A" stroke-width="14" stroke-linecap="round"/>
+  <path d="M1325 478H1533V576C1533 603 1511 622 1484 622H1374C1347 622 1325 603 1325 576V478Z" fill="url(#weave)" fill-opacity=".84"/>
+  <path d="M1325 478C1378 512 1481 512 1533 478" stroke="#F0D7A7" stroke-opacity=".7" stroke-width="5"/>
+  <circle cx="1007" cy="254" r="4" fill="#E9D29B" fill-opacity=".72"/>
+  <circle cx="1492" cy="337" r="3" fill="#C4D5A5" fill-opacity=".72"/>
+</svg>

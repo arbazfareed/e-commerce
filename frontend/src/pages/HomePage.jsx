@@ -145,9 +145,6 @@ export default function HomePage() {
     },
     hero: {
       backgroundColor: '#0a1715',
-      backgroundImage: "linear-gradient(120deg, rgba(5, 19, 16, 0.92) 0%, rgba(16, 56, 48, 0.86) 42%, rgba(62, 52, 24, 0.58) 100%), url('/hero-cover.jpg')",
-      backgroundPosition: 'center 46%',
-      backgroundSize: 'cover',
       padding: '66px 24px 42px',
       position: 'relative',
       overflow: 'hidden',
@@ -287,12 +284,12 @@ export default function HomePage() {
       border: isDarkTheme ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(255,255,255,0.22)',
       borderRadius: '13px',
       padding: '14px 20px',
-      background: 'linear-gradient(135deg, #f5d27c 0%, #d79b47 100%)',
+      background: 'linear-gradient(135deg, #d8b977 0%, #bd8a4c 100%)',
       color: '#1d261d',
       fontSize: '13px',
       fontWeight: '800',
       cursor: 'pointer',
-      boxShadow: '0 16px 32px rgba(208, 153, 67, 0.36)',
+      boxShadow: '0 12px 26px rgba(164, 112, 43, 0.28)',
     },
     deliveryNote: {
       color: isDarkTheme ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.78)',
@@ -595,6 +592,15 @@ export default function HomePage() {
     <div className="home-page" style={styles.page}>
       {/* Hero Section */}
       <section className="hero" style={styles.hero}>
+        <div className="hero-image-slider" aria-hidden="true">
+          <div className="hero-image-track">
+            <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" loading="eager" /></div>
+            <div className="hero-image-slide"><img src="/home-ritual-still-life.svg" alt="" /></div>
+            <div className="hero-image-slide"><img src="/home-botanical-still-life.svg" alt="" /></div>
+            <div className="hero-image-slide"><img src="/home-local-craft-still-life.svg" alt="" /></div>
+            <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" /></div>
+          </div>
+        </div>
         <div style={styles.heroGlow} />
         <div className="hero-content" style={styles.heroContent}>
           <div className="hero-copy" style={styles.heroCopy}>
@@ -618,9 +624,9 @@ export default function HomePage() {
               <span style={styles.deliveryNote}>Free shipping over PKR 10,000 • Trusted checkout</span>
             </div>
             <div className="hero-stats" style={styles.heroStats}>
-              <span style={styles.heroStat}><strong>4.9/5</strong> customer rating</span>
-              <span style={styles.heroStat}><strong>24h</strong> dispatch support</span>
-              <span style={styles.heroStat}><strong>2k+</strong> happy shoppers</span>
+              <span className="hero-stat" style={styles.heroStat}><strong>4.9/5</strong> customer rating</span>
+              <span className="hero-stat" style={styles.heroStat}><strong>24h</strong> dispatch support</span>
+              <span className="hero-stat" style={styles.heroStat}><strong>2k+</strong> happy shoppers</span>
             </div>
           </div>
 
@@ -880,28 +886,94 @@ export default function HomePage() {
 
       {/* ✅ ALL animations defined here — no module-level document.head injection */}
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.5; }
         }
 
-        .product-grid > * {
-          animation: fadeIn 0.3s ease-out;
+        @keyframes hero-image-carousel {
+          0%, 18% { transform:translateX(0); }
+          22%, 38% { transform:translateX(-20%); }
+          42%, 58% { transform:translateX(-40%); }
+          62%, 78% { transform:translateX(-60%); }
+          82%, 100% { transform:translateX(-80%); }
+        }
+
+        .hero-image-slider {
+          position:absolute;
+          inset:0;
+          overflow:hidden;
+          pointer-events:none;
+          z-index:0;
+        }
+
+        .hero-image-track {
+          display:flex;
+          width:500%;
+          height:100%;
+          will-change:transform;
+        }
+
+        .hero-image-slide {
+          position:relative;
+          flex:0 0 20%;
+          height:100%;
+          overflow:hidden;
+        }
+
+        .hero-image-slide img {
+          display:block;
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          object-position:center 46%;
+        }
+
+        .hero-image-slide::after {
+          content:'';
+          position:absolute;
+          inset:0;
+          background:linear-gradient(120deg,rgba(5,19,16,.78) 0%,rgba(16,56,48,.70) 42%,rgba(62,52,24,.44) 100%);
+        }
+
+        @media (min-width: 761px) and (prefers-reduced-motion: no-preference) {
+          .hero-image-track { animation:hero-image-carousel 36s ease-in-out infinite; }
+        }
+
+        @media (max-width:760px) {
+          .hero-image-slide img { object-position:68% center; }
+          .hero-image-track { animation:none !important; transform:translateX(0) !important; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero-image-track { animation:none !important; transform:translateX(0) !important; }
+        }
+
+        @media (min-width: 761px) and (prefers-reduced-motion: no-preference) {
+          .hero-image-slider { contain:paint; }
+        }
+
+        .hero-copy .hero-stats {
+          align-items:center;
+          gap:8px;
+          margin-top:18px;
+        }
+
+        .hero-copy .hero-stat {
+          display:inline-flex;
+          align-items:center;
+          gap:6px;
+          padding:8px 12px;
+          border:1px solid rgba(255,255,255,.18);
+          border-radius:999px;
+          background:rgba(255,255,255,.08);
+          line-height:1.3;
+          white-space:nowrap;
+        }
+
+        .hero-copy .hero-stat strong {
+          color:#fff;
+          font-weight:900;
         }
 
         @media (max-width: 760px) {
@@ -915,22 +987,14 @@ export default function HomePage() {
 
           .hero-content {
             grid-template-columns: 1fr !important;
-            gap: 20px !important;
+            gap: 0 !important;
           }
 
           .hero-copy {
             max-width: 100% !important;
           }
 
-          .hero-shell {
-            justify-content: stretch !important;
-            width: 100% !important;
-          }
-
-          .hero-shell > div {
-            max-width: none !important;
-            width: 100% !important;
-          }
+          .hero-shell { display:none !important; }
 
           .hero-copy > div:first-child {
             margin-bottom: 14px !important;
@@ -975,8 +1039,26 @@ export default function HomePage() {
 
           .hero-copy .hero-stats {
             display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 10px 12px !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            margin-top: 18px !important;
+          }
+
+          .hero-copy .hero-stat {
+            display:flex;
+            min-width:0;
+            flex-direction:column;
+            gap:3px;
+            padding:9px 8px;
+            border:1px solid rgba(255,255,255,.16);
+            border-radius:12px;
+            background:rgba(255,255,255,.07);
+            font-size:9px;
+            line-height:1.3;
+          }
+
+          .hero-copy .hero-stat strong {
+            font-size:13px;
           }
 
           .hero-copy .hero-actions {
@@ -1027,6 +1109,14 @@ export default function HomePage() {
           .recent-grid {
             grid-template-columns: 1fr !important;
             gap: 16px !important;
+          }
+        }
+
+        @media (min-width: 520px) and (max-width: 760px) {
+          .home-page .product-row,
+          .home-page .recent-product-row {
+            grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+            gap:14px !important;
           }
         }
 

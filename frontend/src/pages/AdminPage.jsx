@@ -705,6 +705,7 @@ export default function AdminPage() {
         .admin-password-card input:focus { outline:3px solid rgba(16,185,129,.2); border-color:#0b8059; }
         .admin-password-submit { width:100%; min-height:48px; justify-content:center; color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
         :root[data-theme='dark'] .admin-page .admin-main .admin-green-button { color:#062e22 !important; }
+        .admin-page .admin-pdf-report-button { color:#fff !important; }
         :root[data-theme='dark'] .admin-password-card input { border-color:#557264 !important; background:#0b1510 !important; color:#f3faf5 !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.4) !important; }
         :root[data-theme='dark'] .admin-password-card input:focus { outline:3px solid rgba(110,231,183,.22); border-color:#72c9a2 !important; }
         :root[data-theme='dark'] .admin-password-submit { color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
@@ -1152,7 +1153,7 @@ export default function AdminPage() {
                     style={{
                       border:'1px solid rgba(148,163,184,.25)',
                       background: kpiFilter === mode ? (themeMode === 'dark' ? '#0f766e' : '#d1fae5') : (themeMode === 'dark' ? '#0b1d2d' : '#f8fafc'),
-                      color: kpiFilter === mode ? '#ecfeff' : (themeMode === 'dark' ? '#dbeafe' : '#334155'),
+                      color: kpiFilter === mode ? (themeMode === 'dark' ? '#ecfeff' : '#065f46') : (themeMode === 'dark' ? '#dbeafe' : '#334155'),
                       borderRadius:999,
                       padding:'8px 12px',
                       fontWeight:800,
@@ -1175,7 +1176,7 @@ export default function AdminPage() {
                     style={{
                       border:'1px solid rgba(148,163,184,.25)',
                       background: timeWindow === range ? (themeMode === 'dark' ? '#1d4ed8' : '#dbeafe') : (themeMode === 'dark' ? '#0f172a' : '#f8fafc'),
-                      color: timeWindow === range ? '#eff6ff' : (themeMode === 'dark' ? '#dbeafe' : '#334155'),
+                      color: timeWindow === range ? (themeMode === 'dark' ? '#eff6ff' : '#1e40af') : (themeMode === 'dark' ? '#dbeafe' : '#334155'),
                       borderRadius:999,
                       padding:'8px 10px',
                       fontWeight:800,
@@ -1252,17 +1253,17 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* ── Market Split Overview card ── */}
-            <div style={{ ...S.card, marginBottom:20, background: themeMode === 'dark' ? '#0f172a' : 'linear-gradient(180deg, rgba(10,19,23,0.98), rgba(15,23,30,0.98))', borderColor: themeMode === 'dark' ? '#1e293b' : 'rgba(94,170,147,0.25)', boxShadow: themeMode === 'dark' ? '0 12px 32px rgba(2,6,23,.38)' : '0 16px 34px rgba(5,10,14,.25)' }}>
+            {/* ── Sales History & Payment Mix ── */}
+            <div style={{ ...S.card, marginBottom:20, background: themeMode === 'dark' ? '#0f172a' : 'linear-gradient(180deg,#ffffff,#f7fbf8)', borderColor: themeMode === 'dark' ? '#1e293b' : '#dfece4', boxShadow: themeMode === 'dark' ? '0 12px 32px rgba(2,6,23,.38)' : '0 12px 30px rgba(11,58,42,.07)' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18, gap:12, flexWrap:'wrap' }}>
                 <div>
                   <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>📊 Sales History & Payment Mix</h3>
-                  <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#94a3b8' : '#94a3b8' }}>Date, day, week, month, and 3/6/9/12 month revenue trends with cash vs online totals</p>
+                  <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#aebbb4' : '#64748b' }}>Date, day, week, month, and 3/6/9/12 month revenue trends with cash vs online totals</p>
                 </div>
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                   <button style={{ ...S.linkBtn, color: themeMode === 'dark' ? '#93c5fd' : 'var(--brand-dark, #0d5c42)' }} onClick={() => openSection('orders')}>View orders →</button>
                   <button className="admin-green-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12 }} onClick={exportCsvReport}>📊 CSV export</button>
-                  <button style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)' }} onClick={generatePdfReport}>📄 PDF report</button>
+                  <button className="admin-pdf-report-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)' }} onClick={generatePdfReport}>📄 PDF report</button>
                 </div>
               </div>
 
@@ -1295,7 +1296,7 @@ export default function AdminPage() {
                     style={{
                       background: analyticsTab === tab.key ? (themeMode === 'dark' ? '#0f766e' : '#d1fae5') : (themeMode === 'dark' ? '#111827' : '#f8fafc'),
                       border: '1px solid rgba(148,163,184,.22)',
-                      color: analyticsTab === tab.key ? '#ecfeff' : (themeMode === 'dark' ? '#e2e8f0' : '#334155'),
+                      color: analyticsTab === tab.key ? (themeMode === 'dark' ? '#ecfeff' : '#065f46') : (themeMode === 'dark' ? '#e2e8f0' : '#334155'),
                       borderRadius:999,
                       padding:'8px 12px',
                       fontWeight:800,
@@ -1334,32 +1335,32 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  <div style={{ background:'linear-gradient(135deg, rgba(12,18,22,0.98), rgba(18,24,31,0.98))', border:'1px solid rgba(93,175,143,0.28)', borderRadius:14, padding:'18px 16px', boxShadow:'0 22px 40px rgba(5,10,14,0.32)', transition:'all .25s ease' }}>
+                  <div style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg, rgba(12,18,22,0.98), rgba(18,24,31,0.98))' : 'linear-gradient(135deg,#f0fdfa,#f8fafc)', border: themeMode === 'dark' ? '1px solid rgba(93,175,143,0.28)' : '1px solid #cfe4da', borderRadius:14, padding:'18px 16px', boxShadow: themeMode === 'dark' ? '0 22px 40px rgba(5,10,14,0.32)' : '0 12px 28px rgba(15,45,32,.07)', transition:'all .25s ease' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, gap:8, flexWrap:'wrap' }}>
-                      <h4 style={{ ...S.cardH, margin:0, color:'#e5f8ee' }}>🧠 AI growth strategy</h4>
-                      <span style={{ fontSize:10, fontWeight:800, color:'#d8fff0', background:'rgba(15,118,110,0.30)', border:'1px solid rgba(110,231,183,0.26)', padding:'4px 8px', borderRadius:999, letterSpacing:'0.7px', textTransform:'uppercase' }}>smart plan</span>
+                      <h4 style={{ ...S.cardH, margin:0, color: themeMode === 'dark' ? '#e5f8ee' : '#173a2d' }}>🧠 AI growth strategy</h4>
+                      <span style={{ fontSize:10, fontWeight:800, color: themeMode === 'dark' ? '#d8fff0' : '#115e59', background: themeMode === 'dark' ? 'rgba(15,118,110,0.30)' : '#ccfbf1', border:'1px solid rgba(110,231,183,0.4)', padding:'4px 8px', borderRadius:999, letterSpacing:'0.7px', textTransform:'uppercase' }}>smart plan</span>
                     </div>
 
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginBottom:12 }}>
                       {aiPulse.map((chip) => (
-                        <div key={chip.label} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(148,163,184,0.18)', borderRadius:10, padding:'8px 10px', backdropFilter:'blur(6px)' }}>
-                          <p style={{ margin:0, fontSize:9, fontWeight:800, color:'#9ae6b4', textTransform:'uppercase', letterSpacing:'0.8px' }}>{chip.label}</p>
-                          <p style={{ margin:'4px 0 0', fontSize:12, fontWeight:800, color:'#ecfeff', lineHeight:1.3 }}>{chip.value}</p>
+                        <div key={chip.label} style={{ background: themeMode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', border:'1px solid rgba(148,163,184,0.22)', borderRadius:10, padding:'8px 10px', backdropFilter:'blur(6px)' }}>
+                          <p style={{ margin:0, fontSize:9, fontWeight:800, color: themeMode === 'dark' ? '#9ae6b4' : '#0f766e', textTransform:'uppercase', letterSpacing:'0.8px' }}>{chip.label}</p>
+                          <p style={{ margin:'4px 0 0', fontSize:12, fontWeight:800, color: themeMode === 'dark' ? '#ecfeff' : '#173a2d', lineHeight:1.3 }}>{chip.value}</p>
                         </div>
                       ))}
                     </div>
 
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginBottom:12 }}>
                       {aiStrategy.map((item) => (
-                        <div key={item.label} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(148,163,184,0.14)', borderRadius:10, padding:'8px 10px' }}>
-                          <p style={{ margin:0, fontSize:9, fontWeight:800, color: item.tone === 'green' ? '#9ae6b4' : item.tone === 'orange' ? '#fbbf24' : '#a5b4fc', textTransform:'uppercase', letterSpacing:'0.8px' }}>{item.label}</p>
-                          <p style={{ margin:'4px 0 0', fontSize:12, fontWeight:800, color:'#f8fafc', lineHeight:1.3 }}>{item.value}</p>
+                        <div key={item.label} style={{ background: themeMode === 'dark' ? 'rgba(255,255,255,0.03)' : '#fff', border:'1px solid rgba(148,163,184,0.22)', borderRadius:10, padding:'8px 10px' }}>
+                          <p style={{ margin:0, fontSize:9, fontWeight:800, color: item.tone === '#10b981' ? (themeMode === 'dark' ? '#9ae6b4' : '#047857') : item.tone === '#f59e0b' ? (themeMode === 'dark' ? '#fbbf24' : '#92400e') : item.tone === '#f43f5e' ? (themeMode === 'dark' ? '#fda4af' : '#be123c') : (themeMode === 'dark' ? '#a5b4fc' : '#4338ca'), textTransform:'uppercase', letterSpacing:'0.8px' }}>{item.label}</p>
+                          <p style={{ margin:'4px 0 0', fontSize:12, fontWeight:800, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', lineHeight:1.3 }}>{item.value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <p style={{ margin:'0 0 10px', fontSize:12, color:'#dbeafe', lineHeight:1.7, fontWeight:600 }}>{analytics?.insights?.summaryText || 'No insight available yet.'}</p>
-                    <ul style={{ margin:0, paddingLeft:18, color:'#d6f4ee', fontSize:12, lineHeight:1.7 }}>
+                    <p style={{ margin:'0 0 10px', fontSize:12, color: themeMode === 'dark' ? '#dbeafe' : '#334155', lineHeight:1.7, fontWeight:600 }}>{analytics?.insights?.summaryText || 'No insight available yet.'}</p>
+                    <ul style={{ margin:0, paddingLeft:18, color: themeMode === 'dark' ? '#d6f4ee' : '#334155', fontSize:12, lineHeight:1.7 }}>
                       {(analytics?.insights?.recommendedActions || []).slice(0, 4).map((action) => (
                         <li key={action}>{action}</li>
                       ))}
@@ -1545,7 +1546,7 @@ export default function AdminPage() {
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
                 <div>
                   <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>📊 Market Split Overview</h3>
-                  <p style={{ margin:'4px 0 0', fontSize:12, color:'#94a3b8' }}>How your catalog is distributed across customer markets</p>
+                  <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#aebbb4' : '#64748b' }}>How your catalog is distributed across customer markets</p>
                 </div>
                 <button style={S.linkBtn} onClick={() => openSection('products')}>Manage products →</button>
               </div>
@@ -1782,7 +1783,7 @@ export default function AdminPage() {
                               </div>
                               <div style={{ minWidth:0 }}>
                                 <p style={{ margin:'0 0 4px', fontWeight:800, color: themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontFamily:"'Sora',sans-serif", fontSize:16, lineHeight:1.35 }}>{p.name}</p>
-                                {p.description && <p style={{ margin:0, fontSize:12, color: themeMode === 'dark' ? '#a8b7b2' : '#94a3b8', lineHeight:1.5 }}>{p.description.slice(0,60)}{p.description.length>60?'…':''}</p>}
+                                {p.description && <p style={{ margin:0, fontSize:12, color: themeMode === 'dark' ? '#a8b7b2' : '#64748b', lineHeight:1.5 }}>{p.description.slice(0,60)}{p.description.length>60?'…':''}</p>}
                               </div>
                               <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:8 }}>
                                 <div style={{ fontWeight:900, color: themeMode === 'dark' ? '#a7f3d0' : '#10b981', whiteSpace:'nowrap', fontFamily:"'JetBrains Mono',monospace", fontSize:15 }}>{formatPKR(p.pricePKR)}</div>
@@ -1800,7 +1801,7 @@ export default function AdminPage() {
                             <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:8, marginTop:12, paddingTop:10, borderTop:'1px solid rgba(148,163,184,0.14)' }}>
                               <div>
                                 <div style={{ fontSize:10, letterSpacing:'0.7px', textTransform:'uppercase', color: themeMode === 'dark' ? '#9bb6af' : '#94a3b8', marginBottom:4, fontWeight:800 }}>Category</div>
-                                <span className="admin-cat-tag" style={{ ...S.catTag, display:'inline-block', background: themeMode === 'dark' ? 'rgba(59,130,246,0.16)' : '#f1f5f9', color: themeMode === 'dark' ? '#dbeafe' : '#475569' }}>{p.category}</span>
+                                <span className="admin-cat-tag" style={{ ...S.catTag, display:'inline-block', background: themeMode === 'dark' ? 'rgba(59,130,246,0.16)' : '#f1f5f9', color: themeMode === 'dark' ? '#dbeafe' : '#334155' }}>{p.category}</span>
                               </div>
                               <div>
                                 <div style={{ fontSize:10, letterSpacing:'0.7px', textTransform:'uppercase', color: themeMode === 'dark' ? '#9bb6af' : '#94a3b8', marginBottom:4, fontWeight:800 }}>Stock</div>
@@ -1812,7 +1813,7 @@ export default function AdminPage() {
                               </div>
                               <div>
                                 <div style={{ fontSize:10, letterSpacing:'0.7px', textTransform:'uppercase', color: themeMode === 'dark' ? '#9bb6af' : '#94a3b8', marginBottom:4, fontWeight:800 }}>Visibility</div>
-                                <span className={`admin-visibility-tag ${p.isVisible === false ? 'is-hidden' : 'is-visible'}`} style={{ ...S.catTag, display:'inline-block', background:p.isVisible === false ? (themeMode === 'dark' ? '#3b1d25' : '#fff1f2') : (themeMode === 'dark' ? '#133d2b' : '#ecfdf5'), color:p.isVisible === false ? '#fecdd3' : '#a7f3d0' }}>{p.isVisible === false ? 'Hidden' : 'Visible'}</span>
+                                <span className={`admin-visibility-tag ${p.isVisible === false ? 'is-hidden' : 'is-visible'}`} style={{ ...S.catTag, display:'inline-block', background:p.isVisible === false ? (themeMode === 'dark' ? '#3b1d25' : '#fff1f2') : (themeMode === 'dark' ? '#133d2b' : '#ecfdf5'), color:p.isVisible === false ? (themeMode === 'dark' ? '#fecdd3' : '#9f1239') : (themeMode === 'dark' ? '#a7f3d0' : '#047857') }}>{p.isVisible === false ? 'Hidden' : 'Visible'}</span>
                               </div>
                             </div>
                           </td>
@@ -1829,15 +1830,15 @@ export default function AdminPage() {
                           </td>
                           <td style={{ ...S.td, maxWidth:180 }}>
                             <p style={{ margin:'0 0 2px', fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontFamily:"'Sora',sans-serif" }}>{p.name}</p>
-                            {p.description && <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#a8b7b2' : '#94a3b8' }}>{p.description.slice(0,50)}{p.description.length>50?'…':''}</p>}
+                            {p.description && <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#a8b7b2' : '#64748b' }}>{p.description.slice(0,50)}{p.description.length>50?'…':''}</p>}
                           </td>
-                          <td style={S.td}><span className="admin-cat-tag" style={{ ...S.catTag, background: themeMode === 'dark' ? 'rgba(59,130,246,0.16)' : '#f1f5f9', color: themeMode === 'dark' ? '#dbeafe' : '#475569' }}>{p.category}</span></td>
+                          <td style={S.td}><span className="admin-cat-tag" style={{ ...S.catTag, background: themeMode === 'dark' ? 'rgba(59,130,246,0.16)' : '#f1f5f9', color: themeMode === 'dark' ? '#dbeafe' : '#334155' }}>{p.category}</span></td>
                           <td style={{ ...S.td, fontWeight:800, color: themeMode === 'dark' ? '#a7f3d0' : '#10b981', whiteSpace:'nowrap', fontFamily:"'JetBrains Mono',monospace" }}>{formatPKR(p.pricePKR)}</td>
                           <td style={{ ...S.td, fontWeight:800, color: themeMode === 'dark' ? '#dbeafe' : '#6366f1', whiteSpace:'nowrap', fontFamily:"'JetBrains Mono',monospace" }}>{formatUSD(p.priceUSD)}</td>
                           <td style={S.td}>{Number(p.discountPercent) > 0 ? <span className="admin-discount-chip" style={{ background: themeMode === 'dark' ? 'rgba(251,191,36,0.18)' : '#fef3c7', color: themeMode === 'dark' ? '#fef3c7' : '#a16207', borderRadius:999, padding:'4px 8px', fontWeight:800 }}>{`-${p.discountPercent}%`}</span> : '—'}</td>
                           <td style={S.td}><StockCell n={p.stock} /></td>
                           <td style={S.td}><MarketBadge isLocal={p.isLocal} /></td>
-                          <td style={S.td}><span className={`admin-visibility-tag ${p.isVisible === false ? 'is-hidden' : 'is-visible'}`} style={{ ...S.catTag, background:p.isVisible === false ? (themeMode === 'dark' ? '#3b1d25' : '#fff1f2') : (themeMode === 'dark' ? '#133d2b' : '#ecfdf5'), color:p.isVisible === false ? '#fecdd3' : '#a7f3d0' }}>{p.isVisible === false ? 'Hidden' : 'Visible'}</span></td>
+                          <td style={S.td}><span className={`admin-visibility-tag ${p.isVisible === false ? 'is-hidden' : 'is-visible'}`} style={{ ...S.catTag, background:p.isVisible === false ? (themeMode === 'dark' ? '#3b1d25' : '#fff1f2') : (themeMode === 'dark' ? '#133d2b' : '#ecfdf5'), color:p.isVisible === false ? (themeMode === 'dark' ? '#fecdd3' : '#9f1239') : (themeMode === 'dark' ? '#a7f3d0' : '#047857') }}>{p.isVisible === false ? 'Hidden' : 'Visible'}</span></td>
                           <td style={{ ...S.td, whiteSpace:'nowrap' }}>
                             <button className="edit-btn" style={{
                               ...S.editBtn,
@@ -2656,7 +2657,7 @@ const S = {
   sel:       { padding:'11px 14px', border:'1.5px solid #e2e8f0', borderRadius:11, fontSize:13, background:'#fff', cursor:'pointer', outline:'none', fontFamily:"'Sora',sans-serif", fontWeight:600, color:'#334155', boxShadow:'inset 0 1px 1px rgba(15,23,42,0.03)' },
 
   tbl:  { width:'100%', borderCollapse:'collapse', fontSize:13 },
-  th:   { textAlign:'left', padding:'10px 14px', borderBottom:'2px solid rgba(148,163,184,0.24)', color:'#94a3b8', fontWeight:700, fontSize:10, textTransform:'uppercase', letterSpacing:'.8px', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" },
+  th:   { textAlign:'left', padding:'10px 14px', borderBottom:'2px solid rgba(148,163,184,0.24)', color:'#64748b', fontWeight:800, fontSize:10, textTransform:'uppercase', letterSpacing:'.8px', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" },
   td:   { padding:'14px 14px', borderBottom:'1px solid rgba(148,163,184,0.16)', verticalAlign:'middle', color:'#334155' },
 
   catTag:    { background:'#f1f5f9', color:'#475569', padding:'3px 10px', borderRadius:6, fontSize:11, fontWeight:700, fontFamily:"'Sora',sans-serif" },

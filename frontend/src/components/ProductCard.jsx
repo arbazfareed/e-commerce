@@ -207,6 +207,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
         </span>
 
         <button
+          className="product-card-add-button"
           style={{
             ...styles.addButton,
             ...((isOut || isRestricted) ? styles.addButtonDisabled : {})
@@ -253,25 +254,29 @@ export default function ProductCard({ product: p, onAddToCart }) {
         .product-card {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .product-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 18px 38px rgba(15,23,42,0.12);
-          border-color: rgba(16,185,129,0.3);
-        }
-        .product-card:hover img {
-          transform: scale(1.06);
-        }
-        .product-card:hover button:not(:disabled) {
-          background: linear-gradient(135deg,#059669,#047857) !important;
-        }
-        .product-card:hover .product-image-nav {
-          background: rgba(0,0,0,0.72) !important;
-          transform: translateY(-50%) !important;
+        @media (hover:hover) and (pointer:fine) {
+          .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 38px rgba(15,23,42,0.12);
+            border-color: rgba(16,185,129,0.3);
+          }
+          .product-card:hover img { transform: scale(1.04); }
+          .product-card:hover .product-card-add-button {
+            background: linear-gradient(135deg,#059669,#047857) !important;
+          }
+          .product-card:hover .product-image-nav {
+            background: rgba(0,0,0,0.72) !important;
+            transform: translateY(-50%) !important;
+          }
         }
         @media (max-width: 760px) {
           .product-image-nav {
             opacity: .92 !important;
           }
+        }
+        @media (hover:none) {
+          .product-card:hover { transform:none; }
+          .product-card:hover img { transform:none; }
         }
       `}</style>
     </article>
@@ -281,7 +286,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
 const styles = {
   card: {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,252,250,0.98) 100%)',
-    borderRadius: '20px',
+    borderRadius: '22px',
     overflow: 'hidden',
     border: '1px solid rgba(20,100,70,0.12)',
     transition: 'all 0.22s ease',
@@ -290,7 +295,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     position: 'relative',
-    boxShadow: '0 22px 34px rgba(11, 58, 42, 0.08)',
+    boxShadow: '0 16px 34px rgba(11, 58, 42, 0.08)',
     backdropFilter: 'blur(10px)',
   },
   imageWrapper: {
@@ -478,7 +483,7 @@ const styles = {
     borderRadius: '20px',
   },
   content: {
-    padding: '14px 15px 15px',
+    padding: '16px 17px 17px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',

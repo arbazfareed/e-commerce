@@ -13,7 +13,7 @@ export function MarketBadge({ isLocal }) {
     <span className="admin-market-badge" data-market={isLocal ? 'local' : 'global'} style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       background: isLocal ? '#ecfdf5' : '#eff6ff',
-      color: isLocal ? '#059669' : '#2563eb',
+      color: isLocal ? '#047857' : '#1d4ed8',
       border: `1px solid ${isLocal ? '#bbf7d0' : '#bfdbfe'}`,
       padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',
     }}>

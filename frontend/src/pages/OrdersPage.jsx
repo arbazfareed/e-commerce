@@ -27,7 +27,7 @@ export default function OrdersPage() {
   const [error,   setError]   = useState('');
   const [open,    setOpen]    = useState(null);   // expanded order id
   const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
-  const [isCompact, setIsCompact] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 520 : false);
+  const [isCompact, setIsCompact] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 760 : false);
   const isDark = themeMode === 'dark';
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function OrdersPage() {
       setThemeMode(next);
     };
 
-    const syncCompact = () => setIsCompact(window.innerWidth <= 520);
+    const syncCompact = () => setIsCompact(window.innerWidth <= 760);
 
     syncTheme();
     syncCompact();
@@ -57,7 +57,7 @@ export default function OrdersPage() {
   }, []);
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', fontFamily:"'DM Sans',sans-serif", background: isDark ? '#0b1510' : '#f8fafc' }}>
+    <div className="responsive-page orders-page orders-page-loading" style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', fontFamily:"'DM Sans',sans-serif", background: isDark ? '#0b1510' : '#f8fafc' }}>
       <div style={{ textAlign:'center' }}>
         <div style={{ width:'36px', height:'36px', border:'3px solid #e2e8f0', borderTop:'3px solid #10b981', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }} />
         <p style={{ color: isDark ? '#d8f5e5' : '#64748b', marginTop:'12px' }}>Loading orders…</p>
@@ -77,7 +77,7 @@ export default function OrdersPage() {
   );
 
   if (!orders.length) return (
-    <div style={{ minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',sans-serif" }}>
+    <div className="responsive-page orders-page" style={{ minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',sans-serif", background: isDark ? '#0b1510' : '#f8fafc' }}>
       <div style={{ textAlign:'center', background:'#fff', borderRadius:'22px', padding:'60px 48px', border:'1px solid #e2e8f0', boxShadow:'0 4px 24px rgba(0,0,0,0.07)' }}>
         <p style={{ fontSize:'64px', margin:0 }}>📦</p>
         <h2 style={{ margin:'16px 0 8px', color:'#1e293b' }}>No orders yet</h2>
@@ -91,7 +91,7 @@ export default function OrdersPage() {
 
   return (
     <div className="responsive-page orders-page" style={{ ...S.page, background: isDark ? 'radial-gradient(circle at top, rgba(21,42,33,0.9) 0%, rgba(11,21,16,0.92) 42%, rgba(6,10,9,0.98) 100%)' : '#f8fafc' }}>
-      <div style={{ ...S.wrap, maxWidth:'760px' }}>
+      <div style={{ ...S.wrap, maxWidth:'980px' }}>
         <div style={{ marginBottom:'28px' }}>
           <h1 style={{ margin:'0 0 6px', fontSize:'26px', fontWeight:'900', color: isDark ? '#f1fff6' : '#0f172a' }}>📦 My Orders</h1>
           <p style={{ margin:0, fontSize:'14px', color: isDark ? '#b9d1c4' : '#64748b' }}>{orders.length} order{orders.length !== 1 ? 's':''} total</p>
@@ -121,46 +121,45 @@ export default function OrdersPage() {
                   onClick={() => setOpen(isOpen ? null : order._id)}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(isOpen ? null : order._id); } }}
                 >
-                  <div style={{ display:'grid', gridTemplateColumns: isCompact ? 'repeat(2, minmax(0, 1fr))' : 'auto', alignItems:'center', gap:isCompact ? '12px 10px' : '16px', flexWrap:'wrap', flex:1 }}>
-                    <div>
-                      <p style={{ margin:0, fontSize:'12px', color: isDark ? '#a7b8b0' : '#94a3b8', fontWeight:'600' }}>ORDER</p>
-                      <p style={{ margin:0, fontWeight:'800', fontSize:'14px', color: isDark ? '#dfefff' : '#6366f1', fontFamily:'monospace' }}>
-                        #{order._id.slice(-8).toUpperCase()}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin:0, fontSize:'12px', color: isDark ? '#a7b8b0' : '#94a3b8', fontWeight:'600' }}>DATE</p>
-                      <p style={{ margin:0, fontSize:'13px', fontWeight:'600', color: isDark ? '#edf9f3' : '#334155' }}>
-                        {new Date(order.createdAt).toLocaleDateString('en-PK', { day:'numeric', month:'short', year:'numeric' })}
-                      </p>
-                    </div>
-                    <div>
-                      <p style={{ margin:0, fontSize:'12px', color: isDark ? '#a7b8b0' : '#94a3b8', fontWeight:'600' }}>TOTAL</p>
-                      <p style={{ margin:0, fontSize:'16px', fontWeight:'900', color: isDark ? '#a9f5c8' : '#10b981' }}>{formatPKR(order.totalPrice)}</p>
-                    </div>
-                    <div>
-                      <p style={{ margin:0, fontSize:'12px', color: isDark ? '#a7b8b0' : '#94a3b8', fontWeight:'600' }}>PAYMENT</p>
-                      <p style={{ margin:0, fontSize:'13px', fontWeight:'600', color: isDark ? '#d6c9ff' : '#7c3aed' }}>{order.paymentMethod}</p>
-                      <p style={{ margin:0, fontSize:'10px', color: isDark ? '#b9d1c4' : '#64748b' }}>Status: {order.paymentStatus || (order.isPaid ? 'paid' : 'pending')}</p>
-                    </div>
-                    {isCompact && (
-                      <div style={{ gridColumn:'1 / -1' }}>
-                        <StatusBadge status={order.status} isDark={isDark} />
+                  <div style={{ display:'grid', gridTemplateColumns:isCompact ? '1fr' : 'minmax(0,1fr) auto', alignItems:'center', gap:isCompact ? '14px' : '24px', flex:1, minWidth:0 }}>
+                    <div style={{ display:'grid', gridTemplateColumns:isCompact ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))', alignItems:'center', gap:isCompact ? '12px 10px' : '12px 18px', minWidth:0 }}>
+                      <div>
+                        <p style={{ margin:0, fontSize:'11px', color: isDark ? '#a7b8b0' : '#64748b', fontWeight:'700', letterSpacing:'.45px' }}>ORDER</p>
+                        <p style={{ margin:'2px 0 0', fontWeight:'800', fontSize:'14px', color: isDark ? '#dfefff' : '#4f46e5', fontFamily:'monospace' }}>
+                          #{order._id.slice(-8).toUpperCase()}
+                        </p>
                       </div>
-                    )}
-                    {!isCompact && <StatusBadge status={order.status} isDark={isDark} />}
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:isCompact ? 'space-between' : 'center', gap:'8px', flexShrink:0, width:isCompact ? '100%' : 'auto', marginTop:isCompact ? '8px' : '0' }}>
-                    <Link
-                      to={`/orders/${order._id}`}
-                      onClick={e => e.stopPropagation()}
-                      style={{ padding:'7px 16px', background:'linear-gradient(135deg,#2c4842,#18372e)', color:'#ffffff', borderRadius:'9px', fontSize:'12px', fontWeight:'800', textDecoration:'none', whiteSpace:'nowrap', boxShadow:'0 3px 10px rgba(20,46,39,0.38)', border:'1px solid rgba(160, 234, 188, 0.18)' }}
-                    >
-                      📍 Track
-                    </Link>
-                    <span style={{ fontSize:'18px', color: isDark ? '#dbe9e2' : '#94a3b8', userSelect:'none' }}>
-                      {isOpen ? '▲' : '▼'}
-                    </span>
+                      <div>
+                        <p style={{ margin:0, fontSize:'11px', color: isDark ? '#a7b8b0' : '#64748b', fontWeight:'700', letterSpacing:'.45px' }}>DATE</p>
+                        <p style={{ margin:'2px 0 0', fontSize:'13px', fontWeight:'600', color: isDark ? '#edf9f3' : '#334155' }}>
+                          {new Date(order.createdAt).toLocaleDateString('en-PK', { day:'numeric', month:'short', year:'numeric' })}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ margin:0, fontSize:'11px', color: isDark ? '#a7b8b0' : '#64748b', fontWeight:'700', letterSpacing:'.45px' }}>TOTAL</p>
+                        <p style={{ margin:'2px 0 0', fontSize:'16px', fontWeight:'900', color: isDark ? '#a9f5c8' : '#047857' }}>{formatPKR(order.totalPrice)}</p>
+                      </div>
+                      <div>
+                        <p style={{ margin:0, fontSize:'11px', color: isDark ? '#a7b8b0' : '#64748b', fontWeight:'700', letterSpacing:'.45px' }}>PAYMENT</p>
+                        <p style={{ margin:'2px 0 0', fontSize:'13px', fontWeight:'700', color: isDark ? '#d6c9ff' : '#6d28d9' }}>{order.paymentMethod}</p>
+                        <p style={{ margin:'2px 0 0', fontSize:'10px', color: isDark ? '#b9d1c4' : '#64748b' }}>Status: {order.paymentStatus || (order.isPaid ? 'paid' : 'pending')}</p>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:isCompact ? 'row' : 'column', alignItems:isCompact ? 'center' : 'flex-end', justifyContent:isCompact ? 'space-between' : 'center', gap:'10px', width:isCompact ? '100%' : 'auto', gridColumn:isCompact ? '1' : 'auto' }}>
+                      <StatusBadge status={order.status} isDark={isDark} />
+                      <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                        <Link
+                          to={`/orders/${order._id}`}
+                          onClick={e => e.stopPropagation()}
+                          style={{ padding:'8px 16px', background:'linear-gradient(135deg,#2c4842,#18372e)', color:'#ffffff', borderRadius:'10px', fontSize:'12px', fontWeight:'800', textDecoration:'none', whiteSpace:'nowrap', boxShadow:'0 3px 10px rgba(20,46,39,0.3)', border:'1px solid rgba(160, 234, 188, 0.18)' }}
+                        >
+                          📍 Track order
+                        </Link>
+                        <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:34, height:34, borderRadius:10, background:isDark ? 'rgba(255,255,255,.06)' : '#f1f5f9', fontSize:'14px', color: isDark ? '#dbe9e2' : '#64748b', userSelect:'none' }} aria-hidden="true">
+                          {isOpen ? '▲' : '▼'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

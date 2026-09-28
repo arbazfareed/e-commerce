@@ -240,14 +240,14 @@ sequenceDiagram
     API->>Product: Reload products and validate visibility, market, variants, stock
     Product-->>API: Current prices, stock, variants, weight
     API->>Settings: Read COD configuration
-    API->>API: Calculate prices, shipping, fees and paymentStatus=pending
-    API->>Product: Reserve/decrement stock
+    API->>API: Recalculate totals and mark payment pending
+    API->>Product: Reserve stock
     API->>Order: Create order snapshot
     Order-->>API: Persisted order
-    API--)Courier: Attempt async dispatch (currently not_configured/unsupported)
+    API-->>Courier: Schedule asynchronous dispatch attempt when configured
     API-->>UI: 201 order and pending payment status
     UI->>Cart: Clear cart after successful order
-    UI-->>Customer: Confirmation; online payment is not claimed as captured
+    UI-->>Customer: Show confirmation and explain online payment was not captured
 ```
 
 ## 5. Support-ticket sequence
@@ -407,7 +407,7 @@ flowchart LR
     Browser1["browser-1: BrowserStorage<br/>cart + recentlyViewed"]
 
     User1 --> Order1
-    Order1 *-- Item1
+    Order1 -->|embeds| Item1
     Item1 --> Product1
     User1 --> Ticket1
     Browser1 --> Product1
@@ -572,28 +572,28 @@ flowchart TB
         AppRoutes[AppRoutes + shared Navbar]
         Browser --> ErrorBoundary --> AuthProvider --> CartProvider --> AppRoutes
 
-        AppRoutes --> RootRoute[/: RootRoute]
+        AppRoutes --> RootRoute["Root route /"]
         RootRoute -->|guest/customer| Home[HomePage]
         RootRoute -->|admin redirect| Admin[AdminPage]
-        AppRoutes --> ProductDetail[ProductDetailPage /products/:id]
+        AppRoutes --> ProductDetail["ProductDetailPage /products/:id"]
         AppRoutes --> GuestGuard[GuestRoute]
-        GuestGuard --> Login[LoginPage /login]
-        GuestGuard --> Register[RegisterPage /register]
-        AppRoutes --> Reset[PasswordResetPage /reset-password/:token]
+        GuestGuard --> Login["LoginPage /login"]
+        GuestGuard --> Register["RegisterPage /register"]
+        AppRoutes --> Reset["PasswordResetPage /reset-password/:token"]
         AppRoutes --> PrivateGuard[PrivateRoute]
-        PrivateGuard --> Cart[CartPage /cart]
-        PrivateGuard --> Orders[OrdersPage /orders]
-        PrivateGuard --> Track[OrderTrackPage /orders/:id]
+        PrivateGuard --> Cart["CartPage /cart"]
+        PrivateGuard --> Orders["OrdersPage /orders"]
+        PrivateGuard --> Track["OrderTrackPage /orders/:id"]
         AppRoutes --> AdminGuard[AdminRoute]
         AdminGuard --> Admin
-        AppRoutes --> Support[SupportPage /support]
+        AppRoutes --> Support["SupportPage /support"]
         AppRoutes --> NotFound[NotFoundPage / wildcard]
 
         Home --> ProductCard[ProductCard]
         ProductDetail --> CartProvider
         Cart --> CartProvider
-        Orders --> API[axiosConfig / VITE_API_URL]
-        Admin --> AdminAPI[pages/admin/adminApi]
+        Orders --> API["axiosConfig / VITE_API_URL"]
+        Admin --> AdminAPI["pages/admin/adminApi"]
         AuthProvider --> API
         ProductDetail --> API
         Cart --> API
@@ -610,18 +610,18 @@ one-time token; it does not create a logged-in session.
 
 ```mermaid
 flowchart LR
-        Client[React page / adminApi]
-        Axios[axiosConfig: API_BASE + JWT header]
+        Client["React page / adminApi"]
+        Axios["axiosConfig: API_BASE and JWT header"]
         Server[Express server.js]
         Stack[CORS, Helmet, JSON limit, uploads static]
         Router{Route prefix}
-        Guard[protect / admin / optionalProtect]
+        Guard["protect / admin / optionalProtect"]
         Controller[Controller validation + orchestration]
         Models[(Mongoose models / MongoDB)]
         Utilities[Business utilities]
-        Uploads[(backend/uploads)]
-        Courier[courierService adapter seam]
-        Mail[emailService: Resend HTTPS API]
+        Uploads["backend/uploads"]
+        Courier["courierService adapter seam"]
+        Mail["emailService: Resend HTTPS API"]
 
         Client --> Axios --> Server --> Stack --> Router
         Router --> Guard --> Controller
@@ -632,12 +632,12 @@ flowchart LR
         Controller --> Mail
         Mail --> Resend[api.resend.com]
 
-        subgraph Prefixes[Express route prefixes]
-            AuthRoute[/api/auth]
-            ProductRoute[/api/products]
-            OrderRoute[/api/orders]
-            SupportRoute[/api/support]
-            SettingRoute[/api/settings]
+        subgraph Prefixes["Express route prefixes"]
+            AuthRoute["/api/auth"]
+            ProductRoute["/api/products"]
+            OrderRoute["/api/orders"]
+            SupportRoute["/api/support"]
+            SettingRoute["/api/settings"]
         end
         Router --> Prefixes
 ```
@@ -677,16 +677,16 @@ sequenceDiagram
         API->>Guard: Verify JWT and isAdmin
         Guard->>Auth: Allow reset request
         Auth->>User: Find non-admin account
-        Auth->>Auth: Generate random token; store SHA-256 hash + 20-minute expiry
+        Auth->>Auth: Generate random token, store its SHA-256 hash, set 20-minute expiry
         Auth->>Mail: Send reset URL to customer's registered email
         Mail->>Resend: POST email request (server-side API key)
         Resend-->>Customer: Email with one-time reset link
         Auth-->>AdminUI: Sent confirmation, or delivery error
         Customer->>ResetUI: Open /reset-password/:token
         Customer->>ResetUI: Enter and confirm new password
-        ResetUI->>API: POST /api/auth/password/reset (token + new password)
+        ResetUI->>API: POST /api/auth/password/reset with token and new password
         API->>Auth: Rate-limit and validate request
-        Auth->>User: Hash submitted token; find matching unexpired hash
+        Auth->>User: Hash submitted token and find matching unexpired hash
         Auth->>User: Atomically claim token, then save bcrypt password hash
         Auth-->>ResetUI: Success; token can no longer be reused
 ```

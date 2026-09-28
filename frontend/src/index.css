@@ -150,6 +150,17 @@ img, svg, video, canvas { max-width: 100%; }
 
 button, input, textarea, select { max-width: 100%; }
 
+button:active:not(:disabled) { transform:scale(.985); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior:auto !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+
 #root {
   min-height: 100vh;
 }
@@ -196,10 +207,16 @@ button, input, textarea, select { max-width: 100%; }
   overflow-wrap: anywhere;
 }
 
+.cat-container,
+.subcat-container {
+  justify-content: safe center;
+  scroll-padding-inline: 24px;
+}
+
 .product-row {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(240px, 300px)) !important;
-  justify-content: center;
+  justify-content: start;
   align-items: stretch;
   gap: 20px;
   overflow: visible;
@@ -1335,3 +1352,27 @@ button, input, textarea, select { max-width: 100%; }
   color:#c1f0ce !important;
 }
 :root[data-theme='dark'] .related-products-grid a > span { color:#b8f0c8 !important; }
+
+/* Keep order history atmospheric without competing with order details. */
+:root:not([data-theme='dark']) .orders-page,
+:root:not([data-theme='dark']) .track-page {
+  background-color:#f8fafc !important;
+  background-image:linear-gradient(145deg,rgba(248,250,252,.9),rgba(248,250,252,.95)),url('/hero-cover.svg') !important;
+  background-position:center top !important;
+  background-size:cover !important;
+  background-attachment:fixed !important;
+}
+:root[data-theme='dark'] .orders-page,
+:root[data-theme='dark'] .track-page {
+  background-color:#0b1510 !important;
+  background-image:linear-gradient(145deg,rgba(7,15,12,.78),rgba(6,10,9,.88)),url('/hero-cover.svg') !important;
+  background-position:center top !important;
+  background-size:cover !important;
+  background-attachment:fixed !important;
+}
+@media (max-width:760px) {
+  :root:not([data-theme='dark']) .orders-page,
+  :root:not([data-theme='dark']) .track-page,
+  :root[data-theme='dark'] .orders-page,
+  :root[data-theme='dark'] .track-page { background-attachment:scroll !important; }
+}

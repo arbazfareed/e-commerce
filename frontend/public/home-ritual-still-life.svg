@@ -1,0 +1,62 @@
+<svg width="1600" height="760" viewBox="0 0 1600 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="scene" x1="170" y1="70" x2="1450" y2="740" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102B25"/>
+      <stop offset=".55" stop-color="#183A30"/>
+      <stop offset="1" stop-color="#292A1B"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(-410 360 -330 -376 1330 175)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8B977" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#D8B977" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="1010" y1="285" x2="1290" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B8E2C9" stop-opacity=".82"/>
+      <stop offset=".22" stop-color="#4F806A" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#163B30" stop-opacity=".96"/>
+    </linearGradient>
+    <linearGradient id="label" x1="1048" y1="397" x2="1242" y2="528" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4E5C2"/>
+      <stop offset="1" stop-color="#D8B977"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="1057" y1="252" x2="1234" y2="306" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E6D19B"/>
+      <stop offset="1" stop-color="#A67A43"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="911" y="520" width="540" height="192" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <filter id="leaf-shadow" x="788" y="77" width="739" height="550" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="760" fill="url(#scene)"/>
+  <rect width="1600" height="760" fill="url(#glow)"/>
+  <path d="M0 650C250 594 432 701 671 634C874 577 1044 647 1250 591C1400 550 1515 575 1600 548V760H0V650Z" fill="#0A241F" fill-opacity=".58"/>
+  <path d="M0 684C252 627 438 735 670 670C902 605 1089 687 1290 624C1410 586 1521 609 1600 584" stroke="#D8B977" stroke-opacity=".3" stroke-width="2"/>
+  <g filter="url(#leaf-shadow)" opacity=".76">
+    <path d="M1390 96C1250 104 1184 188 1196 292C1302 269 1373 211 1390 96Z" fill="#57866A" fill-opacity=".74"/>
+    <path d="M1391 101C1345 159 1292 208 1206 283" stroke="#B8D2A5" stroke-opacity=".55" stroke-width="4"/>
+    <path d="M1465 178C1358 175 1292 235 1276 327C1373 321 1441 274 1465 178Z" fill="#315F4B" fill-opacity=".84"/>
+    <path d="M1459 184C1405 229 1355 271 1284 319" stroke="#A5C496" stroke-opacity=".5" stroke-width="3"/>
+    <path d="M1018 120C1086 125 1137 173 1144 244C1079 230 1036 188 1018 120Z" fill="#6A9270" fill-opacity=".74"/>
+    <path d="M1022 126C1055 163 1085 194 1138 239" stroke="#C0D2A5" stroke-opacity=".48" stroke-width="3"/>
+  </g>
+  <ellipse cx="1169" cy="620" rx="218" ry="47" fill="#050F0D" fill-opacity=".68" filter="url(#soft-shadow)"/>
+  <path d="M1035 333C1035 307 1056 286 1082 286H1218C1244 286 1265 307 1265 333V559C1265 590 1240 615 1209 615H1091C1060 615 1035 590 1035 559V333Z" fill="url(#glass)" stroke="#D9E6C9" stroke-opacity=".42" stroke-width="3"/>
+  <path d="M1062 329C1062 315 1073 304 1087 304H1105V590H1091C1075 590 1062 577 1062 561V329Z" fill="#D6F0D8" fill-opacity=".2"/>
+  <path d="M1056 266C1056 253 1067 242 1080 242H1220C1233 242 1244 253 1244 266V286H1056V266Z" fill="url(#lid)" stroke="#F3E6C4" stroke-opacity=".5" stroke-width="2"/>
+  <rect x="1101" y="213" width="97" height="31" rx="8" fill="#D8C28E"/>
+  <path d="M1147 212V192C1147 181 1156 172 1167 172H1230" stroke="#D8C28E" stroke-width="15" stroke-linecap="round"/>
+  <path d="M1058 390C1058 379 1067 370 1078 370H1222C1233 370 1242 379 1242 390V516H1058V390Z" fill="url(#label)" fill-opacity=".96"/>
+  <path d="M1086 418H1214" stroke="#315744" stroke-opacity=".48" stroke-width="3"/>
+  <path d="M1110 450C1122 430 1147 430 1159 450C1147 470 1122 470 1110 450Z" fill="#537D58"/>
+  <path d="M1135 472C1147 452 1172 452 1184 472C1172 492 1147 492 1135 472Z" fill="#75925B"/>
+  <text x="1150" y="500" fill="#294936" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2" text-anchor="middle">BOTANICAL</text>
+  <circle cx="1374" cy="563" r="73" fill="#D8B977" fill-opacity=".82"/>
+  <circle cx="1374" cy="563" r="57" fill="#F3D58B" fill-opacity=".8"/>
+  <circle cx="1374" cy="563" r="46" fill="#DFAF58" fill-opacity=".82"/>
+  <circle cx="1374" cy="563" r="8" fill="#F6E6B4"/>
+  <path d="M1374 517V555M1374 571V609M1328 563H1366M1382 563H1420M1342 531L1369 558M1379 568L1406 595M1406 531L1379 558M1369 568L1342 595" stroke="#F7E8BD" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="920" cy="252" r="4" fill="#E8D49C" fill-opacity=".7"/>
+  <circle cx="1480" cy="389" r="3" fill="#B8D2A5" fill-opacity=".68"/>
+</svg>
