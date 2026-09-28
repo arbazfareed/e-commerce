@@ -10,11 +10,13 @@ This index explains which document answers which project question.
 | SRD / requirements | [`SRD.md`](./SRD.md) | Scope, stakeholders, functional requirements, acceptance criteria, NFRs, and release gates |
 | API reference | [`API_REFERENCE.md`](./API_REFERENCE.md) | Endpoints, authentication levels, fields, statuses, and API limitations |
 | Architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System, deployment, request-flow, and data-model diagrams |
+| UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Current use-case, class, component, checkout, support, and upload UML views |
 | Technical guide | [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Code structure, security model, local development, and Docker |
 | User guide | [`USER_GUIDE.md`](./USER_GUIDE.md) | Customer and administrator workflows |
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |
 | Android runbook | [`ANDROID_GUIDE.md`](./ANDROID_GUIDE.md) | Capacitor builds, GitHub APK artifacts, signing limitations |
 | Test plan | [`TESTING_GUIDE.md`](./TESTING_GUIDE.md) | Unit, integration, UI, Selenium, and manual QA coverage |
+| QA checklist pack | [`qa/README.md`](./qa/README.md) | Implementation-aware boundary, UI/UX, API, security, accessibility, and regression checks |
 | Deployment runbook | [`PRODUCTION_DEPLOYMENT.md`](./PRODUCTION_DEPLOYMENT.md) | Public hosting, HTTPS, storage, backups, monitoring, payments, and legal gates |
 | Release checklist | [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) | Merge, APK, and production sign-off |
 | Security policy | [`../SECURITY.md`](../SECURITY.md) | Secret handling and vulnerability reporting |

@@ -36,6 +36,7 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false);
   const [error,   setError]   = useState('');
   const [orderId, setOrderId] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState('pending');
   const [checkoutSettings, setCheckoutSettings] = useState(null);
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function CartPage() {
         paymentMethod: payment,
       });
       setOrderId(data._id);
+      setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));
       clearCart();
       setStep('success');
     } catch (err) {
@@ -117,8 +119,12 @@ export default function CartPage() {
         </p>
         <p style={{ margin:'0 0 30px', fontSize:'13px', color:'#64748b', lineHeight:'1.6' }}>
           {payment === 'COD'
-            ? '💵 You will pay cash when your order arrives at your doorstep.'
-            : `Payment via ${payment} has been noted.`}
+            ? paymentStatus === 'paid'
+              ? '💵 Payment received.'
+              : '💵 Cash is due when your order arrives. No payment has been collected yet.'
+            : paymentStatus === 'paid'
+              ? `Payment via ${payment} is confirmed.`
+              : `Payment via ${payment} is pending. This order flow has not captured your payment.`}
         </p>
         <div style={{ display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap' }}>
           <button style={S.greenBtn} onClick={() => navigate('/orders')}>📦 View My Orders</button>
@@ -216,7 +222,7 @@ export default function CartPage() {
                     <div style={S.qtyBox}>
                       <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity - 1)}>−</button>
                       <span style={S.qtyNum}>{item.quantity}</span>
-                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)}>+</button>
+                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)} disabled={Number.isFinite(Number(item.stock)) && item.quantity >= Number(item.stock)} aria-label={`Increase ${item.name} quantity`}>+</button>
                     </div>
 
                     {/* Subtotal */}

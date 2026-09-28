@@ -24,3 +24,12 @@ test('rejects a short staging JWT secret', () => {
 
   process.env = previous;
 });
+
+test('User model requires passwords to be at least eight characters', () => {
+  const User = require('../models/User');
+  const shortPassword = new User({ name: 'Test User', email: 'test@example.com', password: '1234567' });
+  const validPassword = new User({ name: 'Test User', email: 'test@example.com', password: '12345678' });
+
+  assert.equal(shortPassword.validateSync().errors.password.kind, 'minlength');
+  assert.equal(validPassword.validateSync(), undefined);
+});

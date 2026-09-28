@@ -2,8 +2,10 @@ const Order   = require('../models/Order');
 const Product = require('../models/Product');
 const { getActiveDiscountPercent, getDiscountedUnitPrice } = require('../utils/discountPricing');
 const { buildSalesAnalytics } = require('../utils/salesAnalytics');
+const { validateManualCashSale } = require('../utils/manualCashSale');
 const SystemSettings = require('../models/SystemSettings');
 const { dispatchOrder } = require('../services/courierService');
+const { isOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -20,8 +22,6 @@ const DEFAULT_ZONE_RATES = {
 };
 
 const PAYMENT_METHODS = new Set(['COD', 'Cash', 'Manual Cash', 'JazzCash', 'EasyPaisa', 'Stripe', 'PayPal']);
-const ORDER_STATUSES = new Set(['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']);
-
 const ZONE_MAP = {
   india:'south_asia', bangladesh:'south_asia', 'sri lanka':'south_asia',
   nepal:'south_asia', bhutan:'south_asia', maldives:'south_asia',
@@ -166,10 +166,19 @@ const placeOrder = async (req, res) => {
       user: req.user._id, products: enrichedItems,
       productTotal, shippingFee, codFee, totalWeight, shippingZone, totalPrice,
       address, paymentMethod, paymentChannel,
-      isPaid: paymentChannel === 'cash' || paymentMethod === 'COD',
-      paidAt: paymentChannel === 'cash' || paymentMethod === 'COD' ? new Date() : null,
+      isPaid: false,
+      paymentStatus: 'pending',
+      paidAt: null,
+      courierDispatchStatus: 'pending',
     });
-    dispatchOrder(order).catch((error) => console.error('Courier dispatch failed:', error.message));
+    dispatchOrder(order)
+      .then(result => Order.findByIdAndUpdate(order._id, {
+        courierDispatchStatus: result.dispatched ? 'dispatched' : (result.status || 'unsupported'),
+      }))
+      .catch(error => {
+        console.error('Courier dispatch failed:', error.message);
+        return Order.findByIdAndUpdate(order._id, { courierDispatchStatus: 'failed' });
+      });
     res.status(201).json(order);
   } catch (e) {
     for (const item of reservedItems)
@@ -211,24 +220,23 @@ const getSalesAnalytics = async (req, res) => {
 const recordManualCashSale = async (req, res) => {
   try {
     const { products, amount, notes, paidAt } = req.body || {};
-    if (amount !== undefined && (!Number.isFinite(Number(amount)) || Number(amount) < 0))
-      return res.status(400).json({ message: 'Manual cash amount must be a non-negative number.' });
-    const items = Array.isArray(products) && products.length ? products : [{
-      name: 'Manual cash sale',
-      quantity: 1,
-      price: Number(amount) || 0,
-    }];
-    const totalAmount = Number(amount) || items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    const validated = validateManualCashSale({ products, amount });
+    if (validated.error) return res.status(400).json({ message: validated.error });
+    if (paidAt !== undefined && Number.isNaN(new Date(paidAt).getTime()))
+      return res.status(400).json({ message: 'Collection time must be a valid date.' });
+    if (notes !== undefined && typeof notes !== 'string')
+      return res.status(400).json({ message: 'Notes must be text.' });
+    const { items, totalAmount } = validated;
 
     const manualOrder = await Order.create({
       user: req.user._id,
       products: items.map((item) => ({
         product: null,
-        name: item.name || 'Manual cash sale',
-        price: Number(item.price || 0),
-        originalPrice: Number(item.price || 0),
+        name: item.name,
+        price: item.price,
+        originalPrice: item.price,
         discountPercent: 0,
-        quantity: Number(item.quantity || 1),
+        quantity: item.quantity,
         image: '',
         selectedColor: '',
         selectedSize: '',
@@ -244,6 +252,7 @@ const recordManualCashSale = async (req, res) => {
       paymentMethod: 'Cash',
       paymentChannel: 'cash',
       isPaid: true,
+      paymentStatus: 'paid',
       paidAt: paidAt ? new Date(paidAt) : new Date(),
       isManualCash: true,
       cashCollectedAt: paidAt ? new Date(paidAt) : new Date(),
@@ -262,15 +271,22 @@ const updateOrderStatus = async (req, res) => {
   try {
     const o = await Order.findById(req.params.id);
     if (!o) return res.status(404).json({ message: 'Order not found.' });
-    if (req.body.status && !ORDER_STATUSES.has(req.body.status))
+    const nextStatus = req.body?.status;
+    if (!isOrderStatus(nextStatus))
       return res.status(400).json({ message: 'Invalid order status.' });
-    if (req.body.status === 'Cancelled' && o.status !== 'Cancelled')
+    const previousStatus = o.status;
+    if (nextStatus === 'Cancelled' && shouldRestoreStockAfterCancellation(previousStatus))
       for (const item of o.products) {
         if (item.product)
           await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
       }
-    o.status = req.body.status || o.status;
-    if (req.body.status === 'Delivered') { o.isPaid = true; o.paidAt = new Date(); }
+    if (nextStatus === 'Cancelled' && !o.isPaid) o.paymentStatus = 'cancelled';
+    o.status = nextStatus;
+    if (nextStatus === 'Delivered' && ['COD', 'Cash'].includes(o.paymentMethod)) {
+      o.isPaid = true;
+      o.paymentStatus = 'paid';
+      o.paidAt = new Date();
+    }
     res.json(await o.save());
   } catch (e) { res.status(500).json({ message: e.message }); }
 };

@@ -47,9 +47,14 @@ export const CartProvider = ({ children }) => {
     setItems(prev => {
       const variantKey = `${product._id}|${options.color || ''}|${options.size || ''}`;
       const exists = prev.find(i => getCartItemKey(i) === variantKey);
+      const stock = Number(product.stock);
+      const maxQuantity = Number.isFinite(stock) ? Math.max(0, Math.floor(stock)) : 99;
+      if (maxQuantity < 1) return prev;
+      const requestedQuantity = Number(quantity);
+      if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) return prev;
       return exists
-        ? prev.map(i => getCartItemKey(i) === variantKey ? { ...i, quantity: i.quantity + quantity } : i)
-        : [...prev, { ...product, quantity, selectedColor: options.color || '', selectedSize: options.size || '' }];
+        ? prev.map(i => getCartItemKey(i) === variantKey ? { ...i, quantity: Math.min(maxQuantity, (Number(i.quantity) || 0) + requestedQuantity) } : i)
+        : [...prev, { ...product, quantity: Math.min(maxQuantity, requestedQuantity), selectedColor: options.color || '', selectedSize: options.size || '' }];
     });
 
   const removeFromCart = (itemOrId, options = {}) => {
@@ -62,11 +67,17 @@ export const CartProvider = ({ children }) => {
   const updateQty = (itemOrId, qty, options = {}) => {
     const item = typeof itemOrId === 'object' ? itemOrId : { _id: itemOrId, ...options };
     const key = getCartItemKey(item);
-    if (qty < 1) {
+    const requestedQuantity = Math.floor(Number(qty) || 0);
+    if (requestedQuantity < 1) {
       setItems(prev => prev.filter(i => getCartItemKey(i) !== key));
       return;
     }
-    setItems(prev => prev.map(i => getCartItemKey(i) === key ? { ...i, quantity: qty } : i));
+    setItems(prev => prev.map(i => {
+      if (getCartItemKey(i) !== key) return i;
+      const stock = Number(i.stock);
+      const maxQuantity = Number.isFinite(stock) ? Math.max(1, Math.floor(stock)) : 99;
+      return { ...i, quantity: Math.min(maxQuantity, requestedQuantity) };
+    }));
   };
 
   const clearCart = () => setItems([]);
@@ -81,6 +92,9 @@ export const CartProvider = ({ children }) => {
 
 export const useCart = () => {
   const ctx = useContext(CartContext);
-  if (!ctx) return { items: [], addToCart:()=>{}, removeFromCart:()=>{}, updateQty:()=>{}, clearCart:()=>{}, totalItems:0, recentlyViewed:[], addToRecentlyViewed:()=>{} };
+  if (!ctx) {
+    if (import.meta.env.DEV) throw new Error('useCart must be used inside a CartProvider.');
+    return { items: [], addToCart:()=>{}, removeFromCart:()=>{}, updateQty:()=>{}, clearCart:()=>{}, totalItems:0, recentlyViewed:[], addToRecentlyViewed:()=>{} };
+  }
   return ctx;
 };

@@ -76,12 +76,13 @@ require an administrator account.
 
 ## Capabilities that are easy to miss
 
-- **Two-market catalog:** products can be Pakistan-only or globally visible,
   while the storefront switches between PKR and USD presentation.
-- **Dynamic taxonomy:** administrators can create new categories and
   subcategories without editing source code.
-- **Variant-safe cart:** colour and size/variant selections remain separate,
   so two variants of one product cannot overwrite each other.
+- **Recently viewed stays useful:** current catalog filters do not erase a
+  customer's browsing history; deleted or hidden products are still excluded.
+- **Market-aware catalog:** selecting All Products clears category filters but
+  keeps the chosen market, so Pakistan-only products remain hidden internationally.
 - **Server-side order protection:** the API rechecks visibility, stock,
   variants, and database prices during checkout instead of trusting browser
   values.

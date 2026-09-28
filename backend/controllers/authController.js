@@ -18,8 +18,8 @@ const registerUser = async (req, res) => {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       return res.status(400).json({ message: 'Please provide a valid email address.' });
     }
-    if (String(password).length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }
 
     // Check if user already exists

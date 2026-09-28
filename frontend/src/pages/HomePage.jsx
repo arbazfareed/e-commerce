@@ -127,6 +127,13 @@ export default function HomePage() {
     return 0;
   });
 
+  const currentProductsById = new Map(products.map(product => [product._id, product]));
+  // Recent history is independent of the active catalog filters: filtering to
+  // Fruit should not hide a Honey item the customer viewed earlier.
+  const validRecentlyViewed = recentlyViewed
+    .map(product => currentProductsById.get(product._id))
+    .filter(Boolean);
+
   const getDisplayPrice = (product) => {
     return isLocal ? formatPKR(product.pricePKR) : formatUSD(product.priceUSD);
   };
@@ -676,6 +683,8 @@ export default function HomePage() {
           <div className="search-wrapper" style={styles.searchWrapper}>
             <span style={styles.searchIcon} aria-hidden="true">⌕</span>
             <input
+              id="product-search"
+              name="productSearch"
               type="text"
               className="search-input"
               aria-label="Search products"
@@ -693,21 +702,21 @@ export default function HomePage() {
           <div className="feature-card" style={styles.featureCard}>
             <span style={styles.featureIcon}>🌿</span>
             <div>
-              <h3 style={styles.featureTitle}>Premium curation</h3>
+              <h2 style={styles.featureTitle}>Premium curation</h2>
               <p style={styles.featureText}>Thoughtfully selected products that bring quality, style, and everyday ease to your routine.</p>
             </div>
           </div>
           <div className="feature-card" style={styles.featureCard}>
             <span style={styles.featureIcon}>🚚</span>
             <div>
-              <h3 style={styles.featureTitle}>Faster fulfillment</h3>
+              <h2 style={styles.featureTitle}>Faster fulfillment</h2>
               <p style={styles.featureText}>Smooth shipping coordination and order visibility designed for a premium shopping experience.</p>
             </div>
           </div>
           <div className="feature-card" style={styles.featureCard}>
             <span style={styles.featureIcon}>💚</span>
             <div>
-              <h3 style={styles.featureTitle}>Support local growth</h3>
+              <h2 style={styles.featureTitle}>Support local growth</h2>
               <p style={styles.featureText}>Every purchase supports quality makers, independent sellers, and meaningful local brands.</p>
             </div>
           </div>
@@ -756,6 +765,11 @@ export default function HomePage() {
             <p style={styles.stats}>
               {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} found
             </p>
+            {!isLocal && (
+              <p role="status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
+                International market: Pakistan-only products are hidden.
+              </p>
+            )}
             {hasFilters && (
               <div className="active-filter-row" aria-label="Active filters">
                 <span className="active-filter-chip">
@@ -769,6 +783,9 @@ export default function HomePage() {
           </div>
 
           <select
+            id="product-sort"
+            name="productSort"
+            aria-label="Sort products"
             value={sortBy}
             className="sort-select"
             onChange={(e) => setSortBy(e.target.value)}
@@ -834,19 +851,16 @@ export default function HomePage() {
 
             {/* Recently Viewed Section */}
             {(() => {
-              const validRecent = recentlyViewed.filter(rp =>
-                products.some(p => p._id === rp._id)
-              );
-              if (validRecent.length === 0) return null;
+              if (validRecentlyViewed.length === 0) return null;
 
               return (
                 <div className="recent-section" style={styles.recentSection}>
                   <h3 className="recent-title" style={styles.recentTitle}>
                     🕐 Recently Viewed
-                    <span className="recent-count" style={styles.recentCount}>{validRecent.length}</span>
+                    <span className="recent-count" style={styles.recentCount}>{validRecentlyViewed.length}</span>
                   </h3>
                   <div className="product-row recent-product-row" style={styles.recentGrid}>
-                    {validRecent.slice(0, 4).map(product => (
+                    {validRecentlyViewed.slice(0, 4).map(product => (
                       <ProductCard
                         key={product._id}
                         product={product}

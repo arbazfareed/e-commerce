@@ -15,6 +15,7 @@
 - **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
 - **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** — SRD, API, architecture, testing, deployment, and policy documents
 - **[Software Requirements Document](./docs/SRD.md)** — scope, requirements, acceptance criteria, and release gates
+- **[UML Diagrams](./docs/UML_DIAGRAMS.md)** — implementation-based use-case, class, component, checkout, support, and upload diagrams
 - **[API Reference](./docs/API_REFERENCE.md)** — implemented routes, auth levels, fields, and limitations
 - **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
@@ -30,6 +31,21 @@ IndusCart is an e-commerce application with:
 - A Vite + React frontend in [`frontend/`](./frontend/)
 - An Express + Mongoose API in [`backend/`](./backend/)
 - MongoDB for users, products, orders, and support tickets
+
+## Current scope and limitations
+
+- This is a full-stack e-commerce demo/MVP. The cart is stored in the current
+    browser's `localStorage`; it survives reloads in that browser but does not
+    sync across devices and is lost if browser storage is cleared.
+- Payment choices other than COD/cash are order metadata only; real payment
+    capture, refunds, and webhooks are not integrated.
+- Courier settings are present, but provider booking, labels, and tracking are
+    not implemented.
+- Product images are stored on the backend's local disk (or the Docker uploads
+    volume). Multi-instance production hosting should move uploads to shared object
+    storage before deployment.
+- Catalog search/filter/sort currently run in the frontend after loading the
+    product list; server-side search and pagination are not implemented.
 
 Additional documentation:
 
@@ -231,7 +247,8 @@ before production deployment.
 This project now includes a layered QA setup to cover the main risk areas without
 rewriting the app:
 
-- Unit tests for pricing and environment validation in the backend
+- Backend unit tests for pricing, environment/password validation, order-status
+    transitions, and image-signature checks
 - Integration tests for API health and routing behavior using the real Express app
 - UI and text tests for the React storefront and navigation state
 - Browser smoke tests with Selenium for end-to-end verification of a loaded page
@@ -412,6 +429,9 @@ Browser Back and Forward navigate between admin sections normally.
 Cart quantity, removal, and updates identify an item by product plus its
 selected colour and size/variant. This prevents two variants of the same
 product from changing each other. Order items also persist those selections.
+The cart itself is browser-local: it persists in that browser's local storage,
+does not sync between devices, and is removed if that browser's site data is
+cleared.
 When an order is submitted, the backend re-checks product visibility, stock,
 variant availability, quantity, and the database price instead of trusting
 values sent by the browser.

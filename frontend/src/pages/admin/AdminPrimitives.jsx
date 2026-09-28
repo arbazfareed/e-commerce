@@ -54,7 +54,7 @@ export function ImagePicker({ previews, onPick, onRemove, inputRef, max = 5 }) {
           <label style={{ width: 82, height: 82, border: '2px dashed #cbd5e1', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f8fafc', gap: 4 }}>
             <span style={{ fontSize: 24, color: '#94a3b8' }}>+</span>
             <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>Photo</span>
-            <input ref={inputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={event => { onPick(event.target.files); if (inputRef.current) inputRef.current.value = ''; }} />
+            <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display: 'none' }} onChange={event => { onPick(event.target.files); if (inputRef.current) inputRef.current.value = ''; }} />
           </label>
         )}
       </div>

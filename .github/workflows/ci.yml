@@ -40,6 +40,10 @@ jobs:
         working-directory: backend
         run: npm run check
 
+      - name: Backend tests
+        working-directory: backend
+        run: npm test
+
   frontend-validation:
     name: Frontend validation
     runs-on: ubuntu-latest

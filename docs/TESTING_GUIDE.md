@@ -10,6 +10,12 @@ Covered areas:
 - discount calculations in `backend/utils/discountPricing.js`
 - environment validation in `backend/config/env.js`
 - sales analytics aggregation in `backend/utils/salesAnalytics.js`
+- order status value and cancellation stock-restoration rules in `backend/utils/orderStatus.js`
+- manual cash-sale input validation in `backend/utils/manualCashSale.js`
+- retained-image path safety and product field limits
+- order lifecycle transitions in `backend/utils/orderStatus.js`
+- image signature checks in `backend/utils/imageSignatures.js`
+- eight-character password minimum in the `User` model
 
 Typical commands:
 ```powershell
@@ -40,6 +46,8 @@ Covered areas:
 - home page content rendering
 - login form visibility and label accessibility
 - route-level guest access control
+- cart quantity cap and dedicated unknown-route page
+- error-boundary recovery UI
 - navigation to key pages
 
 Typical commands:
@@ -101,8 +109,8 @@ Use the checklist below before sign-off:
 ## 8. Local validation
 
 Run the relevant checks locally before sharing a change. GitHub Actions also
-runs backend syntax validation and frontend tests/builds on pushes and pull
-requests.
+runs backend syntax validation/tests and frontend tests/builds on pushes and
+pull requests.
 
 This project keeps the tests in the existing repo structure and avoids
 rewriting business logic while still improving coverage for the main user

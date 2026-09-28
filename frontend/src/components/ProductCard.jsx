@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
 import { assetUrl } from '../utils/axiosConfig';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ProductCard({ product: p, onAddToCart }) {
   const { user } = useAuth();
@@ -74,14 +74,10 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const currentImageUrl = getCurrentImageUrl();
 
   return (
-    <div
+    <article
       className="product-card"
       style={styles.card}
-      role="link"
-      tabIndex={0}
-      aria-label={`View ${p.name}`}
       onClick={() => navigate(`/products/${p._id}`)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/products/${p._id}`); }}
     >
       {/* Image Section */}
       <div
@@ -148,14 +144,15 @@ export default function ProductCard({ product: p, onAddToCart }) {
                 className="product-image-dot"
                 aria-label={`Show image ${i + 1} of ${p.name}`}
                 style={{
-                  ...styles.dot,
-                  ...(i === idx ? styles.dotActive : {})
+                  ...styles.dotButton,
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIdx(i);
                 }}
-              />
+              >
+                <span aria-hidden="true" style={{ ...styles.dot, ...(i === idx ? styles.dotActive : {}) }} />
+              </button>
             ))}
           </div>
         )}
@@ -185,7 +182,9 @@ export default function ProductCard({ product: p, onAddToCart }) {
 
       {/* Content Section */}
       <div className="product-card-content" style={styles.content}>
-        <h3 style={styles.name}>{p.name}</h3>
+        <h3 style={styles.name}>
+          <Link to={`/products/${p._id}`} onClick={event => event.stopPropagation()} style={styles.nameLink}>{p.name}</Link>
+        </h3>
         {(p.subcategory || p.brand || p.model) && (
           <p style={styles.productMeta}>
             {[p.subcategory, p.brand, p.model].filter(Boolean).join(' · ')}
@@ -239,11 +238,15 @@ export default function ProductCard({ product: p, onAddToCart }) {
           appearance: none !important;
         }
         .product-image-dot {
-          min-width: 0 !important;
-          min-height: 0 !important;
-          max-width: none !important;
-          max-height: none !important;
-          display: block !important;
+          min-width: 24px !important;
+          min-height: 24px !important;
+          width: 24px !important;
+          height: 24px !important;
+          max-width: 24px !important;
+          max-height: 24px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
           line-height: 0 !important;
           appearance: none !important;
         }
@@ -271,7 +274,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
           }
         }
       `}</style>
-    </div>
+    </article>
   );
 }
 
@@ -364,6 +367,17 @@ const styles = {
     gap: '6px',
     zIndex: 10,
   },
+  dotButton: {
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    border: 0,
+    background: 'transparent',
+    cursor: 'pointer',
+  },
   dot: {
     width: '6px',
     height: '6px',
@@ -410,7 +424,7 @@ const styles = {
     zIndex: 10,
   },
   badgeLocal: {
-    background: '#059669',
+    background: '#047857',
     color: '#fff',
     fontSize: '10px',
     fontWeight: '600',
@@ -480,6 +494,10 @@ const styles = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+  },
+  nameLink: {
+    color: 'inherit',
+    textDecoration: 'none',
   },
   description: {
     margin: '0 0 10px',

@@ -14,7 +14,9 @@ const request = (server, path) => new Promise((resolve, reject) => {
     let body = '';
     response.on('data', chunk => { body += chunk; });
     response.on('end', () => {
-      const parsed = body ? JSON.parse(body) : {};
+      let parsed = {};
+      try { parsed = body ? JSON.parse(body) : {}; }
+      catch { parsed = body; }
       req.destroy();
       resolve({ status: response.statusCode, body: parsed });
     });

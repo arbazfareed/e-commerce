@@ -1,11 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('selenium-webdriver/chrome');
 
 const shouldRun = process.env.RUN_SELENIUM === 'true';
 
 test('browser smoke test loads the storefront', { skip: !shouldRun }, async () => {
+  const { Builder, By, until } = require('selenium-webdriver');
+  const chrome = require('selenium-webdriver/chrome');
   const options = new chrome.Options();
   options.addArguments('--headless=new', '--disable-gpu', '--no-sandbox', '--window-size=1440,1200');
 

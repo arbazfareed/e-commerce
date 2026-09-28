@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     name:     { type: String, required: [true, 'Name is required'], trim: true },
     username: { type: String, trim: true, lowercase: true, unique: true, sparse: true },
     email:    { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true },
-    password: { type: String, required: [true, 'Password is required'], minlength: 6 },
+    password: { type: String, required: [true, 'Password is required'], minlength: 8 },
     phone:    { type: String, default: '', trim: true },
     country:  { type: String, default: 'Pakistan', trim: true },
     city:     { type: String, default: '', trim: true },

@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
   {
-    name:        { type: String, required: [true, 'Product name is required'], trim: true },
-    description: { type: String, default: '', trim: true },
-    category:    { type: String, required: [true, 'Category is required'], trim: true },
+    name:        { type: String, required: [true, 'Product name is required'], trim: true, maxlength: 200 },
+    description: { type: String, default: '', trim: true, maxlength: 5000 },
+    category:    { type: String, required: [true, 'Category is required'], trim: true, maxlength: 100 },
     subcategory: { type: String, default: '', trim: true },
     brand:       { type: String, default: '', trim: true },
     model:       { type: String, default: '', trim: true },
@@ -26,5 +26,9 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+productSchema.index({ category: 1 });
+productSchema.index({ isVisible: 1, isLocal: 1, createdAt: -1 });
+productSchema.index({ name: 'text', description: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);

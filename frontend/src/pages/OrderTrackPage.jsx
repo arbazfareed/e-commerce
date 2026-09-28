@@ -130,6 +130,7 @@ export default function OrdersPage() {
                     <div>
                       <p style={{ margin:0, fontSize:'12px', color: isDark ? '#a7b8b0' : '#94a3b8', fontWeight:'600' }}>PAYMENT</p>
                       <p style={{ margin:0, fontSize:'13px', fontWeight:'600', color: isDark ? '#d6c9ff' : '#7c3aed' }}>{order.paymentMethod}</p>
+                      <p style={{ margin:0, fontSize:'10px', color: isDark ? '#b9d1c4' : '#64748b' }}>Status: {order.paymentStatus || (order.isPaid ? 'paid' : 'pending')}</p>
                     </div>
                     <StatusBadge status={order.status} isDark={isDark} />
                   </div>

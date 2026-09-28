@@ -276,6 +276,9 @@ stateDiagram-v2
       Cancelled --> [*]
 ```
 
+This diagram describes the intended fulfillment journey. The current admin/API
+still permits any enumerated status value; it does not enforce this graph.
+
 ### 4.7 Diagram coverage and missing views
 
 | View | Status | Notes |
@@ -292,6 +295,10 @@ stateDiagram-v2
 | Communication diagram | Not needed yet | Sequence diagram currently communicates the same integration path |
 | Payment/courier detailed flows | Missing | Add after real providers and webhooks are selected |
 | Returns/refunds activity | Missing | Add when the returns domain model and workflow are implemented |
+
+The standalone implementation-based UML set is maintained in
+[`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md); this SRD section retains the
+requirements-level behavioral models.
 
 ## 5. Functional requirements
 
@@ -318,7 +325,7 @@ stateDiagram-v2
 | FR-19 | Store settings | Implemented | Admin can configure COD and courier settings; public API exposes checkout-safe fields |
 | FR-20 | Public health checks | Implemented | Live and readiness endpoints report process/database state |
 | FR-21 | Android package | Implemented | Capacitor packages the web build; public HTTPS API is required outside local Wi-Fi |
-| FR-22 | Automated build validation | Implemented | GitHub Actions validates backend syntax and frontend tests/build |
+| FR-22 | Automated build validation | Implemented | GitHub Actions validates backend syntax/tests and frontend tests/build |
 | FR-23 | Automated APK artifact | Implemented | Tag/manual workflow builds debug APK when `VITE_API_URL` is a public HTTPS URL |
 | FR-24 | Returns/refunds workflow | Planned | Requires model, API, UI, eligibility, approval, refund, and stock rules |
 | FR-25 | Notifications | Planned | Requires email/SMS/push provider, templates, retry, and preferences |

@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const path    = require('path');
 const fs      = require('fs');
+const { filterRetainedImages, resolveUploadedImagePath } = require('../utils/productImageSafety');
 
 const parseList = (value) => {
   if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
@@ -64,6 +65,11 @@ const createProduct = async (req, res) => {
   try {
     const { name, pricePKR, priceUSD, discountPercent = 0, discountStartDate = '', discountEndDate = '', category, subcategory, brand, model, colors, sizes, isVisible, description, isLocal, stock, weightKg } = req.body;
 
+    if ((req.files || []).length > 5) {
+      await Promise.all(req.files.map(file => fs.promises.unlink(file.path).catch(() => {})));
+      return res.status(400).json({ message: 'A product can have at most 5 images.' });
+    }
+
     // Validate required fields
     if (!name || !category) {
       return res.status(400).json({ message: 'Name and category are required.' });
@@ -107,7 +113,7 @@ const createProduct = async (req, res) => {
     res.status(201).json(product);
   } catch (error) {
     console.error('createProduct error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: error.message });
   }
 };
 
@@ -153,20 +159,23 @@ const updateProduct = async (req, res) => {
 
     // Handle images: keep existing + add new uploads
     if (req.body.replaceImages === 'true') {
-      const keptImages  = req.body.keptImages
-        ? (Array.isArray(req.body.keptImages) ? req.body.keptImages : [req.body.keptImages])
-        : [];
-      const newImages   = req.files ? req.files.map(f => f.filename) : [];
-      product.images    = [...keptImages, ...newImages];
+      const keptImages = filterRetainedImages(req.body.keptImages || [], product.images);
+      const newImages = req.files ? req.files.map(f => f.filename) : [];
+      product.images = [...keptImages, ...newImages];
     } else if (req.files && req.files.length > 0) {
       product.images = [...(product.images || []), ...req.files.map(f => f.filename)];
+    }
+
+    if (product.images.length > 5) {
+      await Promise.all((req.files || []).map(file => fs.promises.unlink(file.path).catch(() => {})));
+      return res.status(400).json({ message: 'A product can have at most 5 images.' });
     }
 
     const updated = await product.save();
     res.json(updated);
   } catch (error) {
     console.error('updateProduct error:', error);
-    res.status(500).json({ message: error.message });
+    res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: error.message });
   }
 };
 
@@ -177,7 +186,7 @@ const deleteProduct = async (req, res) => {
     if (product) {
       // Also delete image files from disk
       (product.images || []).forEach(img => {
-        const filePath = path.join(__dirname, '..', 'uploads', img);
+        const filePath = resolveUploadedImagePath(path.join(__dirname, '..', 'uploads'), img);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       });
       res.json({ message: 'Product deleted successfully' });

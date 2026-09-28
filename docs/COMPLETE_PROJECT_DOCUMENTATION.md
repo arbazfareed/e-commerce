@@ -189,8 +189,9 @@ npm test
 npm run build
 ```
 
-GitHub Actions runs backend syntax validation and frontend tests/builds on
-pushes and pull requests. Test files are also kept for local validation.
+GitHub Actions runs backend syntax validation and tests plus frontend
+tests/builds on pushes and pull requests. Test files are also kept for local
+validation.
 Pull requests from the same repository targeting `main` are configured for
 squash auto-merge after required checks pass; fork pull requests are excluded.
 

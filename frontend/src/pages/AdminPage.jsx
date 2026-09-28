@@ -3,10 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BrandMark from '../components/BrandMark';
 import { assetUrl } from '../utils/axiosConfig';
-import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getSupportTickets, updateTicketStatus, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
+import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
-import { createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, recordManualCashSale, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct } from './admin/adminApi';
+import { createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, getSupportTickets, recordManualCashSale, replyToSupportTicket, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct, updateSupportTicketStatus } from './admin/adminApi';
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AdminPage() {
@@ -54,7 +54,7 @@ export default function AdminPage() {
   const [shipSaved,   setShipSaved]   = useState(false);
   const [weightRates,  setWeightRates]  = useState(getWeightRates());
   const [wSaved,       setWSaved]       = useState(false);
-  const [tickets,      setTickets]      = useState(getSupportTickets());
+  const [tickets,      setTickets]      = useState([]);
   const [ticketFilter, setTicketFilter] = useState('All');
   const [usdRate,   setUsdRate]   = useState(String(getUSDRate()));
   const [usdSaved,  setUsdSaved]  = useState(false);
@@ -98,12 +98,19 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     try {
-      const [pR, oR, cR] = await getAdminData();
-      setProducts(pR.data);
-      setOrders(oR.data);
+      const { products: pR, orders: oR, categories: cR, failures } = await getAdminData();
+      setProducts(Array.isArray(pR.data) ? pR.data : []);
+      setOrders(Array.isArray(oR.data) ? oR.data : []);
       setCats(Array.isArray(cR.data) ? cR.data.filter(Boolean) : []);
-      const { data } = await getSalesAnalytics();
-      setAnalytics(data);
+      if (failures.length) {
+        flash(`Some admin data could not load: ${failures.map(failure => failure.resource).join(', ')}.`, false);
+      }
+      try {
+        const { data } = await getSalesAnalytics();
+        setAnalytics(data);
+      } catch (error) {
+        flash(getApiErrorMessage(error, 'Failed to load analytics'), false);
+      }
     } catch (error) { flash(getApiErrorMessage(error, 'Failed to load data'), false); }
     finally  { setLoading(false); }
   }, []);
@@ -147,7 +154,14 @@ export default function AdminPage() {
 
   /* ── image helpers ── */
   const pickImgs = (files, isEdit) => {
-    const arr  = Array.from(files);
+    const currentCount = isEdit ? ePrevs.length : previews.length;
+    const available = Math.max(0, 5 - currentCount);
+    const selected = Array.from(files);
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    const validFiles = selected.filter(file => allowedTypes.has(file.type) && file.size <= 5 * 1024 * 1024);
+    if (validFiles.length !== selected.length) flash('Choose JPG, PNG, or WEBP images no larger than 5 MiB each.', false);
+    const arr = validFiles.slice(0, available);
+    if (validFiles.length > arr.length) flash('A product can have at most 5 images.', false);
     const urls = arr.map(f => URL.createObjectURL(f));
     if (isEdit) { setENewFiles(p => [...p,...arr]); setEPrevs(p => [...p,...urls]); }
     else        { setImgFiles(p => [...p,...arr]);  setPreviews(p => [...p,...urls]); }
@@ -223,10 +237,41 @@ export default function AdminPage() {
     } catch (error) { flash(getApiErrorMessage(error, 'Status update failed'), false); }
   };
 
-  /* ── refresh tickets whenever the support tab is opened ── */
+  /* ── load server-backed tickets whenever the support tab is opened ── */
   useEffect(() => {
-    if (tab === 'support') setTickets(getSupportTickets());
+    if (tab !== 'support') return;
+    getSupportTickets()
+      .then(({ data }) => setTickets(Array.isArray(data) ? data : []))
+      .catch(error => flash(getApiErrorMessage(error, 'Failed to load support tickets'), false));
   }, [tab]);
+
+  const refreshTickets = async () => {
+    try {
+      const { data } = await getSupportTickets();
+      setTickets(Array.isArray(data) ? data : []);
+    } catch (error) {
+      flash(getApiErrorMessage(error, 'Failed to refresh support tickets'), false);
+    }
+  };
+
+  const changeTicketStatus = async (ticketId, status) => {
+    try {
+      const { data } = await updateSupportTicketStatus(ticketId, status);
+      setTickets(current => current.map(ticket => ticket._id === ticketId ? data : ticket));
+    } catch (error) {
+      flash(getApiErrorMessage(error, 'Failed to update support ticket'), false);
+    }
+  };
+
+  const saveTicketReply = async (ticketId, text) => {
+    try {
+      const { data } = await replyToSupportTicket(ticketId, text);
+      setTickets(current => current.map(ticket => ticket._id === ticketId ? data : ticket));
+    } catch (error) {
+      flash(getApiErrorMessage(error, 'Failed to save support reply'), false);
+      throw error;
+    }
+  };
 
   const saveWeight = () => { saveWeightRates(weightRates); setWSaved(true); setTimeout(() => setWSaved(false), 2000); };
   const saveShip = () => {
@@ -1918,6 +1963,9 @@ export default function AdminPage() {
                           <td style={{ ...S.td, fontWeight:900, color: themeMode === 'dark' ? '#a7f3d0' : '#10b981', whiteSpace:'nowrap', fontFamily:"'JetBrains Mono',monospace" }}>{formatPKR(o.totalPrice)}</td>
                           <td style={S.td}>
                             <span style={{ background: themeMode === 'dark' ? 'rgba(124,58,237,0.14)' : '#faf5ff', color: themeMode === 'dark' ? '#d8b4fe' : '#7c3aed', padding:'4px 10px', borderRadius:7, fontSize:11, fontWeight:700 }}>{o.paymentMethod}</span>
+                            <p style={{ margin:'5px 0 0', fontSize:10, color: themeMode === 'dark' ? '#a7b8b0' : '#64748b' }}>
+                              Payment: {o.paymentStatus || (o.isPaid ? 'paid' : 'pending')} · Courier: {(o.courierDispatchStatus || 'not_configured').replaceAll('_', ' ')}
+                            </p>
                           </td>
                           <td style={S.td}><Badge status={o.status} config={STATUS_CFG} /></td>
                           <td style={S.td}>
@@ -2124,7 +2172,7 @@ export default function AdminPage() {
                 <h1 style={S.pgTitle}>🎧 Support Tickets</h1>
                 <p style={S.pgSub}>Customer support requests · {tickets.filter(t=>t.status==='Open').length} open · {tickets.filter(t=>t.status==='Resolved').length} resolved</p>
               </div>
-              <button style={S.greenBtn} onClick={() => setTickets(getSupportTickets())}>
+              <button style={S.greenBtn} onClick={refreshTickets}>
                 🔄 Refresh
               </button>
             </div>
@@ -2214,11 +2262,12 @@ export default function AdminPage() {
                   )
                   .map(ticket => (
                     <TicketCard
-                      key={ticket.id}
+                      key={ticket._id}
                       ticket={ticket}
                       darkMode={themeMode === 'dark'}
-                      onResolve={() => { updateTicketStatus(ticket.id, 'Resolved'); setTickets(getSupportTickets()); }}
-                      onReopen={() => { updateTicketStatus(ticket.id, 'Open'); setTickets(getSupportTickets()); }}
+                      onResolve={() => changeTicketStatus(ticket._id, 'Resolved')}
+                      onReopen={() => changeTicketStatus(ticket._id, 'Open')}
+                      onReply={saveTicketReply}
                     />
                   ))}
               </div>
@@ -2234,24 +2283,24 @@ export default function AdminPage() {
 /* ── helpers ─────────────────────────────────────────────────── */
 
 /* TicketCard — shows user identity, userId badge, admin reply */
-function TicketCard({ ticket, onResolve, onReopen, darkMode = false }) {
+function TicketCard({ ticket, onResolve, onReopen, onReply, darkMode = false }) {
   const [showReply, setShowReply] = useState(false);
   const [reply, setReply]         = useState(ticket.adminReply || '');
   const [saved,  setSaved]        = useState(false);
   const [replyError, setReplyError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const saveReply = () => {
-    // Persist reply alongside the ticket in localStorage
+  const saveReply = async () => {
+    setSaving(true);
     try {
-      const all = JSON.parse(localStorage.getItem('ic_support_tickets') || '[]');
-      const updated = all.map(t => t.id === ticket.id ? { ...t, adminReply: reply } : t);
-      localStorage.setItem('ic_support_tickets', JSON.stringify(updated));
+      await onReply(ticket._id, reply.trim());
       setReplyError('');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
-      console.error('Unable to save support reply', error);
-      setReplyError('Reply could not be saved on this device.');
+      setReplyError(error?.response?.data?.message || 'Reply could not be saved. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -2286,7 +2335,7 @@ function TicketCard({ ticket, onResolve, onReopen, darkMode = false }) {
             <span style={{ fontSize:'12px', color:subText }}>{ticket.email}</span>
 
             {/* 👤 Registered user badge if userId present */}
-            {ticket.userId ? (
+            {ticket.user ? (
               <span style={{ fontSize:'10px', background: darkMode ? '#17382d' : '#ecfdf5', color: darkMode ? '#a9f0c7' : '#059669', padding:'3px 9px', borderRadius:'999px', fontWeight:'800', border: darkMode ? '1px solid #2a5b4c' : '1px solid #bbf7d0', fontFamily:"'Sora',sans-serif" }}>
                 👤 Registered User
               </span>
@@ -2304,9 +2353,9 @@ function TicketCard({ ticket, onResolve, onReopen, darkMode = false }) {
           </div>
 
           {/* User ID line */}
-          {ticket.userId && (
+          {ticket.user && (
             <p style={{ margin:'0 0 6px', fontSize:'10px', color:muted, fontFamily:"'JetBrains Mono',monospace" }}>
-              User ID: <span style={{ color: darkMode ? '#dfeafc' : '#6366f1' }}>{ticket.userId}</span>
+              User ID: <span style={{ color: darkMode ? '#dfeafc' : '#6366f1' }}>{ticket.user._id || ticket.user}</span>
             </p>
           )}
 
@@ -2340,9 +2389,9 @@ function TicketCard({ ticket, onResolve, onReopen, darkMode = false }) {
               />
               {replyError && <p style={{ margin:'6px 0 0', fontSize:11, color:'#dc2626' }}>{replyError}</p>}
               <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                <button onClick={saveReply}
-                  style={{ padding:'7px 16px', background:'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', border:'none', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Sora',sans-serif" }}>
-                  {saved ? '✓ Saved!' : '💾 Save Reply'}
+                <button onClick={saveReply} disabled={saving || !reply.trim()}
+                  style={{ padding:'7px 16px', background:'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', border:'none', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:"'Sora',sans-serif", opacity:saving ? 0.7 : 1 }}>
+                  {saved ? '✓ Saved!' : saving ? 'Saving…' : '💾 Save Reply'}
                 </button>
                 <button onClick={() => setShowReply(false)}
                   style={{ padding:'7px 14px', background:buttonSecondary, border:`1px solid ${buttonSecondaryBorder}`, color:buttonSecondaryText, borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer' }}>

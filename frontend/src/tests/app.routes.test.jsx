@@ -58,4 +58,12 @@ describe('IndusCart UI and navigation smoke tests', () => {
       expect(screen.getByText(/sign in to your account/i)).toBeInTheDocument();
     });
   });
+
+  test('shows a not-found page for an unknown route', () => {
+    window.history.pushState({}, '', '/this-route-does-not-exist');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: /we couldn’t find that page/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /back to the shop/i })).toHaveAttribute('href', '/');
+  });
 });

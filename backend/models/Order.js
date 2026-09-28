@@ -55,6 +55,16 @@ const orderSchema = new mongoose.Schema(
     },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'failed', 'cancelled'],
+      default: undefined,
+    },
+    courierDispatchStatus: {
+      type: String,
+      enum: ['pending', 'dispatched', 'not_configured', 'unsupported', 'failed'],
+      default: 'not_configured',
+    },
     isManualCash: { type: Boolean, default: false },
     cashCollectedAt: { type: Date },
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

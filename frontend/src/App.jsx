@@ -11,6 +11,8 @@ import OrderTrackPage  from './pages/OrderTrackPage';
 import AdminPage       from './pages/AdminPage';
 import SupportPage     from './pages/SupportPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import NotFoundPage from './pages/NotFoundPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /* Redirect logged-in users away from guest-only pages */
 const GuestRoute = ({ children }) => {
@@ -54,7 +56,7 @@ const AppRoutes = () => (
       <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/support"        element={<SupportPage />} />
-      <Route path="*"               element={<Navigate to="/" replace />} />
+      <Route path="*"               element={<NotFoundPage />} />
     </Routes>
   </>
 );
@@ -62,11 +64,13 @@ const AppRoutes = () => (
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <AppRoutes />
-        </CartProvider>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <CartProvider>
+            <AppRoutes />
+          </CartProvider>
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

@@ -1,0 +1,15 @@
+# IndusCart
+
+IndusCart is a Pakistan-focused online storefront with local and international product browsing, customer accounts, order tracking, and customer support. Payment gateway capture and courier booking are not currently integrated.
+
+## Public pages
+- [Shop](/)
+- [Customer support](/support)
+- [Sign in](/login)
+- [Create an account](/register)
+
+## Repository documentation
+- [README](../README.md)
+- [API reference](../docs/API_REFERENCE.md)
+- [User guide](../docs/USER_GUIDE.md)
+- [QA checklist](../docs/qa/README.md)

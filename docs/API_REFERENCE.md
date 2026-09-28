@@ -27,7 +27,7 @@ Admin endpoints additionally require the authenticated user's `isAdmin` flag.
 | GET | `/api/auth/session` | User | Verifies JWT session and returns current user |
 
 Registration accepts `name`, `username`, `email`, `password`, `phone`, `country`,
-and `city`. Passwords must be at least six characters. Production credentials
+and `city`. Passwords must be at least eight characters. Production credentials
 must use stronger operational policy than the minimum application rule.
 
 ## Products
@@ -45,9 +45,9 @@ Product fields include `name`, `description`, `category`, `subcategory`, `brand`
 `model`, `colors`, `sizes`, `pricePKR`, `priceUSD`, `discountPercent`,
 discount dates, `isVisible`, `isLocal`, `stock`, and `weightKg`.
 
-Uploads accept JPG/JPEG/PNG/WEBP and are limited to 5 MB per file. The API
-accepts up to 10 files per request; the current admin UI presents up to five
-image slots. Product files are served from `/uploads/<filename>`.
+Uploads accept JPG/JPEG/PNG/WEBP and are limited to 5 MiB per file and five
+images per product. The server checks both the declared type/extension and the
+file signature. Product files are served from `/uploads/<filename>`.
 
 ## Orders
 
@@ -63,12 +63,21 @@ image slots. Product files are served from `/uploads/<filename>`.
 
 Supported payment method values are `COD`, `Cash`, `Manual Cash`, `JazzCash`,
 `EasyPaisa`, `Stripe`, and `PayPal`. Only cash/COD behavior is implemented;
-non-COD values are currently order metadata and do not capture funds.
+non-COD values are currently order metadata and do not capture funds. New
+customer orders start with `paymentStatus: "pending"`; cash/COD orders become
+paid only when marked Delivered. Manual cash records are marked paid when
+created. Existing `isPaid` remains for compatibility.
 
 Order statuses are `Pending`, `Processing`, `Shipped`, `Delivered`, and
-`Cancelled`. Shipping is calculated server-side from country/city zone and item
-weight. The service can attempt courier dispatch asynchronously, but provider
-adapters are not currently implemented.
+`Cancelled`. The admin UI retains all five status choices; the API validates
+status values but does not enforce a transition graph. Inventory is restored
+when cancellation occurs from Pending or Processing, but not after shipment.
+Invalid status names return `400`.
+Shipping is calculated server-side from country/city zone and item
+weight. Courier dispatch outcome is recorded in `courierDispatchStatus`
+(`pending`, `dispatched`, `not_configured`, `unsupported`, or `failed`). The
+service can attempt dispatch asynchronously, but provider adapters are not
+currently implemented, so selecting a provider does not book a shipment.
 
 ## Support tickets
 
@@ -103,7 +112,7 @@ Typical responses are JSON objects with a `message` field. Common status codes:
 - `401` missing/invalid JWT or missing user
 - `403` authenticated user lacks permission
 - `404` product, order, or ticket does not exist
-- `409` checkout stock changed during reservation; refresh the cart and retry
+- `409` checkout stock changed during reservation
 - `500` unexpected server error
 
 ## Source of truth

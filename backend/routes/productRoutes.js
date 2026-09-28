@@ -14,6 +14,7 @@ const {
 } = require('../controllers/productController');
 
 const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
+const { removeUploadedFiles, validateImageUploads } = require('../middleware/validateImageUploads');
 
 // Always resolve storage from this file, not the process working directory.
 // This keeps uploads and the static directory aligned when started from any folder.
@@ -30,12 +31,26 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|webp/;
-    const ok = allowed.test(path.extname(file.originalname).toLowerCase()) &&
-               allowed.test(file.mimetype);
+    const allowedTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+    };
+    const extension = path.extname(file.originalname).toLowerCase();
+    const ok = allowedTypes[extension] === file.mimetype;
     ok ? cb(null, true) : cb(new Error('Only JPG, PNG, WEBP images allowed'));
   },
 });
+const uploadProductImages = upload.array('images', 5);
+const handleProductImageUpload = (req, res, next) => {
+  uploadProductImages(req, res, error => {
+    if (error) {
+      return removeUploadedFiles(req.files).then(() => res.status(400).json({ message: error.message }));
+    }
+    return next();
+  });
+};
 
 // ✅ FIX: /categories MUST come before /:id — otherwise Express
 //    treats "categories" as an :id param and it never matches
@@ -48,12 +63,11 @@ router.get('/',    optionalProtect, getProducts);
 // GET  /api/products/:id      → single product (public)
 router.get('/:id', getProductById);
 
-// ✅ FIX: upload.array('images', 10) instead of upload.single('image')
-// POST /api/products          → admin: create product
-router.post('/',   protect, admin, upload.array('images', 10), createProduct);
+// POST /api/products          → admin: create product (up to five images)
+router.post('/',   protect, admin, handleProductImageUpload, validateImageUploads, createProduct);
 
 // PUT  /api/products/:id      → admin: update product
-router.put('/:id', protect, admin, upload.array('images', 10), updateProduct);
+router.put('/:id', protect, admin, handleProductImageUpload, validateImageUploads, updateProduct);
 
 // DELETE /api/products/:id    → admin: delete product
 router.delete('/:id', protect, admin, deleteProduct);
