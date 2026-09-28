@@ -5,6 +5,16 @@ import { useCart } from '../context/CartContext';
 import BrandMark from './BrandMark';
 
 const THEME_KEY = 'ic_theme_preference';
+const ADMIN_THEME_KEY = 'ic_admin_theme';
+
+function readThemePreference() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(ADMIN_THEME_KEY);
+    return saved === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+}
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -12,22 +22,31 @@ export default function Navbar() {
   const { pathname }     = useLocation();
   const navigate         = useNavigate();
   const [open, setOpen]  = useState(false);
-  const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'; }
-    catch { return 'light'; }
-  });
+  const [theme, setTheme] = useState(readThemePreference);
 
   const on = (p) => pathname === p;
   const adminOn = pathname.startsWith('/admin');
 
   const doLogout = () => { logout(); navigate('/login'); setOpen(false); };
   const isDark = theme === 'dark';
-  const toggleTheme = () => setTheme(current => current === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(current => {
+    const nextTheme = current === 'dark' ? 'light' : 'dark';
+    window.dispatchEvent(new CustomEvent('ic-theme-change', { detail: { theme: nextTheme } }));
+    return nextTheme;
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem(THEME_KEY, theme); } catch { /* Theme still works for this session. */ }
   }, [theme]);
+
+  useEffect(() => {
+    const syncTheme = event => {
+      if (event.detail?.theme === 'light' || event.detail?.theme === 'dark') setTheme(event.detail.theme);
+    };
+    window.addEventListener('ic-theme-change', syncTheme);
+    return () => window.removeEventListener('ic-theme-change', syncTheme);
+  }, []);
 
   // Admins get a different nav — only Admin panel + Support
   // Regular users get Shop, Cart, Orders, Support
@@ -547,10 +566,10 @@ export default function Navbar() {
 const S = {
   bar:      { position:'sticky', top:0, zIndex:200, height:'60px', background:'linear-gradient(180deg, rgba(7,19,16,0.96), rgba(8,27,22,0.96))', backdropFilter:'blur(16px)', borderBottom:'1px solid rgba(143,204,164,0.18)', boxShadow:'0 12px 28px rgba(2, 12, 9, 0.22)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', fontFamily:"'DM Sans','Segoe UI',sans-serif" },
   brand:    { display:'flex', alignItems:'center', gap:'10px', textDecoration:'none', borderRadius:'12px' },
-  brandText:{ fontSize:'18px', fontWeight:'800', color:'#f8fafc' },
+  brandText:{ fontSize:'18px', fontWeight:'800', color:'#173a2d' },
   links:    { display:'flex', alignItems:'center', gap:'4px' },
-  lnk:      { padding:'8px 14px', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:'600', color:'#d7eae1', transition:'all 0.15s ease' },
-  lnkOn:    { background:'linear-gradient(135deg, rgba(19,144,102,0.30), rgba(18,109,89,0.22))', color:'#ebfff3', boxShadow:'inset 0 0 0 1px rgba(126,220,175,0.25)' },
+  lnk:      { padding:'8px 14px', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:'700', color:'#334155', transition:'all 0.15s ease' },
+  lnkOn:    { background:'linear-gradient(135deg, #e7f7ef, #d9f1e7)', color:'#075c43', boxShadow:'inset 0 0 0 1px rgba(13,92,66,0.14)' },
   bdg:      { position:'absolute', top:'-2px', right:'-2px', background:'linear-gradient(135deg,#f5b04c,#e77a2d)', color:'#fff', borderRadius:'999px', fontSize:'10px', fontWeight:'800', minWidth:'16px', height:'16px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px', boxShadow:'0 8px 16px rgba(231,122,45,0.25)' },
   auth:     { display:'flex', alignItems:'center' },
   avatar:   { width:'30px', height:'30px', borderRadius:'50%', background:'linear-gradient(135deg,#19a76d,#0f4d39)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'800', color:'#fff', boxShadow:'0 10px 22px rgba(13,92,66,0.22)' },

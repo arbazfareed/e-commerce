@@ -6,11 +6,12 @@ This index explains which document answers which project question.
 |---|---|---|
 | Project overview | [`README.md`](../README.md) | Quick start, stack, major commands, and repository entry point |
 | Project showcase | [`PROJECT_SHOWCASE.md`](./PROJECT_SHOWCASE.md) | Product capabilities, user journeys, routes, and GitHub presentation |
+| Feature coverage | [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md) | Implemented, partial, and missing use cases and recommended next work |
 | Complete project reference | [`COMPLETE_PROJECT_DOCUMENTATION.md`](./COMPLETE_PROJECT_DOCUMENTATION.md) | Consolidated technical, operational, and future-planning reference |
 | SRD / requirements | [`SRD.md`](./SRD.md) | Scope, stakeholders, functional requirements, acceptance criteria, NFRs, and release gates |
 | API reference | [`API_REFERENCE.md`](./API_REFERENCE.md) | Endpoints, authentication levels, fields, statuses, and API limitations |
 | Architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System, deployment, request-flow, and data-model diagrams |
-| UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Current use-case, class, component, checkout, support, and upload UML views |
+| UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Source inventory/counts, route/guard and component maps, exact domain relationships, deployment, checkout/support/product flows, reset-email sequence/state, and classic UML views |
 | Technical guide | [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Code structure, security model, local development, and Docker |
 | User guide | [`USER_GUIDE.md`](./USER_GUIDE.md) | Customer and administrator workflows |
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |
@@ -29,7 +30,8 @@ This index explains which document answers which project question.
 When behavior changes, update the relevant source document in the same change:
 
 - New feature or changed user behavior → `SRD.md`, `USER_GUIDE.md`, and
-  `PROJECT_SHOWCASE.md`
+  `PROJECT_SHOWCASE.md`, plus `FEATURE_COVERAGE.md` and `UML_DIAGRAMS.md` when
+  system behavior or domain structure changes
 - New endpoint or changed request/response → `API_REFERENCE.md`
 - New deployment/runtime behavior → `ARCHITECTURE.md`, runbooks, and
   `PRODUCTION_DEPLOYMENT.md`

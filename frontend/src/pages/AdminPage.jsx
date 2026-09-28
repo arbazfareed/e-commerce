@@ -6,7 +6,19 @@ import { assetUrl } from '../utils/axiosConfig';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
-import { createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, getSupportTickets, recordManualCashSale, replyToSupportTicket, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct, updateSupportTicketStatus } from './admin/adminApi';
+import { changeOwnPassword, createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, getSupportTickets, recordManualCashSale, replyToSupportTicket, resetCustomerPassword, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct, updateSupportTicketStatus } from './admin/adminApi';
+
+const THEME_KEY = 'ic_theme_preference';
+const ADMIN_THEME_KEY = 'ic_admin_theme';
+
+function readThemePreference() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(ADMIN_THEME_KEY);
+    return saved === 'light' || saved === 'dark' ? saved : 'light';
+  } catch {
+    return 'light';
+  }
+}
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AdminPage() {
@@ -29,14 +41,7 @@ export default function AdminPage() {
   const [fCat,      setFCat]      = useState('All');
   const [fMarket,   setFMarket]   = useState('all');   // 'all' | 'local' | 'global'
   const [fStatus,   setFStatus]   = useState('All');
-  const [themeMode, setThemeMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ic_admin_theme');
-      return saved === 'light' || saved === 'dark' ? saved : 'dark';
-    } catch (error) {
-      return 'dark';
-    }
-  });
+  const [themeMode, setThemeMode] = useState(readThemePreference);
   const [isCompact, setIsCompact] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 760 : false);
   const [hoveredKpi, setHoveredKpi] = useState(null);
   const [analyticsTab, setAnalyticsTab] = useState('overview');
@@ -65,6 +70,10 @@ export default function AdminPage() {
     courierProvider: '', courierApiKey: '',
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [ownPasswordForm, setOwnPasswordForm] = useState({ newPassword:'', confirmPassword:'' });
+  const [customerPasswordForm, setCustomerPasswordForm] = useState({ email:'' });
+  const [ownPasswordSaving, setOwnPasswordSaving] = useState(false);
+  const [customerPasswordSaving, setCustomerPasswordSaving] = useState(false);
 
   const [editP,     setEditP]     = useState(null);
   const [eForm,     setEForm]     = useState({});
@@ -117,9 +126,27 @@ export default function AdminPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    const safeTheme = themeMode === 'light' || themeMode === 'dark' ? themeMode : 'dark';
-    try { localStorage.setItem('ic_admin_theme', safeTheme); } catch (error) {}
+    const safeTheme = themeMode === 'light' || themeMode === 'dark' ? themeMode : 'light';
+    document.documentElement.dataset.theme = safeTheme;
+    try {
+      localStorage.setItem(ADMIN_THEME_KEY, safeTheme);
+      localStorage.setItem(THEME_KEY, safeTheme);
+    } catch (error) { /* Theme still works for this session. */ }
   }, [themeMode]);
+
+  useEffect(() => {
+    const syncTheme = event => {
+      if (event.detail?.theme === 'light' || event.detail?.theme === 'dark') setThemeMode(event.detail.theme);
+    };
+    window.addEventListener('ic-theme-change', syncTheme);
+    return () => window.removeEventListener('ic-theme-change', syncTheme);
+  }, []);
+
+  const toggleThemeMode = () => setThemeMode(current => {
+    const nextTheme = current === 'dark' ? 'light' : 'dark';
+    window.dispatchEvent(new CustomEvent('ic-theme-change', { detail: { theme: nextTheme } }));
+    return nextTheme;
+  });
 
   useEffect(() => {
     const syncCompact = () => setIsCompact(window.innerWidth <= 760);
@@ -149,6 +176,47 @@ export default function AdminPage() {
       flash('Store settings saved!');
     } catch (err) {
       flash(err.response?.data?.message || 'Failed to save store settings', false);
+    }
+  };
+
+  const submitOwnPasswordChange = async (event) => {
+    event.preventDefault();
+    if (ownPasswordForm.newPassword !== ownPasswordForm.confirmPassword) {
+      flash('The new password confirmation does not match.', false);
+      return;
+    }
+    if (ownPasswordForm.newPassword.length < 12) {
+      flash('Choose a new password with at least 12 characters.', false);
+      return;
+    }
+
+    setOwnPasswordSaving(true);
+    try {
+      const { data } = await changeOwnPassword({
+        newPassword: ownPasswordForm.newPassword,
+      });
+      setOwnPasswordForm({ newPassword:'', confirmPassword:'' });
+      flash(data.message || 'Your password was changed successfully.');
+    } catch (error) {
+      flash(error.response?.data?.message || getApiErrorMessage(error, 'Password could not be changed.'), false);
+    } finally {
+      setOwnPasswordSaving(false);
+    }
+  };
+
+  const submitCustomerPasswordReset = async (event) => {
+    event.preventDefault();
+    setCustomerPasswordSaving(true);
+    try {
+      const { data } = await resetCustomerPassword({
+        email: customerPasswordForm.email.trim(),
+      });
+      setCustomerPasswordForm({ email:'' });
+      flash(data.message || 'Customer password was reset successfully.');
+    } catch (error) {
+      flash(error.response?.data?.message || getApiErrorMessage(error, 'Customer password could not be reset.'), false);
+    } finally {
+      setCustomerPasswordSaving(false);
     }
   };
 
@@ -631,7 +699,79 @@ export default function AdminPage() {
         @keyframes spin    { to { transform:rotate(360deg) } }
         @keyframes fadeUp  { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
         @keyframes slideUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:none } }
-        .nav-btn:hover   { background:rgba(16,185,129,.14) !important; color:#f8fffb !important; box-shadow:inset 0 0 0 1px rgba(167,243,208,.20) !important; }
+        :root[data-theme='dark'] .nav-btn:hover { background:rgba(16,185,129,.14) !important; color:#f8fffb !important; box-shadow:inset 0 0 0 1px rgba(167,243,208,.20) !important; }
+        :root:not([data-theme='dark']) .admin-sidebar .nav-btn:hover { background:#eaf5ee !important; color:#075c43 !important; box-shadow:inset 0 0 0 1px rgba(5,150,105,.14) !important; }
+        .admin-password-card input { width:100%; min-height:46px; margin-top:6px; padding:10px 12px; border:1px solid #b9cec0; border-radius:10px; box-sizing:border-box; background:#fbfdfb; color:#10251b; }
+        .admin-password-card input:focus { outline:3px solid rgba(16,185,129,.2); border-color:#0b8059; }
+        .admin-password-submit { width:100%; min-height:48px; justify-content:center; color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-green-button { color:#062e22 !important; }
+        :root[data-theme='dark'] .admin-password-card input { border-color:#557264 !important; background:#0b1510 !important; color:#f3faf5 !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.4) !important; }
+        :root[data-theme='dark'] .admin-password-card input:focus { outline:3px solid rgba(110,231,183,.22); border-color:#72c9a2 !important; }
+        :root[data-theme='dark'] .admin-password-submit { color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
+        .admin-add-product-submit { color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
+        :root[data-theme='dark'] .admin-main .admin-add-product-submit { color:#062e22 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-badge[data-market='local'] { color:#166534 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-badge[data-market='global'] { color:#1d4ed8 !important; }
+        :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='pending'] { color:#9a3412 !important; }
+        :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='processing'] { color:#1d4ed8 !important; }
+        :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='shipped'] { color:#0369a1 !important; }
+        :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='delivered'] { color:#166534 !important; }
+        :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='cancelled'] { color:#be123c !important; }
+        :root[data-theme='dark'] .admin-page .admin-category-new { background:#26322c !important; border-color:#53645a !important; color:#edf4f0 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-local-label { color:#a7f3d0 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-local-count { color:#86efac !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-local-description { color:#b7f3cd !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-local-share { color:#a7f3d0 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-global-label { color:#bfdbfe !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-global-count { color:#93c5fd !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-global-description { color:#c4ddf5 !important; }
+        :root[data-theme='dark'] .admin-page .admin-market-summary-global-share { color:#bfdbfe !important; }
+        .admin-image-picker-add { transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+        .admin-image-picker-add:hover { transform:translateY(-1px); }
+        .admin-image-picker > div + p { color:#536b5c !important; }
+        :root[data-theme='dark'] .admin-image-picker > div + p { color:#bdcbc3 !important; }
+        :root[data-theme='dark'] .admin-image-picker-add { background:#26322c !important; border-color:#718479 !important; }
+        :root[data-theme='dark'] .admin-image-picker-plus,
+        :root[data-theme='dark'] .admin-image-picker-caption { color:#e2eee6 !important; }
+        .admin-settings-page .admin-settings-card { border-radius:18px !important; padding:24px !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card { background:#1c2320 !important; border-color:#39443f !important; box-shadow:0 14px 32px rgba(0,0,0,.24) !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card { background:#fff !important; border-color:#dbe7df !important; box-shadow:0 12px 28px rgba(15,45,32,.07) !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card h3,
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card h4 { color:#edf4f0 !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card h3,
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card h4 { color:#183329 !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card p { color:#b9c7bf !important; font-size:12px !important; line-height:1.65 !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card p { color:#586b60 !important; font-size:12px !important; line-height:1.65 !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-password-warning { color:#f2d58c !important; background:#342b1e !important; border-color:#6c5732 !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-password-warning { color:#854d0e !important; background:#fffbeb !important; border-color:#f3d08a !important; }
+        .admin-settings-page .admin-settings-card label { display:block; font-size:10px !important; font-weight:800 !important; letter-spacing:.65px !important; line-height:1.5; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card label { color:#c9d5ce !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card label { color:#40594a !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card input:not([type='checkbox']),
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card select,
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card textarea { min-height:40px; border:1px solid #4a5b51 !important; border-radius:10px; background:#242b28 !important; color:#f0f5f1 !important; font-size:13px !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.22) !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card input:not([type='checkbox']),
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card select,
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card textarea { min-height:40px; border:1px solid #cbd9cf !important; border-radius:10px; background:#fbfdfb !important; color:#183329 !important; font-size:13px !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-zone-rate-card { background:#252d29 !important; border-color:#48564e !important; }
+        :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-zone-rate-card { background:#f5f9f6 !important; border-color:#d4e1d8 !important; }
+        .admin-settings-page .admin-settings-card button { min-height:42px; border-radius:10px; color:#062e22 !important; }
+        :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card button { background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; color:#062e22 !important; }
+        :root[data-theme='dark'] .admin-main .market-picker-option-title,
+        :root[data-theme='dark'] .admin-main .market-picker-option-check { color:#dce8e1 !important; }
+        :root[data-theme='dark'] .admin-main .market-picker-option.is-active[data-market='global'] .market-picker-option-title,
+        :root[data-theme='dark'] .admin-main .market-picker-option.is-active[data-market='global'] .market-picker-option-check { color:#bfdbfe !important; }
+        :root[data-theme='dark'] .admin-main .market-picker-option.is-active[data-market='local'] .market-picker-option-title,
+        :root[data-theme='dark'] .admin-main .market-picker-option.is-active[data-market='local'] .market-picker-option-check { color:#a7f3d0 !important; }
+        :root[data-theme='dark'] .admin-main .market-picker-option-sub { color:#bdcbc3 !important; }
+        :root[data-theme='dark'] .admin-main .market-picker-hint { color:#bcebd1 !important; }
+        :root:not([data-theme='dark']) .admin-main .market-picker-option-title { color:#334155 !important; }
+        :root:not([data-theme='dark']) .admin-main .market-picker-option.is-active[data-market='global'] .market-picker-option-title,
+        :root:not([data-theme='dark']) .admin-main .market-picker-option.is-active[data-market='global'] .market-picker-option-check { color:#1d4ed8 !important; }
+        :root:not([data-theme='dark']) .admin-main .market-picker-option.is-active[data-market='local'] .market-picker-option-title,
+        :root:not([data-theme='dark']) .admin-main .market-picker-option.is-active[data-market='local'] .market-picker-option-check { color:#047857 !important; }
+        :root:not([data-theme='dark']) .admin-main .market-picker-option-sub { color:#52675d !important; }
+        :root:not([data-theme='dark']) .admin-main .market-picker-hint { color:#145c43 !important; }
         .row-hover:hover { background:#f8fafc; }
         .kpi-card:hover  { transform:translateY(-4px); box-shadow:0 16px 48px rgba(0,0,0,.2) !important; }
         .del-btn:hover   { background:#fef2f2 !important; }
@@ -760,7 +900,7 @@ export default function AdminPage() {
               {/* images */}
               <div style={{ marginBottom:20 }}>
                 <label style={S.lbl}>Product Images</label>
-                <ImagePicker previews={ePrevs} onPick={f => pickImgs(f, true)} onRemove={i => removeImg(i, true)} inputRef={eRef} />
+                  <ImagePicker previews={ePrevs} onPick={f => pickImgs(f, true)} onRemove={i => removeImg(i, true)} inputRef={eRef} darkMode={themeMode === 'dark'} />
               </div>
               <div style={S.grid2}>
                 <div>
@@ -856,13 +996,13 @@ export default function AdminPage() {
                 {/* ── MARKET VISIBILITY (full-width, improved) ── */}
                 <div style={{ gridColumn:'1/-1' }}>
                   <label style={{ ...S.lbl, marginBottom:10 }}>Market Visibility *</label>
-                  <MarketPicker value={eForm.isLocal} onChange={v => setEForm(f => ({...f, isLocal:v}))} />
+                  <MarketPicker value={eForm.isLocal} onChange={v => setEForm(f => ({...f, isLocal:v}))} darkMode={themeMode === 'dark'} />
                 </div>
               </div>
             </div>
             <div className="admin-modal-footer" style={S.mFoot}>
               <button style={S.ghostBtn} onClick={() => setEditP(null)}>Cancel</button>
-              <button style={S.greenBtn} onClick={handleEditSave} disabled={eSaving}>
+              <button className="admin-green-button" style={S.greenBtn} onClick={handleEditSave} disabled={eSaving}>
                 {eSaving ? '⏳ Saving…' : '💾 Save Changes'}
               </button>
             </div>
@@ -871,14 +1011,14 @@ export default function AdminPage() {
       )}
 
       {/* ═══ SIDEBAR ══════════════════════════════════════════ */}
-      <aside className="admin-sidebar" style={{ ...S.side, background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(13,22,19,0.98), rgba(17,28,25,0.98))' : 'linear-gradient(180deg, rgba(11,53,43,0.92), rgba(10,46,36,0.96))', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)', borderRight:'1px solid rgba(255,255,255,.08)' }}>
-        <div style={{ ...S.sideLogo, background: themeMode === 'dark' ? 'rgba(15,23,42,0.18)' : 'rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.10)' }}>
-          <div style={{ width:38, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.08)', boxShadow:'0 12px 22px rgba(14,116,144,0.18)' }}>
+      <aside className="admin-sidebar" style={{ ...S.side, background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(13,22,19,0.98), rgba(17,28,25,0.98))' : 'linear-gradient(180deg, #ffffff, #f3f8f5)', borderRight: themeMode === 'dark' ? '1px solid rgba(255,255,255,.08)' : '1px solid #dce8e0', boxShadow: themeMode === 'dark' ? S.side.boxShadow : '4px 0 18px rgba(15,23,42,.05)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)' }}>
+        <div style={{ ...S.sideLogo, background: themeMode === 'dark' ? 'rgba(15,23,42,0.18)' : 'rgba(15,92,66,0.035)', borderBottom: themeMode === 'dark' ? '1px solid rgba(255,255,255,0.10)' : '1px solid #e2ece6' }}>
+          <div style={{ width:38, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background: themeMode === 'dark' ? 'rgba(255,255,255,0.08)' : '#e8f5ed', boxShadow:'0 12px 22px rgba(14,116,144,0.18)' }}>
             <BrandMark size={26} style={{ filter:'drop-shadow(0 5px 9px rgba(0,0,0,.22))' }} />
           </div>
           <div>
-            <p style={{ margin:0, fontSize:15, fontWeight:900, color:'#f8fafc', fontFamily:"'Sora',sans-serif", letterSpacing:'-0.4px' }}>IndusCart</p>
-            <p style={{ margin:0, fontSize:9, color: themeMode === 'dark' ? '#dfece7' : '#dfece7', fontWeight:800, letterSpacing:'1.5px', textTransform:'uppercase' }}>Admin Console</p>
+            <p style={{ margin:0, fontSize:15, fontWeight:900, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', fontFamily:"'Sora',sans-serif", letterSpacing:'-0.4px' }}>IndusCart</p>
+            <p style={{ margin:0, fontSize:9, color: themeMode === 'dark' ? '#dfece7' : '#60766a', fontWeight:800, letterSpacing:'1.5px', textTransform:'uppercase' }}>Admin Console</p>
           </div>
         </div>
 
@@ -894,12 +1034,12 @@ export default function AdminPage() {
               style={{
                 ...S.navBtn,
                 ...(tab === item.id ? S.navOn : {}),
-                color: themeMode === 'dark' ? '#f8fffb' : '#f8fffb',
-                background: tab === item.id ? 'linear-gradient(90deg, rgba(22,163,74,.20), rgba(16,185,129,.10))' : 'rgba(255,255,255,0.02)',
+                color: themeMode === 'dark' ? '#f8fffb' : '#334155',
+                background: tab === item.id ? (themeMode === 'dark' ? 'linear-gradient(90deg, rgba(22,163,74,.20), rgba(16,185,129,.10))' : 'linear-gradient(90deg, #e5f5eb, #f0faf4)') : (themeMode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(15,23,42,0.025)'),
                 borderRadius: 12,
                 marginBottom: 6,
                 padding: '12px 12px 12px 14px',
-                boxShadow: tab === item.id ? 'inset 0 0 0 1px rgba(167,243,208,.18), 0 10px 24px rgba(16,185,129,.08)' : 'inset 0 0 0 1px rgba(255,255,255,0.02)',
+                boxShadow: tab === item.id ? (themeMode === 'dark' ? 'inset 0 0 0 1px rgba(167,243,208,.18), 0 10px 24px rgba(16,185,129,.08)' : 'inset 0 0 0 1px rgba(5,150,105,.14), 0 6px 14px rgba(15,23,42,.04)') : 'none',
               }}
               onClick={() => openSection(item.id)}>
               <span style={{
@@ -908,17 +1048,17 @@ export default function AdminPage() {
                 textAlign:'center',
                 flexShrink:0,
                 opacity: tab===item.id ? 1 : .96,
-                color: tab===item.id ? '#d1fae5' : '#f3fff8',
+                color: tab===item.id ? (themeMode === 'dark' ? '#d1fae5' : '#08734e') : (themeMode === 'dark' ? '#f3fff8' : '#64766c'),
                 display:'inline-flex',
                 alignItems:'center',
                 justifyContent:'center',
-                background: tab===item.id ? 'rgba(110,231,183,0.14)' : 'rgba(255,255,255,0.06)',
+                background: tab===item.id ? (themeMode === 'dark' ? 'rgba(110,231,183,0.14)' : 'rgba(16,185,129,0.10)') : (themeMode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.045)'),
                 borderRadius:8,
                 height:26,
-                border: tab===item.id ? '1px solid rgba(167,243,208,0.32)' : '1px solid rgba(255,255,255,0.09)',
+                border: tab===item.id ? (themeMode === 'dark' ? '1px solid rgba(167,243,208,0.32)' : '1px solid rgba(5,150,105,0.20)') : (themeMode === 'dark' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(15,23,42,0.07)'),
                 boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.02)',
               }}>{item.icon}</span>
-              <span style={{ flex:1, textAlign:'left', color: tab===item.id ? '#f9fffc' : '#edfdf5', fontSize:13, fontWeight:800 }}>{item.label}</span>
+              <span style={{ flex:1, textAlign:'left', color: tab===item.id ? (themeMode === 'dark' ? '#f9fffc' : '#075c43') : (themeMode === 'dark' ? '#edfdf5' : '#334155'), fontSize:13, fontWeight:800 }}>{item.label}</span>
               {item.badge > 0 && (
                 <span style={{ ...S.navBadge, background: item.warn ? '#ef4444' : 'rgba(16,185,129,.26)', color: item.warn ? '#fff' : '#ffffff', boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.12)', fontWeight:900 }}>
                   {item.badge}
@@ -929,40 +1069,40 @@ export default function AdminPage() {
         </nav>
 
         {/* ── market split in sidebar ── */}
-        <div style={{ padding:'14px 18px', borderTop:'1px solid rgba(255,255,255,.06)', borderBottom:'1px solid rgba(255,255,255,.06)', background:'rgba(15,23,42,0.10)' }}>
-          <p style={{ margin:'0 0 10px', fontSize:9, color: '#d5e8e0', fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px' }}>Market Split</p>
+        <div style={{ padding:'14px 18px', borderTop: themeMode === 'dark' ? '1px solid rgba(255,255,255,.06)' : '1px solid #e2ece6', borderBottom: themeMode === 'dark' ? '1px solid rgba(255,255,255,.06)' : '1px solid #e2ece6', background: themeMode === 'dark' ? 'rgba(15,23,42,0.10)' : 'rgba(15,23,42,0.015)' }}>
+          <p style={{ margin:'0 0 10px', fontSize:9, color: themeMode === 'dark' ? '#d5e8e0' : '#64766c', fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px' }}>Market Split</p>
           <div style={{ display:'flex', gap:8 }}>
-            <div style={{ flex:1, background:'rgba(16,185,129,.12)', border:'1px solid rgba(16,185,129,.30)', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(16,185,129,.04)' }}>
-              <p style={{ margin:0, fontSize:20, fontWeight:900, color:'#a7f3d0', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color:'#d9fbe9', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🇵🇰 Local</p>
+            <div style={{ flex:1, background: themeMode === 'dark' ? 'rgba(16,185,129,.12)' : '#ecfdf5', border: themeMode === 'dark' ? '1px solid rgba(16,185,129,.30)' : '1px solid #bbf7d0', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(16,185,129,.04)' }}>
+              <p style={{ margin:0, fontSize:20, fontWeight:900, color: themeMode === 'dark' ? '#a7f3d0' : '#047857', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
+              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#d9fbe9' : '#166534', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🇵🇰 Local</p>
             </div>
-            <div style={{ flex:1, background:'rgba(99,102,241,.12)', border:'1px solid rgba(99,102,241,.30)', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(99,102,241,.04)' }}>
-              <p style={{ margin:0, fontSize:20, fontWeight:900, color:'#c7d2fe', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color:'#ebebff', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🌍 Global</p>
+            <div style={{ flex:1, background: themeMode === 'dark' ? 'rgba(99,102,241,.12)' : '#eef2ff', border: themeMode === 'dark' ? '1px solid rgba(99,102,241,.30)' : '1px solid #c7d2fe', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(99,102,241,.04)' }}>
+              <p style={{ margin:0, fontSize:20, fontWeight:900, color: themeMode === 'dark' ? '#c7d2fe' : '#4338ca', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
+              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#ebebff' : '#4338ca', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🌍 Global</p>
             </div>
           </div>
         </div>
 
-        <div style={{ ...S.miniStats, background:'rgba(15,23,42,0.10)' }}>
+        <div style={{ ...S.miniStats, background: themeMode === 'dark' ? 'rgba(15,23,42,0.10)' : 'rgba(15,23,42,0.015)', borderTopColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6', borderBottomColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6' }}>
           {[
-            { label:'Products', value: products.length, color:'#34d399' },
-            { label:'Orders',   value: orders.length,   color:'#fbbf24' },
-            { label:'OOS',      value: oos,             color:'#fda4af' },
+            { label:'Products', value: products.length, color: themeMode === 'dark' ? '#34d399' : '#047857' },
+            { label:'Orders',   value: orders.length,   color: themeMode === 'dark' ? '#fbbf24' : '#b45309' },
+            { label:'OOS',      value: oos,             color: themeMode === 'dark' ? '#fda4af' : '#be123c' },
           ].map(s => (
             <div key={s.label} style={{ textAlign:'center', padding:'4px 0' }}>
               <p style={{ margin:0, fontSize:20, fontWeight:900, color:s.color, lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{s.value}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color:'#e6f7ef', fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px' }}>{s.label}</p>
+              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#e6f7ef' : '#64766c', fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px' }}>{s.label}</p>
             </div>
           ))}
         </div>
 
-        <div style={S.sideUser}>
+        <div style={{ ...S.sideUser, background: themeMode === 'dark' ? 'rgba(15,23,42,.12)' : 'rgba(15,23,42,.025)', borderTopColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6' }}>
           <div style={S.ava}>{user?.name?.[0]?.toUpperCase()||'A'}</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <p style={{ margin:0, fontSize:12, fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#f8fafc', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" }}>{user?.name}</p>
-            <p style={{ margin:0, fontSize:10, color: themeMode === 'dark' ? '#a7f3d0' : '#a7f3d0', fontWeight:600 }}>Administrator</p>
+            <p style={{ margin:0, fontSize:12, fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" }}>{user?.name}</p>
+            <p style={{ margin:0, fontSize:10, color: themeMode === 'dark' ? '#a7f3d0' : '#08734e', fontWeight:600 }}>Administrator</p>
           </div>
-          <button title="Logout" style={{ ...S.logoutBtn, color: themeMode === 'dark' ? '#e2f9ef' : '#dbeafe', borderColor: themeMode === 'dark' ? 'rgba(255,255,255,.15)' : 'rgba(148,163,184,.25)', background: themeMode === 'dark' ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.12)' }} onClick={() => { logout(); navigate('/login'); }}>⏻</button>
+          <button title="Logout" style={{ ...S.logoutBtn, color: themeMode === 'dark' ? '#e2f9ef' : '#475569', borderColor: themeMode === 'dark' ? 'rgba(255,255,255,.15)' : '#d6e2da', background: themeMode === 'dark' ? 'rgba(255,255,255,.04)' : '#fff' }} onClick={() => { logout(); navigate('/login'); }}>⏻</button>
         </div>
       </aside>
 
@@ -973,7 +1113,7 @@ export default function AdminPage() {
           <h1>Admin workspace</h1>
           <span>Run your catalog, orders, customers, and delivery operations from one place.</span>
           <button
-            onClick={() => setThemeMode((prev) => prev === 'dark' ? 'light' : 'dark')}
+            onClick={toggleThemeMode}
             style={{
               marginTop:12,
               border:'1px solid rgba(255,255,255,0.2)',
@@ -1000,7 +1140,7 @@ export default function AdminPage() {
                 <h1 style={{ ...S.pgTitle, color: themeMode === 'dark' ? '#e2e8f0' : 'var(--ink, #14251d)' }}>Dashboard</h1>
                 <p style={{ ...S.pgSub, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>Welcome back, <strong style={{ color: themeMode === 'dark' ? '#f8fafc' : '#0f172a' }}>{user?.name}</strong>. Here is the latest health of your store.</p>
               </div>
-              <button style={{ ...S.greenBtn, boxShadow:'0 10px 20px rgba(76, 201, 157, 0.22)' }} onClick={() => openSection('add')}>+ Add Product</button>
+              <button className="admin-green-button" style={{ ...S.greenBtn, boxShadow:'0 10px 20px rgba(76, 201, 157, 0.22)' }} onClick={() => openSection('add')}>+ Add Product</button>
             </div>
 
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:18 }}>
@@ -1121,7 +1261,7 @@ export default function AdminPage() {
                 </div>
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                   <button style={{ ...S.linkBtn, color: themeMode === 'dark' ? '#93c5fd' : 'var(--brand-dark, #0d5c42)' }} onClick={() => openSection('orders')}>View orders →</button>
-                  <button style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12 }} onClick={exportCsvReport}>📊 CSV export</button>
+                  <button className="admin-green-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12 }} onClick={exportCsvReport}>📊 CSV export</button>
                   <button style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)' }} onClick={generatePdfReport}>📄 PDF report</button>
                 </div>
               </div>
@@ -1414,18 +1554,18 @@ export default function AdminPage() {
                 <div style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg,#062f2a,#0f172a)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: themeMode === 'dark' ? '1.5px solid rgba(34,197,94,.28)' : '1.5px solid #bbf7d0', borderRadius:14, padding:'20px 22px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
                     <div>
-                      <p style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#166534', textTransform:'uppercase', letterSpacing:'1px' }}>🇵🇰 Pakistan / Local</p>
-                      <p style={{ margin:0, fontSize:34, fontWeight:900, color:'#15803d', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
+                      <p className="admin-market-summary-local-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#166534', textTransform:'uppercase', letterSpacing:'1px' }}>🇵🇰 Pakistan / Local</p>
+                      <p className="admin-market-summary-local-count" style={{ margin:0, fontSize:34, fontWeight:900, color:'#15803d', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
                     </div>
                     <span style={{ fontSize:36, lineHeight:1 }}>🇵🇰</span>
                   </div>
-                  <p style={{ margin:'0 0 12px', fontSize:12, color:'#4ade80', fontWeight:500 }}>
+                  <p className="admin-market-summary-local-description" style={{ margin:'0 0 12px', fontSize:12, color:'#4ade80', fontWeight:500 }}>
                     Only visible to customers shopping in <strong>Pakistan mode (PKR)</strong>
                   </p>
                   <div style={{ height:6, background:'rgba(0,0,0,.06)', borderRadius:99, overflow:'hidden' }}>
                     <div style={{ height:'100%', width: products.length ? `${(localCnt/products.length)*100}%` : '0%', background:'#16a34a', borderRadius:99, transition:'width 1.2s ease' }} />
                   </div>
-                  <p style={{ margin:'6px 0 0', fontSize:11, color:'#16a34a', fontWeight:600 }}>
+                  <p className="admin-market-summary-local-share" style={{ margin:'6px 0 0', fontSize:11, color:'#16a34a', fontWeight:600 }}>
                     {products.length ? Math.round((localCnt/products.length)*100) : 0}% of total catalog
                   </p>
                 </div>
@@ -1433,18 +1573,18 @@ export default function AdminPage() {
                 <div style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg,#0f172a,#111827)' : 'linear-gradient(135deg,#eff6ff,#dbeafe)', border: themeMode === 'dark' ? '1.5px solid rgba(96,165,250,.28)' : '1.5px solid #bfdbfe', borderRadius:14, padding:'20px 22px' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
                     <div>
-                      <p style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'1px' }}>🌍 International / Global</p>
-                      <p style={{ margin:0, fontSize:34, fontWeight:900, color:'#2563eb', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
+                      <p className="admin-market-summary-global-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'1px' }}>🌍 International / Global</p>
+                      <p className="admin-market-summary-global-count" style={{ margin:0, fontSize:34, fontWeight:900, color:'#2563eb', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
                     </div>
                     <span style={{ fontSize:36, lineHeight:1 }}>🌍</span>
                   </div>
-                  <p style={{ margin:'0 0 12px', fontSize:12, color:'#60a5fa', fontWeight:500 }}>
+                  <p className="admin-market-summary-global-description" style={{ margin:'0 0 12px', fontSize:12, color:'#60a5fa', fontWeight:500 }}>
                     Visible to <strong>ALL customers</strong> — Pakistan + international buyers
                   </p>
                   <div style={{ height:6, background:'rgba(0,0,0,.06)', borderRadius:99, overflow:'hidden' }}>
                     <div style={{ height:'100%', width: products.length ? `${(globalCnt/products.length)*100}%` : '0%', background:'#3b82f6', borderRadius:99, transition:'width 1.2s ease' }} />
                   </div>
-                  <p style={{ margin:'6px 0 0', fontSize:11, color:'#2563eb', fontWeight:600 }}>
+                  <p className="admin-market-summary-global-share" style={{ margin:'6px 0 0', fontSize:11, color:'#2563eb', fontWeight:600 }}>
                     {products.length ? Math.round((globalCnt/products.length)*100) : 0}% of total catalog
                   </p>
                 </div>
@@ -1555,7 +1695,7 @@ export default function AdminPage() {
                 <h1 style={S.pgTitle}>Products</h1>
                 <p style={S.pgSub}>{products.length} total · {localCnt} local · {globalCnt} global · {oos} out of stock</p>
               </div>
-              <button style={S.greenBtn} onClick={() => openSection('add')}>+ Add Product</button>
+              <button className="admin-green-button" style={S.greenBtn} onClick={() => openSection('add')}>+ Add Product</button>
             </div>
 
             {/* filter bar */}
@@ -1856,10 +1996,10 @@ export default function AdminPage() {
 
                   <div>
                     <label style={{ ...S.lbl, marginBottom:10 }}>Market Visibility *</label>
-                    <MarketPicker value={form.isLocal} onChange={v => setForm(f=>({...f,isLocal:v}))} />
+                    <MarketPicker value={form.isLocal} onChange={v => setForm(f=>({...f,isLocal:v}))} darkMode={themeMode === 'dark'} />
                   </div>
 
-                  <button type="submit" style={{ ...S.greenBtn, width:'100%', padding:15, fontSize:14 }} disabled={saving}>
+                  <button className="admin-add-product-submit admin-green-button" type="submit" style={{ ...S.greenBtn, width:'100%', padding:15, fontSize:14 }} disabled={saving}>
                     {saving ? '⏳ Publishing…' : '+ Publish Product'}
                   </button>
                 </form>
@@ -1874,7 +2014,7 @@ export default function AdminPage() {
                   padding: 22,
                 }}>
                   <h4 style={{ ...S.cardH, marginBottom:16, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Product Photos</h4>
-                  <ImagePicker previews={previews} onPick={f => pickImgs(f, false)} onRemove={i => removeImg(i, false)} inputRef={fileRef} />
+                  <ImagePicker previews={previews} onPick={f => pickImgs(f, false)} onRemove={i => removeImg(i, false)} inputRef={fileRef} darkMode={themeMode === 'dark'} />
                 </div>
                 <div style={{
                   ...S.card,
@@ -1986,7 +2126,7 @@ export default function AdminPage() {
 
         {/* ─── SETTINGS ───────────────────────────────────────── */}
         {tab === 'settings' && (
-          <div style={{ animation:'fadeUp .35s ease' }}>
+          <div className="admin-settings-page" style={{ animation:'fadeUp .35s ease' }}>
             <div style={S.pgTop}>
               <div>
                 <h1 style={S.pgTitle}>Settings</h1>
@@ -1994,7 +2134,44 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div style={{
+            <div className="admin-password-card admin-settings-card" style={{ ...S.card, background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(240,250,244,0.9))', borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : '#dfece4', boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)', marginBottom:20 }}>
+              <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>🔐 Password & account security</h3>
+              <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
+                Set a new password without entering the old one. Customer resets email a one-time link (expires in 20 minutes). New passwords must have at least 12 characters.
+              </p>
+              <p className="admin-password-warning" style={{ margin:'0 0 18px', padding:'10px 12px', borderRadius:10, border: themeMode === 'dark' ? '1px solid rgba(251,191,36,.25)' : '1px solid #f3d08a', background: themeMode === 'dark' ? 'rgba(120,83,12,.16)' : '#fffbeb', color: themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:11, lineHeight:1.5 }}>
+                Keep this admin session private and sign out on shared devices. Anyone with access to your signed-in admin session can change account passwords.
+              </p>
+
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:16 }}>
+                <section style={{ padding:16, borderRadius:14, border: themeMode === 'dark' ? '1px solid rgba(148,163,184,.2)' : '1px solid #e2ece6', background: themeMode === 'dark' ? 'rgba(15,23,42,.5)' : '#fff' }}>
+                  <h4 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b', marginBottom:6 }}>Change your password</h4>
+                  <p style={{ margin:'0 0 14px', fontSize:11, color: themeMode === 'dark' ? '#aebfba' : '#64748b' }}>Choose a new password you can remember and confirm it below.</p>
+                  <form onSubmit={submitOwnPasswordChange} style={{ display:'grid', gap:11 }}>
+                    <label style={S.lbl}>New password
+                      <input style={S.inp} type="password" autoComplete="new-password" minLength={12} value={ownPasswordForm.newPassword} onChange={event => setOwnPasswordForm(form => ({ ...form, newPassword:event.target.value }))} required />
+                    </label>
+                    <label style={S.lbl}>Confirm new password
+                      <input style={S.inp} type="password" autoComplete="new-password" minLength={12} value={ownPasswordForm.confirmPassword} onChange={event => setOwnPasswordForm(form => ({ ...form, confirmPassword:event.target.value }))} required />
+                    </label>
+                    <button className="admin-password-submit admin-green-button" type="submit" style={{ ...S.greenBtn, justifySelf:'start' }} disabled={ownPasswordSaving}>{ownPasswordSaving ? 'Saving…' : 'Update my password'}</button>
+                  </form>
+                </section>
+
+                <section style={{ padding:16, borderRadius:14, border: themeMode === 'dark' ? '1px solid rgba(148,163,184,.2)' : '1px solid #e2ece6', background: themeMode === 'dark' ? 'rgba(15,23,42,.5)' : '#fff' }}>
+                  <h4 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b', marginBottom:6 }}>Email a customer reset link</h4>
+                  <p style={{ margin:'0 0 14px', fontSize:11, color: themeMode === 'dark' ? '#aebfba' : '#64748b' }}>The customer chooses their own password from a secure, single-use link.</p>
+                  <form onSubmit={submitCustomerPasswordReset} style={{ display:'grid', gap:11 }}>
+                    <label style={S.lbl}>Customer email
+                      <input style={S.inp} type="email" autoComplete="off" value={customerPasswordForm.email} onChange={event => setCustomerPasswordForm(form => ({ ...form, email:event.target.value }))} required />
+                    </label>
+                    <button className="admin-password-submit admin-green-button" type="submit" style={{ ...S.greenBtn, justifySelf:'start' }} disabled={customerPasswordSaving}>{customerPasswordSaving ? 'Sending…' : 'Send password reset email'}</button>
+                  </form>
+                </section>
+              </div>
+            </div>
+
+            <div className="admin-settings-card" style={{
               ...S.card,
               background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.74))',
               borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.18)',
@@ -2020,10 +2197,10 @@ export default function AdminPage() {
                   <textarea style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)', minHeight:80, resize:'vertical' } : { ...S.inp, minHeight:80, resize:'vertical' }} value={cashForm.notes} onChange={e => setCashForm(f => ({ ...f, notes: e.target.value }))} placeholder="Customer name, delivery note, cash collected at doorstep..." />
                 </div>
               </div>
-              <button style={S.greenBtn} onClick={handleManualCashSale}>💰 Record cash sale</button>
+              <button className="admin-green-button" style={S.greenBtn} onClick={handleManualCashSale}>💰 Record cash sale</button>
             </div>
 
-            <div style={{
+            <div className="admin-settings-card" style={{
               ...S.card,
               background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.74))',
               borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.18)',
@@ -2075,13 +2252,13 @@ export default function AdminPage() {
                     value={storeSettings.courierApiKey} onChange={e => setStoreSettings(s => ({ ...s, courierApiKey:e.target.value }))} />
                 </div>
               </div>
-              <button style={S.greenBtn} onClick={saveStoreSettings}>
+              <button className="admin-green-button" style={S.greenBtn} onClick={saveStoreSettings}>
                 {settingsSaved ? '✓ Saved!' : '💾 Save COD Settings'}
               </button>
             </div>
 
             {/* Exchange rate card */}
-            <div style={{
+            <div className="admin-settings-card" style={{
               ...S.card,
               background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.74))',
               borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.18)',
@@ -2100,7 +2277,7 @@ export default function AdminPage() {
                     <input style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)', paddingLeft:36 } : { ...S.inp, paddingLeft:36 }} type="number" min="1" step="0.01" value={usdRate} onChange={e => setUsdRate(e.target.value)} />
                   </div>
                 </div>
-                <button style={{ ...S.greenBtn, whiteSpace:'nowrap', flexShrink:0 }} onClick={saveRate}>
+                <button className="admin-green-button" style={{ ...S.greenBtn, whiteSpace:'nowrap', flexShrink:0 }} onClick={saveRate}>
                   {usdSaved ? '✓ Saved!' : '💾 Save Rate'}
                 </button>
               </div>
@@ -2108,7 +2285,7 @@ export default function AdminPage() {
             </div>
 
             {/* Zone-based shipping card */}
-            <div style={{
+            <div className="admin-settings-card" style={{
               ...S.card,
               background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.74))',
               borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.18)',
@@ -2154,7 +2331,7 @@ export default function AdminPage() {
                 })}
               </div>
 
-              <button style={S.greenBtn} onClick={saveZone}>
+              <button className="admin-green-button" style={S.greenBtn} onClick={saveZone}>
                 {zoneSaved ? '✓ Saved!' : '💾 Save Zone Rates'}
               </button>
               <p style={{ margin:'10px 0 0', fontSize:11, color: themeMode === 'dark' ? '#94a3b8' : '#94a3b8' }}>
@@ -2172,7 +2349,7 @@ export default function AdminPage() {
                 <h1 style={S.pgTitle}>🎧 Support Tickets</h1>
                 <p style={S.pgSub}>Customer support requests · {tickets.filter(t=>t.status==='Open').length} open · {tickets.filter(t=>t.status==='Resolved').length} resolved</p>
               </div>
-              <button style={S.greenBtn} onClick={refreshTickets}>
+              <button className="admin-green-button" style={S.greenBtn} onClick={refreshTickets}>
                 🔄 Refresh
               </button>
             </div>

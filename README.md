@@ -6,16 +6,20 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-ready-47A248?logo=mongodb&logoColor=white)](./docker-compose.yml)
 [![License](https://img.shields.io/badge/license-ISC-blue)](./backend/package.json)
 
-> A full-stack storefront for discovering, managing, and selling products with
-> customer accounts, admin operations, local/global markets, and Android support.
+> IndusCart is a Pakistan-focused, full-stack e-commerce demo/MVP: a React and
+> Capacitor storefront backed by an Express/MongoDB API, with customer accounts,
+> a protected admin workspace, local/international catalog modes, COD checkout,
+> server-validated orders, and support tickets. Online payment capture and live
+> courier booking are not yet integrated.
 
 ### Explore the project
 
 - **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
+- **[Feature Coverage](./docs/FEATURE_COVERAGE.md)** — implemented, partial, and missing use cases plus next steps
 - **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
 - **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** — SRD, API, architecture, testing, deployment, and policy documents
 - **[Software Requirements Document](./docs/SRD.md)** — scope, requirements, acceptance criteria, and release gates
-- **[UML Diagrams](./docs/UML_DIAGRAMS.md)** — implementation-based use-case, class, component, checkout, support, and upload diagrams
+- **[UML Diagrams](./docs/UML_DIAGRAMS.md)** — GitHub-rendered source inventory/counts, frontend routes, backend authorization, domain relationships, deployment, checkout, support, uploads, password-reset email sequence/state, and UML views
 - **[API Reference](./docs/API_REFERENCE.md)** — implemented routes, auth levels, fields, and limitations
 - **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model

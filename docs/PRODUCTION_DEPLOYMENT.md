@@ -28,7 +28,14 @@ MONGO_URI=mongodb+srv://USER:PASSWORD@CLUSTER/induscart
 JWT_SECRET=replace-with-a-unique-random-secret-at-least-32-characters
 CORS_ORIGINS=https://shop.example.com
 PORT=5000
+FRONTEND_URL=https://shop.example.com
+RESEND_API_KEY=replace-with-resend-api-key
+EMAIL_FROM="IndusCart <no-reply@your-verified-domain.com>"
 ```
+
+Customer password-reset emails require a Resend API key and an `EMAIL_FROM`
+address whose domain is verified with Resend. Keep the API key in the backend
+environment only; the reset link is single-use and expires after 20 minutes.
 
 Build the frontend with:
 

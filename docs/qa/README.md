@@ -126,6 +126,8 @@ Use `Authorization: Bearer <JWT>` on protected routes. Assert status, JSON shape
 | `GET /health/ready` | `200` when MongoDB connected; `503` while disconnected |
 | `POST /api/auth/register` | valid; missing fields; malformed/duplicate email; duplicate username; password under 8 |
 | `POST /api/auth/login` | valid email/username; bad credentials; missing fields; auth rate limit |
+| `PUT /api/auth/admin/customer-password` | admin required; unknown/admin account rejected; configured email delivery; no token/password leakage |
+| `POST /api/auth/password/reset` | valid reset; expired/invalid/replayed token; minimum length; token consumed once |
 | `GET /api/auth/profile`, `/api/auth/session` | missing/invalid/valid token; profile has no password |
 | `GET /api/products` | visible products; category and `isLocal` filters; hidden exclusion; admin-only `includeHidden`; empty list |
 | `GET /api/products/categories` | visible categories; hidden category excluded except authenticated admin with `includeHidden=true` |

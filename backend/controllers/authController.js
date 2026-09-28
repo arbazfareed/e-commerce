@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
 
 // Helper: generate JWT token
 const generateToken = (id) => {
@@ -101,6 +103,116 @@ const loginUser = async (req, res) => {
   }
 };
 
+const changeOwnPassword = async (req, res) => {
+  const { newPassword } = req.body || {};
+  if (typeof newPassword !== 'string' || !newPassword) {
+    return res.status(400).json({ message: 'New password is required.' });
+  }
+  if (newPassword.length < 12) {
+    return res.status(400).json({ message: 'New password must be at least 12 characters.' });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User account was not found.' });
+    if (await user.matchPassword(newPassword)) {
+      return res.status(400).json({ message: 'New password must be different from your current password.' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    return res.json({ message: 'Your password was changed successfully.' });
+  } catch (error) {
+    console.error('Password change error:', error.message);
+    return res.status(500).json({ message: 'Password could not be changed.' });
+  }
+};
+
+const resetCustomerPassword = async (req, res) => {
+  const { email } = req.body || {};
+  if (typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email.trim())) {
+    return res.status(400).json({ message: 'A valid customer email is required.' });
+  }
+
+  try {
+    const customer = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!customer) return res.status(404).json({ message: 'No customer account was found for that email.' });
+    if (customer.isAdmin) {
+      return res.status(403).json({ message: 'Admin passwords must be changed by that administrator.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('base64url');
+    customer.passwordResetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    customer.passwordResetExpiresAt = new Date(Date.now() + 20 * 60 * 1000);
+    await customer.save();
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const resetUrl = `${frontendUrl}/reset-password/${token}`;
+    try {
+      await emailService.sendCustomerPasswordResetEmail({
+        to: customer.email,
+        name: customer.name,
+        resetUrl,
+      });
+    } catch (error) {
+      customer.passwordResetTokenHash = undefined;
+      customer.passwordResetExpiresAt = undefined;
+      await customer.save().catch(() => {});
+      console.error('Password reset email delivery failed:', error.code || 'EMAIL_ERROR');
+      return res.status(503).json({ message: 'Reset email could not be sent. Check email service settings and try again.' });
+    }
+
+    return res.json({ message: 'Password reset email sent to the customer.' });
+  } catch (error) {
+    console.error('Customer password reset request error:', error.message);
+    return res.status(500).json({ message: 'Password reset request could not be completed.' });
+  }
+};
+
+const completeCustomerPasswordReset = async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  if (typeof token !== 'string' || token.length < 32 || token.length > 128
+    || typeof newPassword !== 'string' || !newPassword) {
+    return res.status(400).json({ message: 'A valid reset link and new password are required.' });
+  }
+  if (newPassword.length < 12) {
+    return res.status(400).json({ message: 'New password must be at least 12 characters.' });
+  }
+
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const now = new Date();
+    const user = await User.findOne({
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: now },
+    }).select('+passwordResetTokenHash +passwordResetExpiresAt');
+    if (!user) return res.status(400).json({ message: 'This password reset link is invalid, expired, or already used.' });
+    if (await user.matchPassword(newPassword)) {
+      return res.status(400).json({ message: 'Choose a password different from the current password.' });
+    }
+
+    const claimed = await User.updateOne({
+      _id: user._id,
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: now },
+    }, {
+      $unset: { passwordResetTokenHash: 1, passwordResetExpiresAt: 1 },
+    });
+    if (claimed.modifiedCount !== 1) {
+      return res.status(400).json({ message: 'This password reset link is invalid, expired, or already used.' });
+    }
+
+    user.password = newPassword;
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpiresAt = undefined;
+    await user.save();
+    return res.json({ message: 'Your password was reset successfully.' });
+  } catch (error) {
+    console.error('Customer password reset completion error:', error.message);
+    return res.status(500).json({ message: 'Password could not be reset.' });
+  }
+};
+
 // ─── @GET /api/auth/profile ────────────────────────────────────
 const getUserProfile = async (req, res) => {
   try {
@@ -117,4 +229,4 @@ const getUserProfile = async (req, res) => {
 
 const verifySession = (req, res) => res.json({ valid: true, user: req.user });
 
-module.exports = { registerUser, loginUser, getUserProfile, verifySession };
+module.exports = { registerUser, loginUser, changeOwnPassword, resetCustomerPassword, completeCustomerPasswordReset, getUserProfile, verifySession };

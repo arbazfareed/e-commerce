@@ -38,6 +38,14 @@ export function getSupportTickets() {
   return API.get('/api/support/tickets');
 }
 
+export function changeOwnPassword(payload) {
+  return API.patch('/api/auth/password', payload);
+}
+
+export function resetCustomerPassword(payload) {
+  return API.put('/api/auth/admin/customer-password', payload);
+}
+
 export function updateSupportTicketStatus(ticketId, status) {
   return API.put(`/api/support/tickets/${ticketId}/status`, { status });
 }

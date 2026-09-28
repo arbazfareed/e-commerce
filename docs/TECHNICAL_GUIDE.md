@@ -112,3 +112,22 @@ Health endpoints:
   before taking real payments.
 - The frontend build still reports a non-blocking large-bundle warning.
 
+## 9. Full source map and UML guide
+
+The implementation-based, GitHub-renderable diagrams are maintained in
+[`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md). They include the repository/package map,
+frontend route and guard structure, backend layers and authorization, actual
+Mongo relationships, checkout/order lifecycle, and customer password-reset
+email lifecycle. Start with sections 17–25 for the detailed source map and
+flows; sections 1–16 preserve the original UML views.
+
+| Source area | Files matched | Main contents |
+|---|---:|---|
+| `backend/**/*.{js,json,md}` | 47 | Express entry point, config, routes, controllers, middleware, Mongoose models, services, utilities, scripts, tests and guide |
+| `frontend/src/**/*.{js,jsx,ts,tsx,css}` | 32 | Router, pages, shared components, contexts, API/pricing utilities, styles and tests |
+
+These are workspace file counts, not LOC counts. Generated builds, Android
+intermediates, `node_modules`, uploads and binary assets are excluded. For
+requirements-level models, see [`SRD.md`](./SRD.md); for deployment and system
+overview, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+

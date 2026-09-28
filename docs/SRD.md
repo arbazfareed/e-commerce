@@ -180,13 +180,16 @@ classDiagram
          +String name
          +String username
          +String email
-         +String passwordHash
+         +String password
+         +String passwordResetTokenHash
+         +Date passwordResetExpiresAt
          +Boolean isAdmin
       }
       class Product {
          +ObjectId id
          +String name
          +String category
+         +String subcategory
          +Number pricePKR
          +Number priceUSD
          +Number discountPercent
@@ -194,6 +197,7 @@ classDiagram
          +Boolean isLocal
          +Number stock
          +Number weightKg
+         +String[] images
       }
       class Order {
          +ObjectId id
@@ -203,19 +207,25 @@ classDiagram
          +Number codFee
          +Number totalPrice
          +String paymentMethod
+         +String paymentStatus
+         +String courierDispatchStatus
          +String status
       }
       class OrderItem {
          +ObjectId product
          +String name
          +Number price
+         +Number originalPrice
+         +Number discountPercent
          +Number quantity
+         +Number weightKg
          +String selectedColor
          +String selectedSize
       }
       class SupportTicket {
          +ObjectId id
          +ObjectId user
+         +String email
          +String status
          +String message
          +String adminReply
@@ -227,12 +237,18 @@ classDiagram
          +Number codFee
          +String courierProvider
       }
-      User "1" --> "many" Order : places
-      Order "1" *-- "many" OrderItem : contains
-      Product "1" <-- "many" OrderItem : snapshot source
-      User "1" --> "many" SupportTicket : creates
-      SystemSettings "1" --> "many" Order : pricing rules
+      User "1" --> "0..*" Order : places
+      Order "1" *-- "1..*" OrderItem : embeds
+      OrderItem "0..*" --> "0..1" Product : optional source reference
+      User "0..1" --> "0..*" SupportTicket : submits
+      SystemSettings ..> Order : read during checkout
 ```
+
+   `User.password` is the field name stored by the model and contains a bcrypt
+   hash. `OrderItem` is embedded in an Order; manual cash items can have a null
+   Product reference, and guest support tickets have a null User reference.
+   `SystemSettings` is read while calculating an order but is not stored as a
+   direct Order relationship.
 
 ### 4.5 Level-1 data-flow diagram
 
@@ -287,12 +303,17 @@ still permits any enumerated status value; it does not enforce this graph.
 | Activity | Added | Checkout validation and order creation |
 | Sequence | Added | Browser-to-API checkout collaboration |
 | Class/domain | Added | Mongoose domain model relationships |
+| Object/instance snapshot | Added | Illustrative user/order/ticket/browser-state instance view in `UML_DIAGRAMS.md` |
+| Package | Added | Mermaid package-group view of frontend/backend responsibilities |
 | ER/data model | Added | See `ARCHITECTURE.md` |
 | Data flow | Added | Level-1 actors, processes, stores, integrations |
 | State machine | Added | Order lifecycle |
-| Component/deployment | Added | See `ARCHITECTURE.md` |
-| Timing diagram | Not needed yet | Add only when latency/SLA timing becomes a requirement |
-| Communication diagram | Not needed yet | Sequence diagram currently communicates the same integration path |
+| Component/deployment | Added | `ARCHITECTURE.md` and `UML_DIAGRAMS.md` |
+| Communication/collaboration | Added | Numbered message view in `UML_DIAGRAMS.md` |
+| Interaction overview | Added | High-level shopper/admin flow in `UML_DIAGRAMS.md` |
+| Timing view | Partial | Async courier ordering only; no SLA/latency guarantees are modeled |
+| Composite structure | Not separately modeled | Current component/package views cover required structure; no plug-in ports exist |
+| UML profile | Not applicable | No project-specific UML metamodel/stereotypes are defined |
 | Payment/courier detailed flows | Missing | Add after real providers and webhooks are selected |
 | Returns/refunds activity | Missing | Add when the returns domain model and workflow are implemented |
 
@@ -344,8 +365,10 @@ requirements-level behavioral models.
    available only to authenticated administrators.
 7. COD can be disabled and can use a flat or percentage fee with an optional
    product-total threshold.
-8. Cancelling an order restores stock; other concurrent stock reservations need
-   a transaction/atomic update improvement before high-volume production.
+8. Cancelling an order restores stock only when its previous status is Pending
+   or Processing. Cancellation after Shipped remains possible but does not
+   restore stock. Concurrent order creation still needs a transaction or
+   compensation design before high-volume production.
 9. A courier failure must not fail order creation; the current service reports
    `not_configured` or `provider_not_supported`.
 10. Payment method selection is not payment settlement. Non-COD methods must not

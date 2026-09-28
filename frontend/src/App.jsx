@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext';
 import Navbar          from './components/Navbar';
 import HomePage        from './pages/HomePage';
 import LoginPage       from './pages/LoginPage';
+import PasswordResetPage from './pages/PasswordResetPage';
 import RegisterPage    from './pages/RegisterPage';
 import CartPage        from './pages/CartPage';
 import OrdersPage      from './pages/OrdersPage';
@@ -49,6 +50,7 @@ const AppRoutes = () => (
       <Route path="/"               element={<RootRoute />} />
       <Route path="/products/:id"   element={<ProductDetailPage />} />
       <Route path="/login"          element={<GuestRoute><LoginPage /></GuestRoute>} />
+      <Route path="/reset-password/:token" element={<PasswordResetPage />} />
       <Route path="/register"       element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path="/cart"           element={<PrivateRoute><CartPage /></PrivateRoute>} />
       <Route path="/orders"         element={<PrivateRoute><OrdersPage /></PrivateRoute>} />

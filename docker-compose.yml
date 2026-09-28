@@ -20,6 +20,9 @@ services:
       MONGO_URI: ${DOCKER_MONGO_URI:-mongodb://mongo:27017/induscart}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env file}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     ports:
       - "5000:5000"
     volumes:

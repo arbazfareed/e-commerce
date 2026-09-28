@@ -57,3 +57,19 @@ test('readiness endpoint reports the database status while MongoDB is disconnect
     await new Promise(resolve => server.close(resolve));
   }
 });
+
+test('repeated session checks do not consume the credential-attempt limit', async () => {
+  const server = await new Promise(resolve => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+
+  try {
+    for (let attempt = 0; attempt < 35; attempt += 1) {
+      const response = await request(server, '/api/auth/session');
+      assert.equal(response.status, 401, `session check ${attempt + 1} should require authentication`);
+      assert.notEqual(response.body.message, 'Too many authentication attempts. Please try again later.');
+    }
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});

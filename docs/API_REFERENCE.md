@@ -23,12 +23,20 @@ Admin endpoints additionally require the authenticated user's `isAdmin` flag.
 |---|---|---|---|
 | POST | `/api/auth/register` | Public/rate limited | Creates account and returns user plus JWT |
 | POST | `/api/auth/login` | Public/rate limited | Accepts email/username-compatible identifier and password |
+| PATCH | `/api/auth/password` | User | Changes the authenticated user's password |
+| PUT | `/api/auth/admin/customer-password` | Admin | Emails a non-admin customer a one-time reset link |
+| POST | `/api/auth/password/reset` | Public/rate limited | Consumes a reset token and saves the customer's new password |
 | GET | `/api/auth/profile` | User | Returns current profile without password |
 | GET | `/api/auth/session` | User | Verifies JWT session and returns current user |
 
 Registration accepts `name`, `username`, `email`, `password`, `phone`, `country`,
 and `city`. Passwords must be at least eight characters. Production credentials
 must use stronger operational policy than the minimum application rule.
+Changed/reset passwords must be at least 12 characters. Admin reset requests
+email a random, single-use link that expires after 20 minutes; only its SHA-256
+hash and expiry are stored. Resend delivery requires `RESEND_API_KEY`, a verified
+`EMAIL_FROM` sender, and `FRONTEND_URL` in the backend environment. Keep admin
+sessions private; do not send passwords directly by email.
 
 ## Products
 

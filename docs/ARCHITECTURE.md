@@ -12,6 +12,7 @@ flowchart LR
     Capacitor[Capacitor Android wrapper\nfrontend/android]
     API[Express API\nbackend/server.js]
     Auth[JWT + bcrypt authentication]
+    Email[Password reset email service\nResend HTTPS API]
     Mongo[(MongoDB)]
     Uploads[(Product uploads\nbackend/uploads)]
     Courier[Optional courier provider]
@@ -24,6 +25,7 @@ flowchart LR
     API --> Mongo
     API --> Uploads
     API -. optional dispatch .-> Courier
+    API --> Email
 ```
 
 ## Local and Docker deployment
@@ -79,27 +81,29 @@ sequenceDiagram
 
 | Area | Entry points | Responsibility |
 |---|---|---|
-| Authentication | `routes/authRoutes.js`, `controllers/authController.js` | Registration, login, session verification, JWT identity |
+| Authentication | `routes/authRoutes.js`, `controllers/authController.js` | Registration, login, session verification, own-password change, one-time customer reset links |
 | Products | `routes/productRoutes.js`, `controllers/productController.js` | Catalog, visibility, categories, variants, images, stock |
 | Orders | `routes/orderRoutes.js`, `controllers/orderController.js` | Checkout validation, order creation, status updates, analytics |
 | Support | `routes/supportRoutes.js`, `controllers/supportController.js` | Customer support tickets and admin handling |
 | Settings | `routes/settingsRoutes.js`, `controllers/settingsController.js` | COD, courier, and store configuration |
 | Persistence | `models/*.js`, `config/db.js` | MongoDB schemas and connection |
 | Security | `middleware/authMiddleware.js`, `config/env.js` | JWT protection, admin authorization, environment validation |
+| Email | `services/emailService.js` | Sends customer reset links through Resend when configured |
 
 ## Data model
 
 ```mermaid
 erDiagram
     USER ||--o{ ORDER : places
-    USER ||--o{ SUPPORT_TICKET : creates
-    ORDER }o--|{ PRODUCT : contains
-    SYSTEM_SETTINGS ||--o{ ORDER : configures
+    USER o|--o{ SUPPORT_TICKET : creates
+    ORDER ||--|{ ORDER_ITEM : embeds
+    PRODUCT o|--o{ ORDER_ITEM : source_reference
 
     USER {
         string id
         string name
         string email
+        string password_bcrypt_hash
         boolean isAdmin
     }
     PRODUCT {
@@ -111,6 +115,14 @@ erDiagram
         number stock
         boolean isVisible
         boolean isLocal
+    }
+    ORDER_ITEM {
+        string productId_optional
+        string name_snapshot
+        number price_snapshot
+        number quantity
+        string selectedColor
+        string selectedSize
     }
     ORDER {
         string id
@@ -133,6 +145,11 @@ erDiagram
     }
 ```
 
+    `ORDER_ITEM` is an embedded order subdocument, not its own collection; manual
+    cash items may have a null Product reference. `SYSTEM_SETTINGS` is read during
+    checkout but does not have a stored relationship to an Order. Password reset
+    stores only a hidden token hash and expiration on `User`.
+
 ## Frontend structure
 
 - `frontend/src/App.jsx` defines route composition.
@@ -152,6 +169,8 @@ erDiagram
 | `JWT_SECRET` | `backend/.env` | JWT signing secret |
 | `PORT` | `backend/.env` | API listening port |
 | `CORS_ORIGINS` | `backend/.env` | Optional browser-origin restriction |
+| `FRONTEND_URL` | `backend/.env` | Base URL used to create customer reset links |
+| `RESEND_API_KEY`, `EMAIL_FROM` | `backend/.env` | Server-side reset email delivery through a verified sender |
 | `VITE_API_URL` | `frontend/.env` | API and upload base URL |
 | Product images | `backend/uploads/` or Docker `uploads_data` | Uploaded product files |
 | MongoDB data | MongoDB or Docker `mongo_data` | Application records |

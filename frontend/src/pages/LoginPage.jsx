@@ -33,6 +33,8 @@ export default function LoginPage() {
         .inp-focus { transition:border-color .18s ease, box-shadow .18s ease, background .18s ease; }
         .btn-hover:hover { opacity:0.92; transform:translateY(-1px); }
         .btn-hover { transition:all 0.15s; }
+        :root[data-theme='dark'] .login-page .login-error-box { background:#3b1f20 !important; border-color:#8b3434 !important; color:#fecaca !important; }
+        :root[data-theme='dark'] .login-page .login-error-message { color:#fecaca !important; }
         .login-shell {
           width:min(100%, 980px);
           display:grid;
@@ -164,9 +166,9 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div style={S.errBox}>
+          <div className="login-error-box" style={S.errBox}>
             <span style={{ fontSize:'15px' }}>⚠️</span>
-            <span>{error}</span>
+            <span className="login-error-message">{error}</span>
           </div>
         )}
 

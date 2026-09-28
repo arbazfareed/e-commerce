@@ -1,7 +1,7 @@
 export function Badge({ status, config }) {
   const colors = config[status] || config.Pending;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: colors.bg, color: colors.color, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: '0.3px' }}>
+    <span className="admin-status-badge" data-status={status.toLowerCase()} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: colors.bg, color: colors.color, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: '0.3px' }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: colors.dot, flexShrink: 0 }} />
       {status}
     </span>
@@ -10,7 +10,7 @@ export function Badge({ status, config }) {
 
 export function MarketBadge({ isLocal }) {
   return (
-    <span style={{
+    <span className="admin-market-badge" data-market={isLocal ? 'local' : 'global'} style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       background: isLocal ? '#ecfdf5' : '#eff6ff',
       color: isLocal ? '#059669' : '#2563eb',
@@ -38,9 +38,9 @@ export function Toast({ toast }) {
   );
 }
 
-export function ImagePicker({ previews, onPick, onRemove, inputRef, max = 5 }) {
+export function ImagePicker({ previews, onPick, onRemove, inputRef, max = 5, darkMode = false }) {
   return (
-    <div>
+    <div className="admin-image-picker">
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {previews.map((url, index) => (
           <div key={index} style={{ position: 'relative' }}>
@@ -51,9 +51,9 @@ export function ImagePicker({ previews, onPick, onRemove, inputRef, max = 5 }) {
           </div>
         ))}
         {previews.length < max && (
-          <label style={{ width: 82, height: 82, border: '2px dashed #cbd5e1', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f8fafc', gap: 4 }}>
-            <span style={{ fontSize: 24, color: '#94a3b8' }}>+</span>
-            <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>Photo</span>
+          <label className="admin-image-picker-add" style={{ width: 82, height: 82, border: `2px dashed ${darkMode ? '#718479' : '#9aafa1'}`, borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: darkMode ? '#26322c' : '#f4f8f5', gap: 4 }}>
+            <span className="admin-image-picker-plus" style={{ fontSize: 24, color: darkMode ? '#e2eee6' : '#456b56' }}>+</span>
+            <span className="admin-image-picker-caption" style={{ fontSize: 11, color: darkMode ? '#d1ded6' : '#405c49', fontWeight: 800 }}>Add photo</span>
             <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display: 'none' }} onChange={event => { onPick(event.target.files); if (inputRef.current) inputRef.current.value = ''; }} />
           </label>
         )}
@@ -63,30 +63,30 @@ export function ImagePicker({ previews, onPick, onRemove, inputRef, max = 5 }) {
   );
 }
 
-export function MarketPicker({ value, onChange, hint = true }) {
+export function MarketPicker({ value, onChange, hint = true, darkMode = false }) {
   const options = [
-    { value: false, flag: '🌍', title: 'Global', sub: 'Visible to ALL customers\n(Pakistan + International)', color: '#2563eb', activeBg: '#eff6ff', activeBorder: '#93c5fd' },
-    { value: true, flag: '🇵🇰', title: 'Pakistan Only', sub: 'Visible only to local\nPakistan customers', color: '#059669', activeBg: '#ecfdf5', activeBorder: '#6ee7b7' },
+    { value: false, flag: '🌍', title: 'Global', sub: 'Visible to ALL customers\n(Pakistan + International)', color: darkMode ? '#bfdbfe' : '#1d4ed8', activeBg: darkMode ? '#1b2c3e' : '#eff6ff', activeBorder: darkMode ? '#60a5fa' : '#93c5fd' },
+    { value: true, flag: '🇵🇰', title: 'Pakistan Only', sub: 'Visible only to local\nPakistan customers', color: darkMode ? '#a7f3d0' : '#047857', activeBg: darkMode ? '#173b2d' : '#ecfdf5', activeBorder: darkMode ? '#6ee7b7' : '#6ee7b7' },
   ];
   return (
-    <div>
+    <div className="market-picker" data-selected-market={value ? 'local' : 'global'}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {options.map(option => {
           const active = value === option.value;
           return (
-            <label key={String(option.value)} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '14px 16px', borderRadius: 14, cursor: 'pointer', userSelect: 'none', border: `2px solid ${active ? option.activeBorder : '#e2e8f0'}`, background: active ? option.activeBg : '#f8fafc', transition: 'all .15s' }}>
+            <label key={String(option.value)} className={`market-picker-option${active ? ' is-active' : ''}`} data-market={option.value ? 'local' : 'global'} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '14px 16px', borderRadius: 14, cursor: 'pointer', userSelect: 'none', border: `2px solid ${active ? option.activeBorder : (darkMode ? '#46534d' : '#d5e0d8')}`, background: active ? option.activeBg : (darkMode ? '#202724' : '#f8faf9'), transition: 'all .15s' }}>
               <input type="radio" style={{ display: 'none' }} checked={active} onChange={() => onChange(option.value)} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20 }}>{option.flag}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: active ? option.color : '#64748b', fontFamily: "'Sora',sans-serif" }}>{option.title}</span>
-                {active && <span style={{ marginLeft: 'auto', fontSize: 14, color: option.color }}>✓</span>}
+                <span className="market-picker-option-title" style={{ fontSize: 13, fontWeight: 800, color: active ? option.color : (darkMode ? '#d5e0da' : '#334155'), fontFamily: "'Sora',sans-serif" }}>{option.title}</span>
+                {active && <span className="market-picker-option-check" style={{ marginLeft: 'auto', fontSize: 14, color: option.color }}>✓</span>}
               </div>
-              <p style={{ margin: 0, fontSize: 11, color: '#94a3b8', fontWeight: 400, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{option.sub}</p>
+              <p className="market-picker-option-sub" style={{ margin: 0, fontSize: 12, color: darkMode ? '#b9c8c0' : '#52675d', fontWeight: 500, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{option.sub}</p>
             </label>
           );
         })}
       </div>
-      {hint && <p style={{ margin: '8px 0 0', fontSize: 11, color: value ? '#059669' : '#2563eb', fontWeight: 600 }}>
+      {hint && <p className="market-picker-hint" style={{ margin: '8px 0 0', fontSize: 12, color: value ? (darkMode ? '#a7f3d0' : '#047857') : (darkMode ? '#bfdbfe' : '#1d4ed8'), fontWeight: 700 }}>
         {value ? '🇵🇰 Only Pakistani customers (shopping in PKR mode) will see this product.' : '🌍 Everyone sees this product — both local and international customers.'}
       </p>}
     </div>
@@ -108,7 +108,7 @@ export function CategoryPicker({ value, onChange, isNew, setIsNew, categories = 
         <option value="">— Select category —</option>
         {categories.map(category => <option key={category} value={category}>{category}</option>)}
       </select>
-      <button type="button" style={buttonStyle} onClick={() => { setIsNew(true); onChange(''); }}>+ New</button>
+      <button type="button" className="admin-category-new" style={buttonStyle} onClick={() => { setIsNew(true); onChange(''); }}>+ New</button>
     </div>
   );
 }

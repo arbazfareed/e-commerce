@@ -100,11 +100,16 @@ Create private environment files from the committed examples.
 MONGO_URI=mongodb://127.0.0.1:27017/induscart
 PORT=5000
 JWT_SECRET=replace-with-a-long-random-secret
+FRONTEND_URL=http://localhost:3000
+RESEND_API_KEY=replace-with-resend-api-key
+EMAIL_FROM="IndusCart <no-reply@your-verified-domain.com>"
 ```
 
 For production, use a unique JWT secret of at least 32 characters and configure
 `CORS_ORIGINS`. Never commit credentials, database URIs containing passwords,
 API keys, or signing keystores.
+Customer password-reset emails require a Resend API key and a sender address
+verified by Resend. The emailed link is single-use and expires after 20 minutes.
 
 ### Frontend: `frontend/.env`
 

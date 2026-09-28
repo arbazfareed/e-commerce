@@ -1,6 +1,21 @@
 # IndusCart UML Diagrams
 
-These diagrams document the repository as implemented, not an idealized future system. Mermaid renders them in GitHub. Payment-provider capture and courier booking are shown as future integrations; support tickets are stored by the current Express/MongoDB API. The cart and recently viewed list are browser-local.
+These diagrams document the repository as implemented, not an idealized future system. Mermaid renders them in GitHub. Payment-provider capture and courier booking are shown as future integrations; support tickets are stored by the current Express/MongoDB API. The cart and recently viewed list are browser-local. Customer password reset uses a one-time, 20-minute link delivered through Resend when configured.
+
+## Repository inventory snapshot
+
+The source inventory was checked against this repository before updating these
+diagrams. The counts are files, not lines of code; generated build output,
+`node_modules`, Android build artifacts, and uploaded images are excluded.
+
+| Area | Files found | Notes |
+|---|---:|---|
+| Backend JS/JSON/Markdown files | 47 | Runtime, API, schemas, scripts, tests, manifests and backend guide |
+| Frontend `src` JS/JSX/TS/TSX/CSS files | 32 | Routes, pages, components, contexts, utilities and tests |
+| UML sections in this guide | 25 | Sections 1–16 reviewed/corrected plus 17–25 for code structure and current workflows |
+
+For GitHub review, start with sections 1–4 for actors, domain data, components
+and routes; then use the workflows in sections 5 onward.
 
 ## 1. Use-case diagram
 
@@ -20,6 +35,9 @@ flowchart LR
         Checkout((Place order))
         Track((View order history/status))
         Ticket((Submit support ticket))
+        AdminPassword((Change own admin password))
+        RequestReset((Request customer reset email))
+        CompleteReset((Choose password from one-time link))
         AdminCatalog((Manage products and images))
         AdminOrders((Review orders and set status))
         AdminSupport((Reply to support tickets))
@@ -30,6 +48,7 @@ flowchart LR
     Guest --> Details
     Guest --> Account
     Guest --> Ticket
+    Guest --> CompleteReset
     Customer --> Browse
     Customer --> Details
     Customer --> LocalCart
@@ -40,6 +59,9 @@ flowchart LR
     Admin --> AdminOrders
     Admin --> AdminSupport
     Admin --> AdminSettings
+    Admin --> AdminPassword
+    Admin --> RequestReset
+    RequestReset -->|email link| CompleteReset
     Checkout -. future capture .-> Payment
     AdminSettings -. future booking adapter .-> Courier
 ```
@@ -53,10 +75,14 @@ classDiagram
         +String name
         +String username
         +String email
-        +String passwordHash
+        +String password
+        +String passwordResetTokenHash
+        +Date passwordResetExpiresAt
         +Boolean isAdmin
+        +String phone
         +String country
         +String city
+        +matchPassword(entered) Boolean
     }
     class Product {
         +ObjectId id
@@ -66,10 +92,14 @@ classDiagram
         +Number pricePKR
         +Number priceUSD
         +Number discountPercent
+        +String discountStartDate
+        +String discountEndDate
         +Boolean isVisible
         +Boolean isLocal
         +Number stock
         +Number weightKg
+        +String[] colors
+        +String[] sizes
         +String[] images
     }
     class CartLine {
@@ -80,34 +110,48 @@ classDiagram
     }
     class Order {
         +ObjectId id
-        +ObjectId userId
+        +ObjectId user
         +Number productTotal
         +Number shippingFee
         +Number codFee
+        +Number totalWeight
+        +String shippingZone
         +Number totalPrice
         +String paymentMethod
+        +String paymentChannel
         +String paymentStatus
         +Boolean isPaid
+        +Date paidAt
         +String courierDispatchStatus
         +String status
+        +Boolean isManualCash
+        +Date cashCollectedAt
+        +ObjectId recordedBy
+        +String notes
     }
     class OrderItem {
-        +ObjectId productId
+        +ObjectId product
         +String name
         +Number price
+        +Number originalPrice
+        +Number discountPercent
         +Number quantity
+        +String image
         +String selectedColor
         +String selectedSize
+        +Number weightKg
     }
     class SupportTicket {
         +ObjectId id
-        +ObjectId userId
+        +ObjectId user
         +String name
         +String email
         +String subject
         +String message
+        +String orderId
         +String status
         +String adminReply
+        +Date resolvedAt
     }
     class SystemSettings {
         +String key
@@ -122,18 +166,20 @@ classDiagram
         +JSON cart
         +JSON recentlyViewed
         +String marketMode
+        +String themePreference
+        +Number exchangeRate
     }
 
     User "1" --> "0..*" Order : places
     Order "1" *-- "1..*" OrderItem : snapshots
-    Product "1" <-- "0..*" OrderItem : source item
+    OrderItem "0..*" --> "0..1" Product : optional source reference
     User "0..1" --> "0..*" SupportTicket : submits
-    SystemSettings "1" --> "0..*" Order : checkout settings
     BrowserStorage "1" o-- "0..*" CartLine : stores locally
     CartLine "0..*" --> "1" Product : references
+    SystemSettings ..> Order : read during checkout
 ```
 
-**Storage distinction:** `CartLine` and `BrowserStorage` are conceptual browser state, not MongoDB models. `Order` and `SupportTicket` are persisted server-side. Courier keys are excluded from normal settings responses; they are not currently encrypted at rest.
+**Storage distinction:** `CartLine` and `BrowserStorage` are conceptual browser state, not MongoDB models. `OrderItem` is an embedded subdocument in `Order`, not a separate collection; manual cash items may have a null `Product` reference. `SystemSettings` is read while creating an order but has no persisted relation to it. Password reset token hashes/expiry are hidden `User` fields. Courier keys are excluded from normal settings responses but are not encrypted at rest.
 
 ## 3. Component diagram
 
@@ -145,9 +191,12 @@ flowchart LR
     AuthContext[AuthContext / JWT session]
     CartContext[CartContext / localStorage]
     AdminAPI[Admin API client]
+    ResetPage[PasswordResetPage]
     Express[Express REST API]
     AuthMW[JWT protect / admin middleware]
     Controllers[Auth, product, order, support, settings controllers]
+    EmailService[Resend email service]
+    Resend[Resend HTTPS API]
     Mongo[(MongoDB: users, products, orders, settings, tickets)]
     Uploads[(backend/uploads or Docker volume)]
     Payment[Future payment adapter]
@@ -158,6 +207,7 @@ flowchart LR
     React --> AuthContext
     React --> CartContext
     React --> AdminAPI
+    React --> ResetPage
     AuthContext --> Express
     AdminAPI --> Express
     React --> Express
@@ -165,6 +215,8 @@ flowchart LR
     AuthMW --> Controllers
     Controllers --> Mongo
     Controllers --> Uploads
+    Controllers --> EmailService
+    EmailService --> Resend
     Controllers -. future integration .-> Payment
     Controllers --> Courier
 ```
@@ -251,4 +303,540 @@ sequenceDiagram
 
 The enum values are `Pending`, `Processing`, `Shipped`, `Delivered`, and `Cancelled`. The current API validates the enum but does **not** enforce a transition graph. Cancellation from Pending/Processing restores stock; cancellation after Shipped remains allowed but does not restore stock. `paymentStatus` is separate from fulfillment: non-COD methods are pending until a payment integration updates them. Courier dispatch state is recorded, but no carrier booking adapter exists.
 
-For the requirements-oriented diagrams and acceptance criteria, see [`SRD.md`](./SRD.md). For runtime/deployment diagrams, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+## 8. Package diagram
+
+This package view groups the current code by responsibility. It is a Mermaid flowchart representation of UML packages, not a separate deployable-service map.
+
+```mermaid
+flowchart LR
+    subgraph Frontend["«package» frontend/src"]
+        Pages[pages]
+        Components[components]
+        Context[context]
+        FrontendAPI[utils/axiosConfig + adminApi]
+        Pages --> Components
+        Pages --> Context
+        Pages --> FrontendAPI
+    end
+
+    subgraph Backend["«package» backend"]
+        Routes[routes]
+        Middleware[middleware]
+        Controllers[controllers]
+        Models[models]
+        Services[services]
+        Utilities[utils]
+        Routes --> Middleware
+        Routes --> Controllers
+        Controllers --> Models
+        Controllers --> Services
+        Controllers --> Utilities
+    end
+
+    FrontendAPI --> Routes
+```
+
+## 9. Deployment diagram
+
+```mermaid
+flowchart TB
+    subgraph Device[Customer or admin device]
+        Browser[Browser / Android WebView]
+        WebApp[React + Vite assets]
+        LocalState[(localStorage cart / recent items)]
+        Browser --> WebApp
+        WebApp --> LocalState
+    end
+
+    subgraph AppHost[Application host or Docker Compose]
+        Proxy[Nginx in Docker, optional]
+        API[Node.js / Express API]
+        Media[(backend/uploads or uploads volume)]
+        Proxy --> API
+        API --> Media
+    end
+
+    subgraph DataHost[Database host]
+        Mongo[(MongoDB)]
+    end
+
+    subgraph MailHost[External email provider]
+        Resend[Resend HTTPS API]
+    end
+
+    WebApp -->|HTTPS/REST + JWT| Proxy
+    WebApp -->|local development / REST| API
+    API --> Mongo
+    API -. configured password-reset email .-> Resend
+```
+
+In local development Vite serves the UI and Express serves the API. In the Docker setup Nginx serves the frontend and proxies API requests; MongoDB and uploads use persistent Docker volumes. Public production hosting, shared object storage, and HTTPS remain deployment requirements, not claims made by this diagram.
+
+## 10. Checkout activity diagram
+
+```mermaid
+flowchart TD
+    Start((Start)) --> Browse[Browse visible catalog]
+    Browse --> Cart[Add product/variant to browser-local cart]
+    Cart --> Auth{Signed in?}
+    Auth -- No --> SignIn[Register or sign in]
+    SignIn --> Checkout[Open protected cart/checkout]
+    Auth -- Yes --> Checkout
+    Checkout --> Submit[Submit product IDs, quantities, address, method]
+    Submit --> Validate[API reloads product and settings data]
+    Validate --> Valid{Visible, eligible, variant valid, stock available?}
+    Valid -- No --> Reject[Return validation error]
+    Valid -- Yes --> Price[Recompute price, shipping and COD fee]
+    Price --> Reserve[Reserve stock and create order]
+    Reserve --> Payment[Set payment state; no online capture]
+    Payment --> Dispatch[Record async courier dispatch outcome]
+    Dispatch --> Confirm[Return order confirmation]
+```
+
+## 11. Object/instance snapshot
+
+This example shows the relationship between stored Mongo documents and browser-only state at one point in time. Values are illustrative, not production records.
+
+```mermaid
+flowchart LR
+    User1["user-1: User<br/>isAdmin=false"]
+    Product1["product-1: Product<br/>category=Fruit<br/>isLocal=false"]
+    Order1["order-1: Order<br/>status=Pending<br/>paymentStatus=pending"]
+    Item1["item-1: OrderItem<br/>quantity=2<br/>selectedSize=Large"]
+    Ticket1["ticket-1: SupportTicket<br/>status=Open"]
+    Browser1["browser-1: BrowserStorage<br/>cart + recentlyViewed"]
+
+    User1 --> Order1
+    Order1 *-- Item1
+    Item1 --> Product1
+    User1 --> Ticket1
+    Browser1 --> Product1
+```
+
+## 12. Communication/collaboration diagram
+
+The numbered messages show the participating objects and their responsibilities for an order. The checkout sequence above gives the same collaboration in time order.
+
+```mermaid
+flowchart LR
+    Customer[Customer]
+    UI[React CartPage]
+    Auth[JWT middleware]
+    OrderController[Order controller]
+    ProductModel[Product model]
+    SettingsModel[SystemSettings model]
+    OrderModel[Order model]
+    CourierService[Courier service]
+
+    Customer -->|1: confirm order| UI
+    UI -->|2: POST /api/orders| Auth
+    Auth -->|3: authenticated request| OrderController
+    OrderController -->|4: reload/validate/reserve| ProductModel
+    OrderController -->|5: read COD settings| SettingsModel
+    OrderController -->|6: create pending order| OrderModel
+    OrderController -.->|7: async dispatch attempt| CourierService
+    OrderModel -->|8: confirmation response| UI
+```
+
+## 13. Interaction overview
+
+```mermaid
+flowchart TD
+    Start([Visitor or signed-in user]) --> Intent{User intent}
+    Intent -->|Shop| Catalog[Browse/search/filter/sort catalog]
+    Catalog --> Product[View product and variants]
+    Product --> Cart[Update local cart]
+    Cart --> Auth{Authenticated?}
+    Auth -- No --> Login[Register/sign in]
+    Login --> Checkout[Place order]
+    Auth -- Yes --> Checkout
+    Checkout --> Order[Review status in order history]
+    Intent -->|Need help| Ticket[Submit guest/customer support ticket]
+    Ticket --> Reply[Read server-backed admin reply]
+    Intent -->|Admin task| Admin[Manage catalog, orders, support, settings]
+```
+
+## 14. Order status state model
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: new order
+    Pending --> AnyValidStatus: admin submits any valid enum
+    Processing --> AnyValidStatus: admin submits any valid enum
+    Shipped --> AnyValidStatus: admin submits any valid enum
+    Delivered --> AnyValidStatus: admin submits any valid enum
+    Cancelled --> AnyValidStatus: admin submits any valid enum
+    state AnyValidStatus <<choice>>
+    AnyValidStatus --> Pending
+    AnyValidStatus --> Processing
+    AnyValidStatus --> Shipped
+    AnyValidStatus --> Delivered
+    AnyValidStatus --> Cancelled
+```
+
+This intentionally reflects current behavior rather than an ideal workflow: the API accepts any enumerated status value and does not enforce a transition graph. Stock is restored only when cancellation occurs from Pending or Processing; cancelling after shipment does not restock.
+
+## 15. Timing/async dispatch view
+
+The repository has no courier SLA or delivery-time implementation, so this is an ordering view only; it does not assert elapsed times.
+
+```mermaid
+sequenceDiagram
+    participant API as Order API
+    participant DB as MongoDB Order
+    participant Courier as Courier service seam
+    participant UI as Customer UI
+
+    API->>DB: Create order (courierDispatchStatus=pending)
+    API-->>UI: Return 201 order response
+    par after response
+        API->>Courier: Attempt dispatch
+        alt no credentials configured
+            Courier-->>API: not_configured
+            API->>DB: Save not_configured status
+        else provider has no adapter
+            Courier-->>API: unsupported
+            API->>DB: Save unsupported status
+        end
+    end
+```
+
+## 16. UML diagram coverage and notation limits
+
+| UML view | Included here or elsewhere | Notes |
+|---|---|---|
+| Use case | Section 1 | Mermaid flowchart notation represents actors and use cases. |
+| Class | Sections 2 and 23; `SRD.md` | Domain entities, embedded order items, browser-local state, and persistence boundaries. |
+| Object | Section 11 | Illustrative instance snapshot using Mermaid nodes. |
+| Package | Section 8 | Mermaid grouped flowchart; source packages are not runtime services. |
+| Component | Section 3; `ARCHITECTURE.md` | Application and persistence boundaries. |
+| Composite structure | Not separately modeled | Internal React/API parts are represented in the component/package views; no plug-in ports are defined. |
+| Deployment | Section 9; `ARCHITECTURE.md` | Local and Docker nodes; public production hosting is future work. |
+| Activity | Section 10; `SRD.md` | Checkout validation and order creation. |
+| State machine | Section 14; `SRD.md` | Current enum behavior, explicitly not a constrained workflow. |
+| Sequence | Sections 4–6 | Checkout, support, and uploads. |
+| Communication | Section 12 | Numbered collaboration messages. |
+| Interaction overview | Section 13 | High-level user journey combining interactions. |
+| Timing | Section 15 | Async courier attempt ordering only; no timing/SLA guarantees. |
+| Repository/package inventory | Sections 17, 24 | Source folders and workspace file counts (not LOC). |
+| Frontend route/access map | Section 18 | Routes, providers, guards, page and API dependencies. |
+| Backend route authorization map | Sections 19–20 | Route prefixes, middleware and persistence boundaries. |
+| Password reset sequence/state | Sections 21–22 | Resend delivery, hashed token, expiry and single-use completion. |
+| Profile | Not applicable | The project defines no UML metamodel profiles or custom stereotypes. |
+
+Mermaid does not provide native UML glyphs for every diagram family. Where noted, flowcharts are readable UML-inspired views. For strict UML modeling/exchange, maintain equivalent models in a UML tool and export PlantUML/XMI as needed.
+
+For the requirements-oriented diagrams and acceptance criteria, see [`SRD.md`](./SRD.md). For runtime/deployment diagrams, see [`ARCHITECTURE.md`](./ARCHITECTURE.md); for implemented/partial/missing features, see [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md).
+
+## 17. Repository package and source map
+
+```mermaid
+flowchart TB
+        Repo[IndusCart repository]
+        Repo --> Backend[backend: Express API]
+        Repo --> Frontend[frontend: React/Vite app]
+        Repo --> Docs[docs: requirements, guides, QA and diagrams]
+        Repo --> Ops[docker-compose.yml, CI, security and contribution files]
+
+        Backend --> Server[server.js]
+        Backend --> Config[config: env, DB, API URL helper]
+        Backend --> Routes[routes: auth, products, orders, support, settings]
+        Backend --> Middleware[middleware: JWT/admin, image upload checks]
+        Backend --> Controllers[controllers: auth, products, orders, support, settings]
+        Backend --> Models[models: User, Product, Order, SupportTicket, SystemSettings]
+        Backend --> Services[services: email/Resend, courier seam]
+        Backend --> Utils[utils: pricing, status, images, analytics, cash sales]
+        Backend --> Scripts[scripts: admin, backup, restore]
+        Backend --> Tests[test: unit, API integration, browser smoke]
+
+        Frontend --> App[App.jsx: router and providers]
+        Frontend --> Pages[pages: shop, detail, auth, cart, orders, support, admin]
+        Frontend --> Components[components: navbar, brand, product card, error boundary]
+        Frontend --> Context[context: auth and cart/localStorage]
+        Frontend --> ApiUtils[utils: axios config, prices and shipping]
+        Frontend --> UiTests[tests: routes, cart, error boundary]
+```
+
+The current source inventory matched 47 backend JS/JSON/Markdown files and 32
+frontend `src` JS/JSX/TS/TSX/CSS files. It excludes generated `dist`, Android
+build outputs, `node_modules`, uploads and other binary/generated content.
+
+## 18. Frontend route, guard and provider diagram
+
+```mermaid
+flowchart TB
+        Browser[Browser / Android WebView]
+        ErrorBoundary[ErrorBoundary]
+        AuthProvider[AuthProvider: persisted JWT + session verification]
+        CartProvider[CartProvider: cart + recent items in localStorage]
+        AppRoutes[AppRoutes + shared Navbar]
+        Browser --> ErrorBoundary --> AuthProvider --> CartProvider --> AppRoutes
+
+        AppRoutes --> RootRoute[/: RootRoute]
+        RootRoute -->|guest/customer| Home[HomePage]
+        RootRoute -->|admin redirect| Admin[AdminPage]
+        AppRoutes --> ProductDetail[ProductDetailPage /products/:id]
+        AppRoutes --> GuestGuard[GuestRoute]
+        GuestGuard --> Login[LoginPage /login]
+        GuestGuard --> Register[RegisterPage /register]
+        AppRoutes --> Reset[PasswordResetPage /reset-password/:token]
+        AppRoutes --> PrivateGuard[PrivateRoute]
+        PrivateGuard --> Cart[CartPage /cart]
+        PrivateGuard --> Orders[OrdersPage /orders]
+        PrivateGuard --> Track[OrderTrackPage /orders/:id]
+        AppRoutes --> AdminGuard[AdminRoute]
+        AdminGuard --> Admin
+        AppRoutes --> Support[SupportPage /support]
+        AppRoutes --> NotFound[NotFoundPage / wildcard]
+
+        Home --> ProductCard[ProductCard]
+        ProductDetail --> CartProvider
+        Cart --> CartProvider
+        Orders --> API[axiosConfig / VITE_API_URL]
+        Admin --> AdminAPI[pages/admin/adminApi]
+        AuthProvider --> API
+        ProductDetail --> API
+        Cart --> API
+        Support --> API
+        AdminAPI --> API
+```
+
+`GuestRoute` redirects authenticated users away from login/register;
+`PrivateRoute` requires a user; `AdminRoute` additionally requires `isAdmin`.
+The reset-link route is intentionally public and accepts only the expiring
+one-time token; it does not create a logged-in session.
+
+## 19. Backend request and persistence architecture
+
+```mermaid
+flowchart LR
+        Client[React page / adminApi]
+        Axios[axiosConfig: API_BASE + JWT header]
+        Server[Express server.js]
+        Stack[CORS, Helmet, JSON limit, uploads static]
+        Router{Route prefix}
+        Guard[protect / admin / optionalProtect]
+        Controller[Controller validation + orchestration]
+        Models[(Mongoose models / MongoDB)]
+        Utilities[Business utilities]
+        Uploads[(backend/uploads)]
+        Courier[courierService adapter seam]
+        Mail[emailService: Resend HTTPS API]
+
+        Client --> Axios --> Server --> Stack --> Router
+        Router --> Guard --> Controller
+        Controller --> Models
+        Controller --> Utilities
+        Controller --> Uploads
+        Controller -. asynchronous dispatch .-> Courier
+        Controller --> Mail
+        Mail --> Resend[api.resend.com]
+
+        subgraph Prefixes[Express route prefixes]
+            AuthRoute[/api/auth]
+            ProductRoute[/api/products]
+            OrderRoute[/api/orders]
+            SupportRoute[/api/support]
+            SettingRoute[/api/settings]
+        end
+        Router --> Prefixes
+```
+
+`server.js` validates required environment, installs common middleware and
+mounts the five route modules. Route modules select middleware; controllers
+call models and utilities. The mail provider is called only for the admin
+customer-reset request when Resend settings are configured.
+
+## 20. API authorization and route map
+
+| Route family | Representative operations | Access enforced by route middleware |
+|---|---|---|
+| `/api/auth` | register, login, profile, session, own password, admin reset-email, public reset-token completion | Login/register/reset completion are rate-limited; own password requires `protect`; admin reset email requires `protect` + `admin` |
+| `/api/products` | catalog/categories/detail, create/update/delete | Public reads use optional admin identity for hidden items; mutations require admin |
+| `/api/orders` | place, own list/detail, all orders, analytics, manual cash, status | Checkout/history require user; all-orders/analytics/manual cash/status require admin; detail enforces owner/admin in controller |
+| `/api/support` | user/guest create, own list, admin list/status/reply | User routes use `protect`; guest creation is public; administration requires user + admin |
+| `/api/settings` | public COD settings, private settings read/update | public checkout read is unauthenticated; private settings require user + admin |
+
+## 21. Admin customer password-reset sequence
+
+```mermaid
+sequenceDiagram
+        actor Admin
+        actor Customer
+        participant AdminUI as AdminPage / Settings
+        participant API as Express auth routes
+        participant Guard as protect + admin
+        participant Auth as authController
+        participant User as User document
+        participant Mail as emailService
+        participant Resend as Resend API
+        participant ResetUI as PasswordResetPage
+
+        Admin->>AdminUI: Enter customer email
+        AdminUI->>API: PUT /api/auth/admin/customer-password (admin JWT)
+        API->>Guard: Verify JWT and isAdmin
+        Guard->>Auth: Allow reset request
+        Auth->>User: Find non-admin account
+        Auth->>Auth: Generate random token; store SHA-256 hash + 20-minute expiry
+        Auth->>Mail: Send reset URL to customer's registered email
+        Mail->>Resend: POST email request (server-side API key)
+        Resend-->>Customer: Email with one-time reset link
+        Auth-->>AdminUI: Sent confirmation, or delivery error
+        Customer->>ResetUI: Open /reset-password/:token
+        Customer->>ResetUI: Enter and confirm new password
+        ResetUI->>API: POST /api/auth/password/reset (token + new password)
+        API->>Auth: Rate-limit and validate request
+        Auth->>User: Hash submitted token; find matching unexpired hash
+        Auth->>User: Atomically claim token, then save bcrypt password hash
+        Auth-->>ResetUI: Success; token can no longer be reused
+```
+
+If email delivery fails, the stored reset token is cleared and the admin gets
+a `503` response. The raw token exists only in the generated link/email and
+request; MongoDB stores only its hash and expiry. Reset completion is
+single-use and requires a 12-character minimum. No plaintext password is
+emailed.
+
+## 22. Password-reset token state model
+
+```mermaid
+stateDiagram-v2
+        [*] --> NotIssued
+        NotIssued --> PendingDelivery: admin requests email
+        PendingDelivery --> Active: email provider accepts message
+        PendingDelivery --> Revoked: delivery failure / clear token
+        Active --> Consumed: valid token claimed and password saved
+        Active --> Expired: 20-minute expiry passes
+        Active --> Revoked: superseded by another reset request
+        Consumed --> [*]
+        Expired --> [*]
+        Revoked --> [*]
+```
+
+## 23. User, order and browser-state class relationships
+
+This focused class view clarifies which values are documents, embedded
+subdocuments, references, or browser-local state.
+
+```mermaid
+classDiagram
+        class User {
+            +ObjectId _id
+            +String email
+            +String password
+            +Boolean isAdmin
+            +String passwordResetTokenHash
+            +Date passwordResetExpiresAt
+        }
+        class Product {
+            +ObjectId _id
+            +String name
+            +String category
+            +Number pricePKR
+            +Number priceUSD
+            +Number stock
+            +Number weightKg
+            +String[] images
+            +String[] colors
+            +String[] sizes
+            +Boolean isLocal
+            +Boolean isVisible
+        }
+        class Order {
+            +ObjectId user
+            +OrderItem[] products
+            +Number productTotal
+            +Number shippingFee
+            +Number codFee
+            +Number totalPrice
+            +String shippingZone
+            +String status
+            +String paymentStatus
+            +String courierDispatchStatus
+        }
+        class OrderItem {
+            +ObjectId product
+            +String name
+            +String image
+            +String selectedColor
+            +String selectedSize
+            +Number price
+            +Number originalPrice
+            +Number discountPercent
+            +Number quantity
+            +Number weightKg
+        }
+        class SupportTicket {
+            +ObjectId user
+            +String name
+            +String email
+            +String subject
+            +String message
+            +String orderId
+            +String status
+            +String adminReply
+            +Date resolvedAt
+        }
+        class SystemSettings {
+            +String key
+            +Boolean codEnabled
+            +String codFeeMode
+            +Number codFee
+            +Number codThreshold
+            +String courierProvider
+            +String courierApiKey
+        }
+        class BrowserStorage {
+            +CartLine[] cart
+            +Product[] recentlyViewed
+            +String marketMode
+            +String themePreference
+            +Number exchangeRate
+        }
+        class CartLine {
+            +Product productSnapshot
+            +Number quantity
+            +String selectedColor
+            +String selectedSize
+        }
+
+        User "1" --> "0..*" Order : places
+        Order "1" *-- "1..*" OrderItem : embeds
+        OrderItem "0..*" --> "0..1" Product : source reference
+        User "0..1" --> "0..*" SupportTicket : submits
+        BrowserStorage "1" *-- "0..*" CartLine : localStorage
+        CartLine "0..*" --> "1" Product : identifies item
+```
+
+`User.password` is a bcrypt hash. The password-reset fields are hidden from
+normal queries; `SystemSettings.courierApiKey` is also `select: false`.
+`OrderItem` is embedded in an Order; `OrderItem.product` can be null for manual
+cash lines. A guest SupportTicket has `user: null`. BrowserStorage and CartLine
+are conceptual client-side data, not MongoDB models. SystemSettings is read at
+checkout but is not directly persisted as an Order relationship.
+
+## 24. Module inventory and count
+
+| Package | Files / responsibilities |
+|---|---|
+| `frontend/src` (32 matched source files) | `App.jsx`; 11 top-level pages + 3 admin helpers; 4 shared components; 2 contexts; 2 utilities; 4 tests/setup files; app entry, styles and support files |
+| `backend` (47 matched JS/JSON/Markdown files) | Express entry; 3 config files; 5 route modules; 5 controllers; 5 models; 2 middleware modules; 2 services; 6 utilities; 4 scripts; 12 tests; 2 package manifests |
+| `docs` | Requirements, API, architecture/UML, QA, user guides, deployment, release and policy documents |
+
+The counts use the workspace file search patterns and include backend
+manifests/tests/guides; they are not LOC counts. Generated Android build
+outputs, frontend `dist`, `node_modules`, uploads and binary assets are excluded.
+Together, the two source patterns match 79 files (47 backend and 32 frontend).
+
+## 25. GitHub documentation map
+
+- Start at [`README.md`](../README.md), then use [`DOCUMENTATION_INDEX.md`](./DOCUMENTATION_INDEX.md).
+- [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) summarizes the source/package map.
+- This file contains implementation-based Mermaid/UML views.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) gives deployment and system overview.
+- [`API_REFERENCE.md`](./API_REFERENCE.md) is the endpoint/auth source of truth.
+- [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md) distinguishes implemented, partial and missing behavior.
+
+All diagrams intentionally use Mermaid syntax supported by GitHub Markdown.
+For exact UML model interchange, use a UML editor and export XMI/PlantUML; the
+Mermaid views are readable, reviewable source documentation rather than XMI.

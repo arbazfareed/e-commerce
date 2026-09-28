@@ -76,30 +76,44 @@ require an administrator account.
 
 ## Capabilities that are easy to miss
 
-  while the storefront switches between PKR and USD presentation.
+- **Two-market catalog:** products can be Pakistan-only or globally visible,
+  while the storefront switches between PKR and USD presentation. International
+  mode intentionally hides Pakistan-only products even when All Products is
+  selected.
+- **Dynamic taxonomy:** administrators can create new categories and
   subcategories without editing source code.
-  so two variants of one product cannot overwrite each other.
-- **Recently viewed stays useful:** current catalog filters do not erase a
-  customer's browsing history; deleted or hidden products are still excluded.
-- **Market-aware catalog:** selecting All Products clears category filters but
-  keeps the chosen market, so Pakistan-only products remain hidden internationally.
+- **Variant-safe cart:** colour and size/variant selections remain separate,
+  so two variants of one product cannot overwrite each other. Cart data is
+  stored in the current browser, not synchronized across devices.
+- **Recently viewed stays useful:** active category/search filters do not erase
+  browsing history; deleted or hidden products are excluded.
 - **Server-side order protection:** the API rechecks visibility, stock,
   variants, and database prices during checkout instead of trusting browser
   values.
 - **Product lifecycle controls:** products can be hidden from customers without
   deleting their records.
 - **Configurable COD:** administrators can enable COD, set flat or percentage
-  fees, and define a free-COD threshold.
+  fees, and define a free-COD threshold. International threshold currency
+  handling remains a known policy gap.
+- **Payment honesty:** non-COD methods are order metadata until a real gateway
+  captures payment; orders expose a separate payment status.
+- **Courier status visibility:** dispatch outcomes are recorded, but carrier
+  booking, labels, and tracking require an adapter that is not implemented.
+- **Server-backed support:** guests/customers can submit tickets and admins can
+  reply or update status through the Mongo-backed support API.
+- **Safer product uploads:** the API enforces five JPG/JPEG/PNG/WEBP images,
+  5 MiB each, with extension/MIME/signature checks.
 - **Operational analytics:** the admin area includes revenue, order, inventory,
   market, and sales analytics views.
-- **Persistent media:** product uploads are served by the backend and can be
-  persisted with the Docker `uploads_data` volume.
+- **Persistent local media:** product uploads are served by the backend and can
+  be persisted with the Docker `uploads_data` volume; shared object storage is
+  recommended before multi-instance production deployment.
 - **Health endpoints:** `/health/live` checks process availability and
   `/health/ready` checks database readiness.
 - **Database portability:** changing `MONGO_URI` moves the app between local
-  MongoDB and a compatible managed provider.
-- **Android reuse:** the Capacitor app packages the same React storefront
-  instead of maintaining a separate mobile codebase.
+  MongoDB and compatible managed providers.
+- **Android reuse:** Capacitor packages the same React storefront rather than
+  maintaining a separate mobile codebase.
 
 ## Where to explore the implementation
 
@@ -112,6 +126,8 @@ require an administrator account.
 - API security: `backend/middleware/authMiddleware.js`
 - Docker runtime: `docker-compose.yml`
 - Architecture diagrams: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
+- UML views: [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md)
+- Implemented/partial/missing functionality: [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md)
 
 ## Recommended GitHub reading order
 

@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema(
     country:  { type: String, default: 'Pakistan', trim: true },
     city:     { type: String, default: '', trim: true },
     isAdmin:  { type: Boolean, default: false },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpiresAt: { type: Date, select: false },
   },
   { timestamps: true }
 );
