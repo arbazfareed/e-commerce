@@ -65,23 +65,28 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 ### Storefront and product details
 
 - [ ] Initial loading, successful empty catalog, API error, and retry behavior.
-- [ ] Search matches product name/description; clear search; combine search with category/subcategory and local/global market filter.
-- [ ] Sort by newest, price ascending/descending, and name; verify discounts are considered for price sorting.
+- [ ] Search matches name/description and brand/model; combine search with category/subcategory, market, min/max price, and sorting; verify pagination resets when filters change.
+- [ ] Sort by newest, discounted price ascending/descending, popularity, and name; verify selected market currency is used for price sorting.
 - [ ] Product detail and variant selection; add to cart; verify distinct variants and cart count.
+- [ ] Product cards/details show approved ratings only; verify star text and review counts remain readable in light and dark themes.
+- [ ] Customers without delivered purchases cannot submit reviews; delivered purchasers can submit one review that stays pending until admin approval.
+- [ ] Save/remove wishlist items, reload/sign in on another browser, and use Move to Cart; confirm one customer's wishlist does not appear for another account on the same browser.
 - [ ] Hidden and Pakistan-only product visibility in each market mode.
 - [ ] Currency/price display matches the selected market/profile; inspect rounding at small and large amounts.
 - [ ] Product images have meaningful alt text or a visible fallback when an image fails.
 
 ### Cart and checkout
 
-- [ ] Cart survives reload in the same browser; removing/updating an item updates totals immediately.
-- [ ] Confirm cart is browser-local and does not merge with a server account across devices.
+- [ ] Guest cart survives reload; signed-in cart syncs across browsers and merges at sign-in without leaking between accounts.
+- [ ] Change cart quantities/variants across devices; verify server stock bounds and checkout revalidates stock.
+- [ ] Apply percentage and flat coupons; test currency mismatch, minimum total, expiry, inactive code, and usage limits. Tamper with browser discount data and confirm server totals remain authoritative.
 - [ ] Guest access to `/cart` redirects to `/login`; after login the locally stored cart is still available in that browser.
 - [ ] Checkout back button preserves address and payment selection.
 - [ ] Blank street/city shows a useful message; server-side missing country and invalid/changed stock errors are handled visibly.
 - [ ] COD option is hidden when public settings disable it; fee and waiver are visible before submission.
 - [ ] Shipping zone/weight, product subtotal, COD fee, and grand total are checked against the created order.
 - [ ] Submit button disables while placing the order; success confirmation and order-history navigation work.
+- [ ] Print invoice and packing-slip layouts; test A4 and narrow/thermal printer selection, Save as PDF, mobile controls, currency, discounts, and address wrapping.
 - [ ] Verify non-COD selections are not represented to customers as successfully captured payments.
 - [ ] Remove action is immediate in the current cart; a confirmation prompt is not an existing requirement.
 
@@ -90,10 +95,15 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 - [ ] Non-admin is redirected away from admin; admin can load dashboard/products/add/orders/settings.
 - [ ] Product create/edit/hide/delete, category, images, stock, discount, and local/global fields persist after reload.
 - [ ] Product deletion asks for confirmation; mutations show disabled/loading state and success/error feedback where applicable.
+- [ ] Create/edit/deactivate/delete coupons; verify duplicate code, expiry, usage count, currency, and customer-facing validation errors.
+- [ ] Approve/reject reviews and verify only approved reviews appear publicly.
+- [ ] Low-stock panel includes visible stock 0–4, excludes hidden products, has a readable empty state, and opens stock editing.
+- [ ] Admin can save/edit/clear courier name, tracking number, and HTTPS tracking link; customer sees details only on their own order. HTTP and non-HTTPS links are rejected; no UI claims automatic booking occurred.
+- [ ] Admin saves/edits/clears manual courier name, tracking number, and HTTPS URL; customer sees the reference/link only on their own order. HTTP/javascript URLs are rejected; manual tracking must not claim automatic booking.
 - [ ] Order status follows valid transitions; cancellation from Pending/Processing restores stock, while cancellation from Shipped does not. Invalid lifecycle transitions are rejected.
 - [ ] COD settings save and are reflected by public checkout settings; courier key is never returned as plaintext in API responses.
 - [ ] Unknown URL shows the 404 screen and provides a shop link; inject a render error in a test build to verify error-boundary recovery.
-- [ ] Test responsive layouts at 360px, 768px, and 1440px, including admin tables/forms. Pagination is not currently implemented as a general 20-row/page behavior.
+- [ ] Test responsive layouts at 360px, 768px, and 1440px, including admin forms, wishlist cards, coupon fields, and invoice controls.
 - [ ] Check API failure and empty states on each page; do not assume every page uses skeleton loading or a retry button.
 - [ ] Check production build for accidental debug output. `console.error`/server logging exists for operational errors, so distinguish useful error logging from stray debug logs.
 

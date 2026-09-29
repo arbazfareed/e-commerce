@@ -47,7 +47,12 @@ but the complete external integration or operational behavior is missing.
 - User registration, login, JWT session verification, and admin authorization
 - Product catalog, categories, dynamic subcategories, images, variants, stock,
   visibility, discounts, and local/global market rules
-- Persistent browser cart with product/color/size identity
+- Server-side product search, price filters, sorting, and pagination
+- Persistent guest cart and account-synced customer cart with product/color/size identity
+- Admin-managed promo coupons with server-side eligibility and usage verification
+- Verified-purchase product reviews with administrator moderation
+- Customer wishlist and printable invoices/packing slips
+- Low-stock customer badges and administrator alerts
 - Server-side order validation, zone shipping, COD fees, stock decrement, and
   order status lifecycle
 - Customer and guest support tickets with admin replies/status updates
@@ -62,7 +67,7 @@ but the complete external integration or operational behavior is missing.
 - Automated returns/refunds workflow
 - Email, SMS, push, and transactional notifications
 - Public production hosting, object storage, monitoring, and legal sign-off
-- Multi-vendor settlement, reviews, wishlists, coupons, and advanced marketing
+- Multi-vendor settlement and automated returns/refunds workflow
 
 ## 4. SRS visual models
 

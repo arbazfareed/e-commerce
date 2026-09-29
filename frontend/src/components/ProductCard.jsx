@@ -4,9 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
 import { assetUrl } from '../utils/axiosConfig';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product: p, onAddToCart }) {
   const { user } = useAuth();
+  const { addToWishlist, removeFromWishlist, isWishlisted } = useCart();
   const navigate = useNavigate();
   const isPak = !user || user.country === 'Pakistan';
 
@@ -185,6 +187,9 @@ export default function ProductCard({ product: p, onAddToCart }) {
         <h3 style={styles.name}>
           <Link to={`/products/${p._id}`} onClick={event => event.stopPropagation()} style={styles.nameLink}>{p.name}</Link>
         </h3>
+        {Number(p.reviewCount) > 0 && <p aria-label={`${p.averageRating} out of 5 stars, ${p.reviewCount} reviews`} style={{ margin:'-7px 0 9px', color:'#a66b12', fontSize:12, fontWeight:800 }}>
+          {'★'.repeat(Math.round(Number(p.averageRating) || 0))}{'☆'.repeat(5 - Math.round(Number(p.averageRating) || 0))} <span style={{ color:'#64748b', fontWeight:600 }}>({p.reviewCount})</span>
+        </p>}
         {(p.subcategory || p.brand || p.model) && (
           <p style={styles.productMeta}>
             {[p.subcategory, p.brand, p.model].filter(Boolean).join(' · ')}
@@ -206,20 +211,23 @@ export default function ProductCard({ product: p, onAddToCart }) {
           Approx. {isPak ? formatUSD(alternatePrice) : formatPKR(alternatePrice)}
         </span>
 
-        <button
-          className="product-card-add-button"
-          style={{
-            ...styles.addButton,
-            ...((isOut || isRestricted) ? styles.addButtonDisabled : {})
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isOut && !isRestricted) onAddToCart(p);
-          }}
-          disabled={isOut || isRestricted}
-        >
-          {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
-        </button>
+        <div style={{ display:'flex', gap:8, alignItems:'stretch' }}>
+          <button
+            className="product-card-add-button"
+            style={{ ...styles.addButton, flex:1, ...((isOut || isRestricted) ? styles.addButtonDisabled : {}) }}
+            onClick={(e) => { e.stopPropagation(); if (!isOut && !isRestricted) onAddToCart(p); }}
+            disabled={isOut || isRestricted}
+          >
+            {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
+          </button>
+          <button type="button" aria-label={isWishlisted(p._id) ? `Remove ${p.name} from wishlist` : `Save ${p.name} to wishlist`} aria-pressed={isWishlisted(p._id)} onClick={event => {
+            event.stopPropagation();
+            if (!user) { navigate('/login'); return; }
+            if (isWishlisted(p._id)) removeFromWishlist(p._id); else addToWishlist(p);
+          }} className="product-card-wishlist" style={{ minWidth:42, minHeight:42, display:'inline-flex', alignItems:'center', justifyContent:'center', border:'1px solid #fda4af', borderRadius:10, background:isWishlisted(p._id) ? '#fff1f2' : '#fff', color:isWishlisted(p._id) ? '#be123c' : '#64748b', fontSize:22, lineHeight:1, cursor:'pointer', flexShrink:0 }}>
+            {isWishlisted(p._id) ? '♥' : '♡'}
+          </button>
+        </div>
       </div>
 
       <style>{`

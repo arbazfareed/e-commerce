@@ -9,6 +9,8 @@ import RegisterPage    from './pages/RegisterPage';
 import CartPage        from './pages/CartPage';
 import OrdersPage      from './pages/OrdersPage';
 import OrderTrackPage  from './pages/OrderTrackPage';
+import InvoicePage from './pages/InvoicePage';
+import WishlistPage from './pages/WishlistPage';
 import AdminPage       from './pages/AdminPage';
 import SupportPage     from './pages/SupportPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -54,7 +56,9 @@ const AppRoutes = () => (
       <Route path="/register"       element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path="/cart"           element={<PrivateRoute><CartPage /></PrivateRoute>} />
       <Route path="/orders"         element={<PrivateRoute><OrdersPage /></PrivateRoute>} />
+      <Route path="/wishlist"       element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
       <Route path="/orders/:id"     element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
+      <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
       <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/support"        element={<SupportPage />} />

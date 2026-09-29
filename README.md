@@ -38,18 +38,16 @@ IndusCart is an e-commerce application with:
 
 ## Current scope and limitations
 
-- This is a full-stack e-commerce demo/MVP. The cart is stored in the current
-    browser's `localStorage`; it survives reloads in that browser but does not
-    sync across devices and is lost if browser storage is cleared.
-- Payment choices other than COD/cash are order metadata only; real payment
-    capture, refunds, and webhooks are not integrated.
-- Courier settings are present, but provider booking, labels, and tracking are
-    not implemented.
+- Signed-in customer carts and wishlists are stored in MongoDB; guest carts
+    remain browser-local until login.
+- COD is the only available checkout payment method. Online payment capture,
+    refunds, and payment webhooks are not integrated.
+- Admins can enter manual courier tracking details, but automatic provider
+    booking and live carrier updates are not integrated.
 - Product images are stored on the backend's local disk (or the Docker uploads
     volume). Multi-instance production hosting should move uploads to shared object
     storage before deployment.
-- Catalog search/filter/sort currently run in the frontend after loading the
-    product list; server-side search and pagination are not implemented.
+- Catalog search, price filters, sorting, and pagination run server-side.
 
 Additional documentation:
 
@@ -125,7 +123,8 @@ when testing from a phone.
 
 ## Run in development
 
-Open two PowerShell windows.
+For a one-click local start, double-click `START-LOCAL.cmd` in the repository
+root. Or open two PowerShell windows to start services manually.
 
 **Terminal 1 - API:**
 

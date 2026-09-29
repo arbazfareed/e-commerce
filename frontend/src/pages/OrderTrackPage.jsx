@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR } from '../utils/priceUtils';
+import ShipmentTrackingCard from '../components/ShipmentTrackingCard';
 
 const STATUS_CFG = {
   Pending:    { lightColor:'#c2410c', lightBg:'#fff7ed', darkColor:'#ffd7a8', darkBg:'rgba(125, 69, 29, 0.48)', dot:'#f97316', icon:'⏳' },
@@ -179,6 +180,8 @@ export default function OrdersPage() {
                         ❌ This order was cancelled.
                       </div>
                     )}
+
+                    <ShipmentTrackingCard order={order} isDark={isDark} />
 
                     {/* Products */}
                     <h4 style={{ margin:'0 0 12px', fontSize:'13px', fontWeight:'800', color:'#475569', textTransform:'uppercase', letterSpacing:'0.5px' }}>Items Ordered</h4>

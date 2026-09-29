@@ -38,6 +38,10 @@ export default function CartPage() {
   const [orderId, setOrderId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [checkoutSettings, setCheckoutSettings] = useState(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
 
   useEffect(() => {
     API.get('/api/settings/public')
@@ -46,17 +50,13 @@ export default function CartPage() {
   }, []);
 
   useEffect(() => {
-    if (checkoutSettings && !checkoutSettings.codEnabled && payment === 'COD') {
-      setPayment('JazzCash');
-    }
-  }, [checkoutSettings, payment]);
-
-  useEffect(() => {
     setAddr(prev => ({ ...prev, city: '', country: user?.country || 'Pakistan' }));
   }, [user?._id]);
 
   // Safe totals — always work even if items is []
   const safeItems  = Array.isArray(items) ? items : [];
+  const cartSignature = safeItems.map(item => `${item._id}:${item.quantity}:${item.selectedColor || ''}:${item.selectedSize || ''}`).join('|');
+  const couponProducts = safeItems.map(item => ({ product: item._id, quantity: item.quantity || 1, selectedColor: item.selectedColor || '', selectedSize: item.selectedSize || '' }));
   const subTotal   = safeItems.reduce((s, i) => s + getItemPrice(i) * (i.quantity||1), 0);
   // ✅ Zone-based shipping: detects domestic (Multan→Karachi), Middle East, US, etc.
   //    Items with no weight (glasses, fruit, etc.) incur only the base/flat rate.
@@ -67,20 +67,57 @@ export default function CartPage() {
   const USD_RATE    = getUSDRate();  // reads from localStorage (admin-configurable)
   const shipFee     = isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2));
   const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
-  const codWaived = codSettings.codThreshold > 0 && subTotal >= codSettings.codThreshold;
+  const supportedPaymentMethods = checkoutSettings?.supportedPaymentMethods || ['COD'];
+  const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codSettings.codEnabled));
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const discountedSubtotal = Math.max(0, subTotal - couponDiscount);
+  const codWaived = codSettings.codThreshold > 0 && discountedSubtotal >= codSettings.codThreshold;
   const codFeePKR = payment === 'COD' && !codWaived
     ? codSettings.codFeeMode === 'percentage'
-      ? Math.round(subTotal * (Number(codSettings.codFee || 0) / 100))
+      ? Math.round(discountedSubtotal * (Number(codSettings.codFee || 0) / 100))
       : Number(codSettings.codFee || 0)
     : 0;
   const codFee = isPak ? codFeePKR : parseFloat((codFeePKR / USD_RATE).toFixed(2));
-  const grandTotal  = subTotal + shipFee + codFee;
+  const grandTotal  = discountedSubtotal + shipFee + codFee;
   const totalQty    = safeItems.reduce((a, i) => a + (i.quantity||1), 0);
+
+  const validateCoupon = async code => {
+    const { data } = await API.post('/api/coupons/validate', { code, products: couponProducts, country: addr.country });
+    return data;
+  };
+
+  const applyCoupon = async () => {
+    setCouponError('');
+    if (!couponInput.trim()) { setCouponError('Enter a promo code first.'); return; }
+    setCouponChecking(true);
+    try {
+      const result = await validateCoupon(couponInput.trim());
+      setAppliedCoupon({ ...result, cartSignature });
+      setCouponInput(result.code);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err.response?.data?.message || 'That promo code could not be applied.');
+    } finally { setCouponChecking(false); }
+  };
+
+  useEffect(() => {
+    if (!appliedCoupon || appliedCoupon.cartSignature === cartSignature) return;
+    let active = true;
+    validateCoupon(appliedCoupon.code)
+      .then(result => { if (active) setAppliedCoupon({ ...result, cartSignature }); })
+      .catch(err => {
+        if (!active) return;
+        setAppliedCoupon(null);
+        setCouponError(err.response?.data?.message || 'The promo code no longer applies to this cart.');
+      });
+    return () => { active = false; };
+  }, [cartSignature, addr.country, appliedCoupon?.code, appliedCoupon?.cartSignature]);
 
   const handlePlaceOrder = async () => {
     setError('');
     if (!addr.street.trim()) { setError('Please enter your street address.'); return; }
     if (!addr.city.trim())   { setError('Please enter your city.'); return; }
+    if (!payment || !supportedPaymentMethods.includes(payment)) { setError('No working payment method is available. Please contact the store administrator.'); return; }
     setPlacing(true);
     try {
       const orderItems = safeItems.map(i => ({
@@ -96,6 +133,7 @@ export default function CartPage() {
         products:      orderItems,
         address:       addr,
         paymentMethod: payment,
+        couponCode:    appliedCoupon?.code || '',
       });
       setOrderId(data._id);
       setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));
@@ -204,11 +242,11 @@ export default function CartPage() {
                     {/* Info */}
                     <div style={{ flex:1, minWidth:0 }}>
                       <p style={{ margin:'0 0 2px', fontWeight:'700', fontSize:'15px', color:'#1e293b' }}>{item.name}</p>
-                      <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
+                      <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
                         {item.category}
                       </p>
                       {(item.selectedColor || item.selectedSize) && (
-                        <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#047857', fontWeight:'700' }}>
+                        <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#047857', fontWeight:'700' }}>
                           {[item.selectedColor && `Colour: ${item.selectedColor}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -277,18 +315,19 @@ export default function CartPage() {
 
               <h3 style={{ ...S.secTitle, marginTop:'24px' }}>💳 Payment Method</h3>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                {PAYMENTS.filter(pm => pm.id !== 'COD' || codSettings.codEnabled).map(pm => (
+                {availablePaymentOptions.map(pm => (
                   <label key={pm.id} style={{ ...S.payOpt, ...(payment === pm.id ? S.payOn : {}) }}>
                     <input type="radio" name="pm" style={{ display:'none' }}
                       checked={payment === pm.id} onChange={() => setPayment(pm.id)} />
                     <span style={{ fontSize:'20px' }}>{pm.icon}</span>
                     <div>
                       <p style={{ margin:0, fontWeight:'700', fontSize:'13px', color:'#1e293b' }}>{pm.label}</p>
-                      <p style={{ margin:0, fontSize:'11px', color:'#64748b' }}>{pm.desc}</p>
+                      <p style={{ margin:0, fontSize:'12px', color:'#64748b', lineHeight:1.45 }}>{pm.desc}</p>
                     </div>
                   </label>
                 ))}
               </div>
+              {availablePaymentOptions.length === 0 && <p role="status" style={{ margin:'10px 0 0', color:'#b91c1c', fontSize:12, lineHeight:1.5 }}>No payment method is currently available. Online payment providers must be integrated and verified before they can be enabled.</p>}
             </div>
           )}
         </div>
@@ -311,13 +350,24 @@ export default function CartPage() {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ margin:0, fontSize:'12px', fontWeight:'600', color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
-                  <p style={{ margin:0, fontSize:'11px', color:'#94a3b8' }}>×{item.quantity}</p>
+                  <p style={{ margin:0, fontSize:'12px', color:'#94a3b8' }}>×{item.quantity}</p>
                 </div>
-                <span style={{ fontSize:'12px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
+                <span style={{ fontSize:'13px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
                   {fmt(getItemPrice(item) * item.quantity)}
                 </span>
               </div>
             ))}
+          </div>
+
+          <div className="cart-coupon-box" style={{ padding:'12px', borderRadius:12, border:'1px solid #dbe7df', background:'#f8fcf9', marginBottom:14 }}>
+            <label htmlFor="coupon-code" style={{ ...S.lbl, marginBottom:7 }}>Promo code</label>
+            <div style={{ display:'flex', gap:7 }}>
+              <input className="cart-coupon-input" id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value.toUpperCase())} placeholder="e.g. WELCOME10" autoComplete="off" style={{ ...S.inp, minWidth:0, flex:1, textTransform:'uppercase' }} aria-describedby="coupon-feedback" />
+              {appliedCoupon ? <button type="button" onClick={() => { setAppliedCoupon(null); setCouponError(''); setCouponInput(''); }} style={{ ...S.ghostBtn, padding:'8px 10px', fontSize:12 }}>Remove</button> : <button type="button" onClick={applyCoupon} disabled={couponChecking} style={{ ...S.greenBtn, padding:'8px 11px', fontSize:12, whiteSpace:'nowrap' }}>{couponChecking ? 'Checking…' : 'Apply'}</button>}
+            </div>
+            <p id="coupon-feedback" aria-live="polite" style={{ margin:'8px 0 0', fontSize:13, fontWeight:600, lineHeight:1.5, color: couponError ? '#b91c1c' : '#047857' }}>
+              {couponError || (appliedCoupon ? `${appliedCoupon.code} applied — you save ${fmt(couponDiscount)}.` : 'Enter a valid promo code to check eligibility.')}
+            </p>
           </div>
 
           <div style={S.divider} />
@@ -326,6 +376,10 @@ export default function CartPage() {
             <span style={S.sumLbl}>Subtotal ({totalQty} items)</span>
             <span style={S.sumVal}>{fmt(subTotal)}</span>
           </div>
+          {couponDiscount > 0 && <div style={S.sumRow}>
+            <span style={S.sumLbl}>Promo discount</span>
+            <span style={{ ...S.sumVal, color:'#047857' }}>−{fmt(couponDiscount)}</span>
+          </div>}
           {payment === 'COD' && (
             <div style={S.sumRow}>
               <span style={S.sumLbl}>
@@ -338,10 +392,10 @@ export default function CartPage() {
           <div style={S.sumRow}>
             <span style={S.sumLbl}>
               Shipping
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'400' }}>
+              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12 }}>
                 {shipCalc.zoneLabel}
               </small>
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'400', fontSize:'10px' }}>
+              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12, lineHeight:1.45, marginTop:2 }}>
                 {shipBreak}
               </small>
             </span>
@@ -377,7 +431,7 @@ export default function CartPage() {
             </>
           )}
 
-          <p style={{ textAlign:'center', fontSize:'11px', color:'#94a3b8', marginTop:'14px', lineHeight:'1.5' }}>
+          <p style={{ textAlign:'center', fontSize:'12px', color:'#94a3b8', marginTop:'14px', lineHeight:'1.5' }}>
             🔒 Secure checkout · IndusCart 🇵🇰
           </p>
         </div>
@@ -409,7 +463,7 @@ const S = {
   sumLbl:  { fontSize:'13px', color:'#64748b', lineHeight:'1.5' },
   sumVal:  { fontSize:'14px', fontWeight:'700', color:'#334155' },
 
-  lbl:     { display:'block', fontSize:'11px', fontWeight:'800', color:'#475569', marginBottom:'6px', textTransform:'uppercase', letterSpacing:'0.3px' },
+  lbl:     { display:'block', fontSize:'12px', fontWeight:'800', color:'#475569', marginBottom:'6px', textTransform:'uppercase', letterSpacing:'0.3px' },
   inp:     { width:'100%', padding:'11px 13px', border:'1.5px solid #e2e8f0', borderRadius:'10px', fontSize:'13px', outline:'none', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b', fontFamily:'inherit', marginBottom:'0' },
   errBox:  { background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', padding:'10px 14px', borderRadius:'10px', fontSize:'13px', fontWeight:'600', marginBottom:'16px' },
   payOpt:  { display:'flex', alignItems:'center', gap:'10px', padding:'12px', border:'2px solid #e2e8f0', borderRadius:'12px', cursor:'pointer', transition:'all 0.15s', userSelect:'none' },

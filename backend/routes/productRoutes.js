@@ -7,6 +7,7 @@ const fs      = require('fs');
 const {
   getProducts,
   getCategories,
+  getSubcategories,
   getProductById,
   createProduct,
   updateProduct,
@@ -56,6 +57,7 @@ const handleProductImageUpload = (req, res, next) => {
 //    treats "categories" as an :id param and it never matches
 // GET /api/products/categories → list all distinct categories
 router.get('/categories', optionalProtect, getCategories);
+router.get('/subcategories', optionalProtect, getSubcategories);
 
 // GET  /api/products          → all products (public)
 router.get('/',    optionalProtect, getProducts);

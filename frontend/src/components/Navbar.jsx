@@ -81,6 +81,7 @@ export default function Navbar() {
                   {totalItems > 0 && <span style={S.bdg}>{totalItems}</span>}
                 </Link>
                 <Link to="/orders" className={`site-nav-link${on('/orders') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/orders') ? S.lnkOn : {}) }}>📦 Orders</Link>
+                <Link to="/wishlist" className={`site-nav-link${on('/wishlist') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/wishlist') ? S.lnkOn : {}) }}>♥ Wishlist</Link>
               </>}
               <Link to="/support" className={`site-nav-link${on('/support') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/support') ? S.lnkOn : {}) }}>🎧 Support</Link>
             </>
@@ -165,6 +166,9 @@ export default function Navbar() {
                 </Link>
                 <Link to="/orders" className={`mobile-nav-link${on('/orders') ? ' is-active' : ''}`} aria-current={on('/orders') ? 'page' : undefined} onClick={() => setOpen(false)}>
                   <span className="mobile-nav-icon" aria-hidden="true">▤</span><span className="mobile-nav-text">Orders</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
+                </Link>
+                <Link to="/wishlist" className={`mobile-nav-link${on('/wishlist') ? ' is-active' : ''}`} aria-current={on('/wishlist') ? 'page' : undefined} onClick={() => setOpen(false)}>
+                  <span className="mobile-nav-icon" aria-hidden="true">♥</span><span className="mobile-nav-text">Wishlist</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
                 </Link>
               </>}
               <Link to="/support" className={`mobile-nav-link${on('/support') ? ' is-active' : ''}`} aria-current={on('/support') ? 'page' : undefined} onClick={() => setOpen(false)}>

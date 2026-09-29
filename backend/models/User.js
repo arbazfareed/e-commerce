@@ -10,6 +10,13 @@ const userSchema = new mongoose.Schema(
     phone:    { type: String, default: '', trim: true },
     country:  { type: String, default: 'Pakistan', trim: true },
     city:     { type: String, default: '', trim: true },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    cart: [{
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+      quantity: { type: Number, min: 1, required: true },
+      selectedColor: { type: String, default: '' },
+      selectedSize: { type: String, default: '' },
+    }],
     isAdmin:  { type: Boolean, default: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },

@@ -80,6 +80,10 @@ export function updateOrderStatus(orderId, status) {
   return API.put(`/api/orders/${orderId}/status`, { status });
 }
 
+export function updateOrderShipment(orderId, shipment) {
+  return API.put(`/api/orders/${orderId}/shipment`, shipment);
+}
+
 export function getApiErrorMessage(error, fallback) {
   const serverMessage = error?.response?.data?.message;
   if (serverMessage) return serverMessage;

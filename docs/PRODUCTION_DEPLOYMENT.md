@@ -26,6 +26,7 @@ Set backend production variables:
 NODE_ENV=production
 MONGO_URI=mongodb+srv://USER:PASSWORD@CLUSTER/induscart
 JWT_SECRET=replace-with-a-unique-random-secret-at-least-32-characters
+SETTINGS_ENCRYPTION_KEY=replace-with-a-unique-random-secret-at-least-32-characters
 CORS_ORIGINS=https://shop.example.com
 PORT=5000
 FRONTEND_URL=https://shop.example.com
@@ -36,6 +37,9 @@ EMAIL_FROM="IndusCart <no-reply@your-verified-domain.com>"
 Customer password-reset emails require a Resend API key and an `EMAIL_FROM`
 address whose domain is verified with Resend. Keep the API key in the backend
 environment only; the reset link is single-use and expires after 20 minutes.
+`SETTINGS_ENCRYPTION_KEY` encrypts courier and future payment-provider secrets
+before they are stored in MongoDB. Keep a protected backup of this value; do not
+rotate it until stored credentials have been re-encrypted.
 
 Build the frontend with:
 
@@ -67,9 +71,11 @@ Before enabling payments, test:
 - refund and order cancellation
 - stock restoration after cancellation
 
-The current checkout supports payment-method selection but does not claim a
-payment was captured. Add the provider adapter only after receiving the real
-merchant credentials.
+EasyPaisa/provider settings in the admin panel are placeholders only. The
+storefront advertises COD only until a provider adapter is implemented. Add a
+real provider only after reviewing its official docs and receiving sandbox
+access; use server-created transactions, webhook signature verification, and
+idempotency before marking an order paid. Never trust a browser redirect alone.
 
 ## 3. Cloud image storage
 

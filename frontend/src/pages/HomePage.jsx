@@ -4,7 +4,7 @@ import API, { API_BASE } from '../utils/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
+import { formatPKR, formatUSD } from '../utils/priceUtils';
 
 const MARKET_KEY = 'ic_market_mode';
 const BRAND_NAME = 'IndusCart Ritual';
@@ -23,12 +23,19 @@ export default function HomePage() {
   const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [allSubcategories, setAllSubcategories] = useState([]);
+  const [pagination, setPagination] = useState({ page:1, pageSize:24, total:0, pages:0 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [activeSub, setActiveSub] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [market, setMarket] = useState(() => localStorage.getItem(MARKET_KEY) || 'local');
   const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -46,35 +53,58 @@ export default function HomePage() {
 
   const isDarkTheme = themeMode === 'dark';
 
-  // Derive unique categories from products (auto-updates when products change)
-  const categories = ['all', ...new Set(
-    products.map(p => p.category).filter(Boolean).sort((a, b) => a.localeCompare(b))
-  )];
+  const categories = ['all', ...new Set(allCategories.filter(value => typeof value === 'string' && value).sort((a, b) => a.localeCompare(b)))];
 
   // Ensure activeCat is valid
   const validCat = categories.includes(activeCat) ? activeCat : 'all';
-  const subcategories = ['all', ...new Set([
-    ...(CATEGORY_TREE[validCat] || []),
-    ...products
-    .filter(p => validCat === 'all' || p.category === validCat)
-    .map(p => p.subcategory).filter(Boolean),
-  ].sort((a, b) => a.localeCompare(b)))];
+  const subcategories = ['all', ...new Set([...(CATEGORY_TREE[validCat] || []), ...allSubcategories.filter(value => typeof value === 'string' && value)].filter(Boolean).sort((a, b) => a.localeCompare(b)))];
   const validSub = subcategories.includes(activeSub) ? activeSub : 'all';
-  const hasFilters = Boolean(search.trim() || validCat !== 'all' || validSub !== 'all');
+  const hasFilters = Boolean(search.trim() || validCat !== 'all' || validSub !== 'all' || minPrice || maxPrice);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 280);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => { setPage(1); }, [validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy]);
+
+  useEffect(() => {
+    API.get('/api/products/categories').then(({ data }) => setAllCategories(Array.isArray(data) ? data.filter(value => typeof value === 'string') : [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    API.get(`/api/products/subcategories${validCat !== 'all' ? `?category=${encodeURIComponent(validCat)}` : ''}`)
+      .then(({ data }) => { if (active) setAllSubcategories(Array.isArray(data) ? data.filter(value => typeof value === 'string') : []); }).catch(() => {});
+    return () => { active = false; };
+  }, [validCat]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const res = await API.get('/api/products');
-      setProducts(res.data);
+      const params = new URLSearchParams();
+      if (validCat !== 'all') params.set('category', validCat);
+      if (validSub !== 'all') params.set('subcategory', validSub);
+      if (market === 'global') params.set('isLocal', 'false');
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (minPrice !== '') params.set('minPrice', minPrice);
+      if (maxPrice !== '') params.set('maxPrice', maxPrice);
+      params.set('sort', sortBy);
+      params.set('currency', market === 'local' ? 'PKR' : 'USD');
+      params.set('page', String(page));
+      params.set('limit', '24');
+      const res = await API.get(`/api/products?${params}`);
+      const items = Array.isArray(res.data) ? res.data : res.data.items || [];
+      setProducts(items);
+      setPagination(res.data.pagination || { page:1, pageSize:items.length, total:items.length, pages:1 });
     } catch (err) {
       console.error('Failed to fetch products:', err);
       setLoadError(`Cannot connect to the store server at ${API_BASE}. Check that the phone and computer use the same Wi-Fi, then try again.`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy, page]);
 
   useEffect(() => {
     fetchProducts();
@@ -87,45 +117,7 @@ export default function HomePage() {
 
   const isLocal = market === 'local';
 
-  // Filter products
-  const filteredProducts = products.filter(p => {
-    // Search filter
-    const matchesSearch = !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description || '').toLowerCase().includes(search.toLowerCase());
-
-    // Category filter
-    const matchesCategory = validCat === 'all' || p.category === validCat;
-    const matchesSubcategory = validSub === 'all' || p.subcategory === validSub;
-
-    // Market filter
-    const matchesMarket = isLocal ? true : !p.isLocal;
-
-    return matchesSearch && matchesCategory && matchesSubcategory && matchesMarket;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-    if (sortBy === 'price-asc') {
-      const currency = isLocal ? 'PKR' : 'USD';
-      const priceA = getDiscountedPrice(isLocal ? a.pricePKR : a.priceUSD, getActiveDiscountPercent(a), currency);
-      const priceB = getDiscountedPrice(isLocal ? b.pricePKR : b.priceUSD, getActiveDiscountPercent(b), currency);
-      return priceA - priceB;
-    }
-    if (sortBy === 'price-desc') {
-      const currency = isLocal ? 'PKR' : 'USD';
-      const priceA = getDiscountedPrice(isLocal ? a.pricePKR : a.priceUSD, getActiveDiscountPercent(a), currency);
-      const priceB = getDiscountedPrice(isLocal ? b.pricePKR : b.priceUSD, getActiveDiscountPercent(b), currency);
-      return priceB - priceA;
-    }
-    if (sortBy === 'name') {
-      return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
-    }
-    return 0;
-  });
+  const sortedProducts = products;
 
   const currentProductsById = new Map(products.map(product => [product._id, product]));
   // Recent history is independent of the active catalog filters: filtering to
@@ -769,7 +761,7 @@ export default function HomePage() {
             <p className="collection-kicker">SHOP THE COLLECTION</p>
             <h2 className="collection-title">Find something meaningful</h2>
             <p style={styles.stats}>
-              {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} found
+              {pagination.total} {pagination.total === 1 ? 'product' : 'products'} found
             </p>
             {!isLocal && (
               <p role="status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
@@ -781,7 +773,7 @@ export default function HomePage() {
                 <span className="active-filter-chip">
                   {search.trim() ? `Search: “${search.trim()}”` : validSub !== 'all' ? validSub : validCat !== 'all' ? validCat : 'Filtered'}
                 </span>
-                <button type="button" className="clear-filters" onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); }}>
+                <button type="button" className="clear-filters" onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); setMinPrice(''); setMaxPrice(''); setPage(1); }}>
                   Clear filters
                 </button>
               </div>
@@ -800,8 +792,18 @@ export default function HomePage() {
             <option value="newest">Newest First</option>
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
+            <option value="popular">Most Popular</option>
             <option value="name">Name: A to Z</option>
           </select>
+        </div>
+
+        <div aria-label="Filter products by price" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:10, maxWidth:520, margin:'0 0 20px auto' }}>
+          <label style={{ display:'grid', gap:5, color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:11, fontWeight:800 }}>Minimum price ({market === 'local' ? 'Rs' : '$'})
+            <input aria-label="Minimum price" type="number" min="0" step="0.01" value={minPrice} onChange={event => setMinPrice(event.target.value)} placeholder="No minimum" style={{ minWidth:0, padding:'9px 11px', border:`1px solid ${isDarkTheme ? '#425449' : '#cbd5e1'}`, borderRadius:9, background:isDarkTheme ? '#101a15' : '#fff', color:isDarkTheme ? '#eef7f1' : '#1e293b', fontSize:13 }} />
+          </label>
+          <label style={{ display:'grid', gap:5, color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:11, fontWeight:800 }}>Maximum price ({market === 'local' ? 'Rs' : '$'})
+            <input aria-label="Maximum price" type="number" min="0" step="0.01" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} placeholder="No maximum" style={{ minWidth:0, padding:'9px 11px', border:`1px solid ${isDarkTheme ? '#425449' : '#cbd5e1'}`, borderRadius:9, background:isDarkTheme ? '#101a15' : '#fff', color:isDarkTheme ? '#eef7f1' : '#1e293b', fontSize:13 }} />
+          </label>
         </div>
 
         {/* Loading State */}
@@ -833,7 +835,7 @@ export default function HomePage() {
                 ? 'No international products available. Switch to Pakistan mode to explore local products.'
                 : 'Try adjusting your search or category filter.'}
             </p>
-            <button onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); }} style={styles.resetBtn}>
+            <button onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); setMinPrice(''); setMaxPrice(''); setPage(1); }} style={styles.resetBtn}>
               Clear Filters
             </button>
           </div>
@@ -880,6 +882,11 @@ export default function HomePage() {
                 </div>
               );
             })()}
+            {pagination.pages > 1 && <nav aria-label="Product result pages" style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:12, margin:'24px 0 8px' }}>
+              <button type="button" disabled={page <= 1 || loading} onClick={() => setPage(current => Math.max(1, current - 1))} style={{ ...styles.resetBtn, opacity:page <= 1 ? .5 : 1 }}>← Previous</button>
+              <span aria-live="polite" style={{ color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:12, fontWeight:700 }}>Page {pagination.page} of {pagination.pages}</span>
+              <button type="button" disabled={page >= pagination.pages || loading} onClick={() => setPage(current => Math.min(pagination.pages, current + 1))} style={{ ...styles.resetBtn, opacity:page >= pagination.pages ? .5 : 1 }}>Next →</button>
+            </nav>}
           </>
         )}
       </main>

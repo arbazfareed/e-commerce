@@ -21,6 +21,8 @@ public issue. Contact the repository owner privately through GitHub with:
 - Revoke any token accidentally shared in chat, commits, logs, or screenshots.
 - Store secrets only in local environment files or protected hosting variables.
 - Use a unique JWT secret of at least 32 characters in production.
+- Configure a unique `SETTINGS_ENCRYPTION_KEY` (at least 32 characters) for encrypted provider credentials; back it up separately and do not rotate it without re-encrypting saved secrets.
+- Never treat the admin “configured/enabled” flags as proof of payment capture or courier booking; require verified server-side provider callbacks before changing order/payment state.
 - Use HTTPS for public websites, APIs, and Android builds.
 - Do not use real customer data in tests or screenshots.
 - Review payment, upload, backup, and admin changes before release.

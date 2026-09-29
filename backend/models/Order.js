@@ -31,6 +31,9 @@ const orderSchema = new mongoose.Schema(
     productTotal: { type: Number, required: true },   // sum(price × qty)
     shippingFee:  { type: Number, required: true },   // zone-based shipping fee
     codFee:       { type: Number, default: 0 },
+    couponCode:   { type: String, default: '' },
+    couponDiscount: { type: Number, min: 0, default: 0 },
+    currency:     { type: String, enum: ['PKR', 'USD'], default: null },
     totalWeight:  { type: Number, default: 0 },       // total cart weight in kg
     shippingZone: { type: String, default: 'domestic_pak' }, // detected zone
     totalPrice:   { type: Number, required: true },   // productTotal + shippingFee
@@ -62,9 +65,13 @@ const orderSchema = new mongoose.Schema(
     },
     courierDispatchStatus: {
       type: String,
-      enum: ['pending', 'dispatched', 'not_configured', 'unsupported', 'failed'],
+      enum: ['pending', 'dispatched', 'manual_tracking', 'not_configured', 'unsupported', 'failed'],
       default: 'not_configured',
     },
+    shippingProvider: { type: String, trim: true, maxlength: 80, default: '' },
+    trackingNumber: { type: String, trim: true, maxlength: 120, default: '' },
+    trackingUrl: { type: String, trim: true, maxlength: 2048, default: '' },
+    trackingUpdatedAt: { type: Date, default: null },
     isManualCash: { type: Boolean, default: false },
     cashCollectedAt: { type: Date },
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

@@ -20,6 +20,12 @@ Use the `IPv4 Address` under the connected Wi-Fi adapter. Do not use an IPv6 add
 
 ## 1. Start the backend API
 
+For a one-click desktop start, double-click `START-LOCAL.cmd` in the repository
+root. It opens separate backend and frontend terminal windows; keep both open
+while using the shop, and close them or press `Ctrl+C` in each to stop services.
+The manual commands below remain available if you prefer starting one service
+at a time.
+
 Make sure MongoDB is running, then open PowerShell Terminal 1:
 
 ```powershell

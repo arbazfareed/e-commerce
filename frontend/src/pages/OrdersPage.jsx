@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR } from '../utils/priceUtils';
+import ShipmentTrackingCard from '../components/ShipmentTrackingCard';
 
 const STATUS_CFG = {
   Pending:    { lightColor:'#c2410c', lightBg:'#fff7ed', darkColor:'#ffd7a8', darkBg:'rgba(125, 69, 29, 0.48)', dot:'#f97316', icon:'⏳' },
@@ -155,6 +156,12 @@ export default function OrdersPage() {
                         >
                           📍 Track order
                         </Link>
+                        <Link
+                          to={`/orders/${order._id}/invoice`}
+                          onClick={e => e.stopPropagation()}
+                          aria-label={`Print invoice for order ${order._id.slice(-8).toUpperCase()}`}
+                          style={{ padding:'8px 11px', background:isDark ? '#25362d' : '#f1f5f9', color:isDark ? '#e5f5eb' : '#334155', borderRadius:10, fontSize:12, fontWeight:800, textDecoration:'none', whiteSpace:'nowrap', border:isDark ? '1px solid #41584a' : '1px solid #e2e8f0' }}
+                        >🖨 Print</Link>
                         <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:34, height:34, borderRadius:10, background:isDark ? 'rgba(255,255,255,.06)' : '#f1f5f9', fontSize:'14px', color: isDark ? '#dbe9e2' : '#64748b', userSelect:'none' }} aria-hidden="true">
                           {isOpen ? '▲' : '▼'}
                         </span>
@@ -194,6 +201,8 @@ export default function OrdersPage() {
                         ❌ This order was cancelled.
                       </div>
                     )}
+
+                    <ShipmentTrackingCard order={order} isDark={isDark} />
 
                     {/* Products */}
                     <h4 style={{ margin:'0 0 12px', fontSize:'13px', fontWeight:'800', color:'#475569', textTransform:'uppercase', letterSpacing:'0.5px' }}>Items Ordered</h4>

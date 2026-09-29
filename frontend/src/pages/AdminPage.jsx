@@ -6,6 +6,9 @@ import { assetUrl } from '../utils/axiosConfig';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
+import CouponsPanel from './admin/CouponsPanel';
+import ReviewsPanel from './admin/ReviewsPanel';
+import ShipmentTrackingEditor from './admin/ShipmentTrackingEditor';
 import { changeOwnPassword, createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, getSupportTickets, recordManualCashSale, replyToSupportTicket, resetCustomerPassword, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct, updateSupportTicketStatus } from './admin/adminApi';
 
 const THEME_KEY = 'ic_theme_preference';
@@ -25,7 +28,7 @@ export default function AdminPage() {
   const { user, logout } = useAuth();
   const navigate         = useNavigate();
   const { section }      = useParams();
-  const adminSections    = ['dashboard', 'products', 'add', 'orders', 'settings'];
+  const adminSections    = ['dashboard', 'products', 'add', 'orders', 'coupons', 'reviews', 'settings'];
   const savedSection     = localStorage.getItem('ic_admin_last_section');
   const initialSection   = adminSections.includes(section) ? section : adminSections.includes(savedSection) ? savedSection : 'dashboard';
 
@@ -42,6 +45,7 @@ export default function AdminPage() {
   const [fMarket,   setFMarket]   = useState('all');   // 'all' | 'local' | 'global'
   const [fStatus,   setFStatus]   = useState('All');
   const [themeMode, setThemeMode] = useState(readThemePreference);
+    const lowStockProducts = products.filter(product => product.isVisible !== false && Number(product.stock) < 5).sort((a, b) => Number(a.stock) - Number(b.stock));
   const [isCompact, setIsCompact] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 760 : false);
   const [hoveredKpi, setHoveredKpi] = useState(null);
   const [analyticsTab, setAnalyticsTab] = useState('overview');
@@ -67,7 +71,10 @@ export default function AdminPage() {
   const [zoneSaved, setZoneSaved] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
     codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0,
-    courierProvider: '', courierApiKey: '',
+    courierProvider: '', courierEnabled: false, courierMode: 'sandbox', courierApiKey: '',
+    easypaisaEnabled: false, easypaisaMode: 'sandbox', easypaisaMerchantId: '', easypaisaApiKey: '',
+    courierApiKeyConfigured: false, easypaisaApiKeyConfigured: false, credentialEncryptionReady: false, legacySecretsNeedEncryption: false,
+    clearCourierApiKey: false, clearEasypaisaApiKey: false,
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [ownPasswordForm, setOwnPasswordForm] = useState({ newPassword:'', confirmPassword:'' });
@@ -169,8 +176,15 @@ export default function AdminPage() {
 
   const saveStoreSettings = async () => {
     try {
-      const { data } = await persistStoreSettings(storeSettings);
-      setStoreSettings(s => ({ ...s, ...data }));
+      const payload = { ...storeSettings };
+      delete payload.courierApiKeyConfigured;
+      delete payload.easypaisaApiKeyConfigured;
+      delete payload.credentialEncryptionReady;
+      delete payload.legacySecretsNeedEncryption;
+      if (!payload.courierApiKey?.trim()) delete payload.courierApiKey;
+      if (!payload.easypaisaApiKey?.trim()) delete payload.easypaisaApiKey;
+      const { data } = await persistStoreSettings(payload);
+      setStoreSettings(s => ({ ...s, ...data, courierApiKey:'', easypaisaApiKey:'', clearCourierApiKey:false, clearEasypaisaApiKey:false }));
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 2500);
       flash('Store settings saved!');
@@ -1029,6 +1043,8 @@ export default function AdminPage() {
             { id:'products',  icon:'⬢', label:'Products',   badge: products.length },
             { id:'add',       icon:'⊕', label:'Add Product' },
             { id:'orders',    icon:'◎', label:'Orders',      badge: pending, warn: true },
+            { id:'coupons',   icon:'🏷', label:'Promo Codes' },
+            { id:'reviews',   icon:'★', label:'Reviews' },
             { id:'settings',  icon:'⚙', label:'Settings' },
           ].map(item => (
             <button key={item.id} className="nav-btn"
@@ -1647,6 +1663,21 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* stock alerts */}
+            <section aria-labelledby="low-stock-heading" style={{ ...S.card, marginBottom:20, background:themeMode === 'dark' ? 'linear-gradient(180deg,#231e13,#111827)' : 'linear-gradient(135deg,#fffbeb,#fff)', borderColor:themeMode === 'dark' ? '#66512b' : '#f3d08a', boxShadow:themeMode === 'dark' ? '0 12px 28px rgba(0,0,0,.22)' : '0 12px 28px rgba(120,83,12,.06)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:lowStockProducts.length ? 12 : 0 }}>
+                <div><h3 id="low-stock-heading" style={{ ...S.cardH, color:themeMode === 'dark' ? '#fde68a' : '#854d0e' }}>⚠️ Low-stock alerts</h3><p style={{ margin:'4px 0 0', color:themeMode === 'dark' ? '#d8c9a3' : '#92400e', fontSize:12 }}>Visible products with fewer than 5 units remaining.</p></div>
+                <span style={{ borderRadius:999, padding:'6px 10px', background:themeMode === 'dark' ? '#48391e' : '#fef3c7', color:themeMode === 'dark' ? '#fde68a' : '#92400e', fontSize:12, fontWeight:900 }}>{lowStockProducts.length} need attention</span>
+              </div>
+              {lowStockProducts.length === 0 ? <p style={{ margin:0, color:themeMode === 'dark' ? '#b9c7bf' : '#64748b', fontSize:13 }}>All visible products have at least 5 units in stock.</p> : <div style={{ display:'grid', gap:8 }}>
+                {lowStockProducts.slice(0, 8).map(product => <div key={product._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', padding:'9px 11px', borderRadius:10, background:themeMode === 'dark' ? 'rgba(15,23,42,.55)' : '#fff', border:`1px solid ${themeMode === 'dark' ? '#55472c' : '#f3e2b5'}` }}>
+                  <div style={{ minWidth:0 }}><strong style={{ color:themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontSize:13 }}>{product.name}</strong><span style={{ display:'block', marginTop:3, color:themeMode === 'dark' ? '#cbd5e1' : '#64748b', fontSize:11 }}>{product.category} · {Number(product.stock) > 0 ? `${product.stock} left` : 'Out of stock'}</span></div>
+                  <button type="button" onClick={() => openEdit(product)} style={{ border:'1px solid #d6a851', borderRadius:8, padding:'7px 10px', background:themeMode === 'dark' ? '#40331b' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:11, fontWeight:800, cursor:'pointer' }}>Update stock</button>
+                </div>)}
+                {lowStockProducts.length > 8 && <p style={{ margin:'2px 0 0', color:themeMode === 'dark' ? '#cbd5e1' : '#64748b', fontSize:11 }}>Showing 8 of {lowStockProducts.length}. <button type="button" onClick={() => openSection('products')} style={{ border:0, background:'none', color:themeMode === 'dark' ? '#a7f3d0' : '#047857', fontWeight:800, cursor:'pointer' }}>View all products</button></p>}
+              </div>}
+            </section>
+
             {/* inventory snapshot */}
             <div style={{
               ...S.card,
@@ -2114,6 +2145,8 @@ export default function AdminPage() {
                               style={{ border: themeMode === 'dark' ? '1.5px solid rgba(148,163,184,.28)' : '1.5px solid #e2e8f0', borderRadius:9, padding:'7px 10px', fontSize:12, cursor:'pointer', background: themeMode === 'dark' ? '#0f172a' : '#fff', color: themeMode === 'dark' ? '#e2e8f0' : '#334155', outline:'none', fontFamily:"'Sora',sans-serif", fontWeight:600 }}>
                               {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
                             </select>
+                            <button type="button" aria-label={`Print invoice for order ${o._id.slice(-8).toUpperCase()}`} onClick={() => navigate(`/orders/${o._id}/invoice`)} style={{ display:'block', marginTop:6, border:'1px solid #cbd5e1', borderRadius:8, padding:'6px 9px', background:themeMode === 'dark' ? '#1f2b25' : '#f8fafc', color:themeMode === 'dark' ? '#e2e8f0' : '#334155', cursor:'pointer', fontSize:11, fontWeight:700 }}>🖨 Print</button>
+                            <ShipmentTrackingEditor order={o} darkMode={themeMode === 'dark'} flash={flash} onSaved={updated => setOrders(current => current.map(order => order._id === updated._id ? updated : order))} />
                           </td>
                         </tr>
                       ))}
@@ -2124,6 +2157,9 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {tab === 'coupons' && <CouponsPanel darkMode={themeMode === 'dark'} flash={flash} />}
+        {tab === 'reviews' && <ReviewsPanel darkMode={themeMode === 'dark'} flash={flash} />}
 
         {/* ─── SETTINGS ───────────────────────────────────────── */}
         {tab === 'settings' && (
@@ -2208,53 +2244,77 @@ export default function AdminPage() {
               boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)',
               marginBottom:20,
             }}>
-              <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>💵 Cash on Delivery & Courier</h3>
+              <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>💵 Checkout & provider setup</h3>
               <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
-                Control COD availability and the fee customers see at checkout. Courier API keys are stored server-side.
+                Configure COD and save courier/EasyPaisa sandbox details for a future adapter. Provider toggles do not activate payment capture or courier booking until the server integration is implemented.
               </p>
+              {!storeSettings.credentialEncryptionReady && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>Provider secrets are locked until <code>SETTINGS_ENCRYPTION_KEY</code> is added to the backend environment (at least 32 characters). Secret inputs are disabled rather than saving credentials in plaintext.</p>}
+              {storeSettings.legacySecretsNeedEncryption && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>An older courier secret is still stored unencrypted. Set <code>SETTINGS_ENCRYPTION_KEY</code>; the server will encrypt it when settings are next loaded.</p>}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:14, marginBottom:16 }}>
-                <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'12px 14px', borderRadius:12, border: themeMode === 'dark' ? '1px solid rgba(110,231,183,0.22)' : '1px solid #bbf7d0', background: themeMode === 'dark' ? 'rgba(6,95,70,0.18)' : '#f0fdf4' }}>
-                  <input type="checkbox" checked={storeSettings.codEnabled}
-                    onChange={e => setStoreSettings(s => ({ ...s, codEnabled:e.target.checked }))} />
-                  <span style={{ fontWeight:800, color: themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Enable COD checkout</span>
+                <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'12px 14px', borderRadius:12, border:themeMode === 'dark' ? '1px solid rgba(110,231,183,0.22)' : '1px solid #bbf7d0', background:themeMode === 'dark' ? 'rgba(6,95,70,0.18)' : '#f0fdf4' }}>
+                  <input type="checkbox" checked={storeSettings.codEnabled} onChange={e => setStoreSettings(s => ({ ...s, codEnabled:e.target.checked }))} />
+                  <span style={{ fontWeight:800, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Enable COD checkout</span>
                 </label>
                 <div>
-                  <label style={themeMode === 'dark' ? { ...S.lbl, color:'#dbeafe' } : S.lbl}>COD fee mode</label>
-                  <select style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)' } : S.inp} value={storeSettings.codFeeMode}
-                    onChange={e => setStoreSettings(s => ({ ...s, codFeeMode:e.target.value }))}>
-                    <option value="flat">Flat fee (PKR)</option>
-                    <option value="percentage">Percentage of subtotal</option>
+                  <label style={S.lbl}>COD fee mode</label>
+                  <select style={S.inp} value={storeSettings.codFeeMode} onChange={e => setStoreSettings(s => ({ ...s, codFeeMode:e.target.value }))}>
+                    <option value="flat">Flat fee (PKR)</option><option value="percentage">Percentage of subtotal</option>
                   </select>
                 </div>
                 <div>
-                  <label style={themeMode === 'dark' ? { ...S.lbl, color:'#dbeafe' } : S.lbl}>{storeSettings.codFeeMode === 'percentage' ? 'COD fee (%)' : 'COD fee (PKR)'}</label>
-                  <input style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)' } : S.inp} type="number" min="0" value={storeSettings.codFee}
-                    onChange={e => setStoreSettings(s => ({ ...s, codFee:Number(e.target.value) }))} />
+                  <label style={S.lbl}>{storeSettings.codFeeMode === 'percentage' ? 'COD fee (%)' : 'COD fee (PKR)'}</label>
+                  <input style={S.inp} type="number" min="0" value={storeSettings.codFee} onChange={e => setStoreSettings(s => ({ ...s, codFee:Number(e.target.value) }))} />
                 </div>
                 <div>
-                  <label style={themeMode === 'dark' ? { ...S.lbl, color:'#dbeafe' } : S.lbl}>Free COD above (PKR, optional)</label>
-                  <input style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)' } : S.inp} type="number" min="0" value={storeSettings.codThreshold}
-                    onChange={e => setStoreSettings(s => ({ ...s, codThreshold:Number(e.target.value) }))} />
+                  <label style={S.lbl}>Free COD above (PKR, optional)</label>
+                  <input style={S.inp} type="number" min="0" value={storeSettings.codThreshold} onChange={e => setStoreSettings(s => ({ ...s, codThreshold:Number(e.target.value) }))} />
                 </div>
                 <div>
-                  <label style={themeMode === 'dark' ? { ...S.lbl, color:'#dbeafe' } : S.lbl}>Courier provider</label>
-                  <select style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)' } : S.inp} value={storeSettings.courierProvider}
-                    onChange={e => setStoreSettings(s => ({ ...s, courierProvider:e.target.value }))}>
-                    <option value="">No courier API</option>
-                    <option value="PostEx">PostEx</option>
-                    <option value="Trax">Trax</option>
-                    <option value="TCS">TCS</option>
-                    <option value="Leopards">Leopards</option>
+                  <label style={S.lbl}>Courier provider</label>
+                  <select style={S.inp} value={storeSettings.courierProvider || ''} onChange={e => setStoreSettings(s => ({ ...s, courierProvider:e.target.value }))}>
+                    <option value="">No courier API</option><option value="PostEx">PostEx</option><option value="Trax">Trax</option><option value="TCS">TCS</option><option value="Leopards">Leopards</option><option value="Custom">Other provider (adapter needed)</option>
                   </select>
                 </div>
                 <div>
-                  <label style={themeMode === 'dark' ? { ...S.lbl, color:'#dbeafe' } : S.lbl}>Courier API key</label>
-                  <input style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)' } : S.inp} type="password" placeholder={storeSettings.courierApiKeyConfigured ? 'Key already saved' : 'Enter provider key'}
-                    value={storeSettings.courierApiKey} onChange={e => setStoreSettings(s => ({ ...s, courierApiKey:e.target.value }))} />
+                  <label style={S.lbl}>Courier environment</label>
+                  <select style={S.inp} value={storeSettings.courierMode || 'sandbox'} onChange={e => setStoreSettings(s => ({ ...s, courierMode:e.target.value }))}>
+                    <option value="sandbox">Sandbox / test</option><option value="live">Live (configuration only)</option>
+                  </select>
                 </div>
+                <label style={{ gridColumn:'1 / -1', display:'flex', alignItems:'center', gap:9, padding:'10px 12px', borderRadius:10, background:themeMode === 'dark' ? '#18271e' : '#f0fdf4', color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:12, fontWeight:800 }}>
+                  <input type="checkbox" checked={Boolean(storeSettings.courierEnabled)} onChange={e => setStoreSettings(s => ({ ...s, courierEnabled:e.target.checked }))} /> Enable courier dispatch setting <span style={{ fontWeight:500 }}>(booking remains off until provider adapter is implemented)</span>
+                </label>
+                <div>
+                  <label style={S.lbl}>Courier API token / key</label>
+                  <input style={S.inp} type="password" autoComplete="new-password" disabled={!storeSettings.credentialEncryptionReady} placeholder={storeSettings.courierApiKeyConfigured ? 'Secret saved; blank keeps it' : 'Sandbox key from provider'} value={storeSettings.courierApiKey || ''} onChange={e => setStoreSettings(s => ({ ...s, courierApiKey:e.target.value, clearCourierApiKey:false }))} />
+                  {storeSettings.courierApiKeyConfigured && <button type="button" onClick={() => setStoreSettings(s => ({ ...s, courierApiKey:'', clearCourierApiKey:true }))} style={{ marginTop:5, border:0, padding:0, background:'none', color:themeMode === 'dark' ? '#fca5a5' : '#b91c1c', fontSize:11, fontWeight:700, cursor:'pointer' }}>Clear saved courier secret</button>}
+                </div>
+                <div style={{ gridColumn:'1 / -1', borderTop:`1px solid ${themeMode === 'dark' ? '#34463c' : '#dfece4'}`, paddingTop:14, marginTop:4 }}>
+                  <h4 style={{ margin:'0 0 5px', color:themeMode === 'dark' ? '#e2e8f0' : '#1e293b', fontSize:15 }}>📲 EasyPaisa setup placeholder</h4>
+                  <p style={{ margin:'0 0 12px', color:themeMode === 'dark' ? '#b9c7bf' : '#64748b', fontSize:11, lineHeight:1.55 }}>Store sandbox merchant details for later. EasyPaisa will not appear as a working checkout method until official API docs are reviewed and payment verification/webhooks are implemented.</p>
+                </div>
+                <label style={{ display:'flex', alignItems:'center', gap:9, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:12, fontWeight:800 }}>
+                  <input type="checkbox" checked={Boolean(storeSettings.easypaisaEnabled)} onChange={e => setStoreSettings(s => ({ ...s, easypaisaEnabled:e.target.checked }))} /> Mark EasyPaisa for future activation
+                </label>
+                <div>
+                  <label style={S.lbl}>EasyPaisa environment</label>
+                  <select style={S.inp} value={storeSettings.easypaisaMode || 'sandbox'} onChange={e => setStoreSettings(s => ({ ...s, easypaisaMode:e.target.value }))}>
+                    <option value="sandbox">Sandbox / test</option><option value="live">Live (configuration only)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={S.lbl}>Merchant / account ID</label>
+                  <input style={S.inp} maxLength={120} value={storeSettings.easypaisaMerchantId || ''} onChange={e => setStoreSettings(s => ({ ...s, easypaisaMerchantId:e.target.value }))} placeholder="DEMO-MERCHANT-ID (replace with sandbox ID)" />
+                </div>
+                <div>
+                  <label style={S.lbl}>EasyPaisa API secret</label>
+                  <input style={S.inp} type="password" autoComplete="new-password" disabled={!storeSettings.credentialEncryptionReady} value={storeSettings.easypaisaApiKey || ''} onChange={e => setStoreSettings(s => ({ ...s, easypaisaApiKey:e.target.value, clearEasypaisaApiKey:false }))} placeholder={storeSettings.easypaisaApiKeyConfigured ? 'Secret saved; blank keeps it' : 'Sandbox secret only'} />
+                  {storeSettings.easypaisaApiKeyConfigured && <button type="button" onClick={() => setStoreSettings(s => ({ ...s, easypaisaApiKey:'', clearEasypaisaApiKey:true }))} style={{ marginTop:5, border:0, padding:0, background:'none', color:themeMode === 'dark' ? '#fca5a5' : '#b91c1c', fontSize:11, fontWeight:700, cursor:'pointer' }}>Clear saved EasyPaisa secret</button>}
+                </div>
+                <p role="note" style={{ gridColumn:'1 / -1', margin:0, color:themeMode === 'dark' ? '#cbd5e1' : '#64748b', fontSize:11, lineHeight:1.55 }}>Never paste live credentials into chat or source code. Secrets are encrypted in MongoDB; the encryption key must remain stable and be backed up separately. Provider endpoints are intentionally not editable here to prevent unsafe server requests.</p>
               </div>
               <button className="admin-green-button" style={S.greenBtn} onClick={saveStoreSettings}>
-                {settingsSaved ? '✓ Saved!' : '💾 Save COD Settings'}
+                {settingsSaved ? '✓ Saved!' : '💾 Save checkout & provider settings'}
               </button>
             </div>
 

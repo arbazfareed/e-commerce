@@ -239,14 +239,14 @@ reviews enabled if human approval is part of your release policy.
 ### Priority 2 — reliability and growth
 
 1. Add API request validation with a schema library and consistent error codes.
-2. Add pagination and database indexes for products, orders, and analytics.
+2. Add pagination and database indexes for admin orders and analytics; product search/filter pagination is implemented.
 3. Add automated end-to-end checkout tests using a test payment provider.
 4. Add error tracking with sensitive-data filtering.
 5. Add role-based admin permissions instead of one administrator flag.
 
 ### Priority 3 — product experience
 
-1. Add product reviews, wishlists, coupons, and abandoned-cart recovery.
+1. Add abandoned-cart recovery and notifications; coupons, verified reviews, wishlists, invoices, low-stock alerts, and server-side product browsing are implemented.
 2. Add courier tracking webhooks and customer delivery notifications.
 3. Add image optimization, lazy loading, and CDN caching.
 4. Add accessibility audits and localization beyond PKR/USD.
