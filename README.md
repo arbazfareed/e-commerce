@@ -4,13 +4,18 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](./frontend/package.json)
 [![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](./backend/package.json)
 [![MongoDB](https://img.shields.io/badge/MongoDB-ready-47A248?logo=mongodb&logoColor=white)](./docker-compose.yml)
-[![License](https://img.shields.io/badge/license-ISC-blue)](./backend/package.json)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](./LICENSE)
 
-> IndusCart is a Pakistan-focused, full-stack e-commerce demo/MVP: a React and
-> Capacitor storefront backed by an Express/MongoDB API, with customer accounts,
-> a protected admin workspace, local/international catalog modes, COD checkout,
-> server-validated orders, and support tickets. Online payment capture and live
+> IndusCart is a Pakistan-focused, full-stack commerce platform with a separate
+> shopper storefront and role-protected admin portal. Built with React, Vite,
+> Capacitor, Express, and MongoDB, it supports customer accounts, local and
+> international catalog modes, COD checkout, server-validated orders, inventory
+> management, analytics, and support workflows. Online payment capture and live
 > courier booking are not yet integrated.
+
+Local development runs the shopper portal at `http://localhost:3000`, the
+admin-only portal at `http://localhost:3001`, and the shared API at
+`http://localhost:5000`.
 
 ### Explore the project
 

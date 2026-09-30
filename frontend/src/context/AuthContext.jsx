@@ -11,6 +11,15 @@ export const AuthProvider = ({ children }) => {
 
   const [authReady, setAuthReady] = useState(false);
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      localStorage.removeItem('user');
+      setUser(null);
+    };
+    window.addEventListener('ic-session-expired', handleSessionExpired);
+    return () => window.removeEventListener('ic-session-expired', handleSessionExpired);
+  }, []);
+
   const persist = (data) => {
     const normalized = { ...data, city: data?.city || '' };
     setUser(normalized);

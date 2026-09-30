@@ -28,7 +28,7 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Auto-logout on 401
+// Expire the session in-app on 401 so route guards can redirect without a full page reload.
 API.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -38,7 +38,7 @@ API.interceptors.response.use(
       || requestUrl.includes('/api/auth/register');
     if (err.response?.status === 401 && !isAuthRequest && localStorage.getItem('user')) {
       localStorage.removeItem('user');
-      window.location.href = window.location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
+      window.dispatchEvent(new Event('ic-session-expired'));
     }
     return Promise.reject(err);
   }

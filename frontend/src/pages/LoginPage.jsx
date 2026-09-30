@@ -145,7 +145,7 @@ export default function LoginPage({ adminOnly = false }) {
         <section className="login-visual">
           <img className="auth-visual-image" src="/signin-welcome.svg" alt="Pakistani artisan basket and pottery" />
           <div className="login-visual-overlay">
-            <span className="login-kicker">{adminOnly ? 'ADMINISTRATOR ACCESS' : 'WELCOME TO INDUSCART'}</span>
+            <span className="login-kicker">{adminOnly ? 'INDUSCART VALLEY ADMIN' : 'WELCOME TO INDUSCART VALLEY'}</span>
             <h1>{adminOnly ? <>Store operations.<br /><em>Admin sign in.</em></> : <>Thoughtful finds.<br /><em>Made in Pakistan.</em></>}</h1>
             <p>{adminOnly ? 'Sign in with your administrator account to manage products, orders, and store settings.' : 'Discover beautiful products from trusted local makers and sellers, delivered with care.'}</p>
             <div className="login-perks">
@@ -158,8 +158,8 @@ export default function LoginPage({ adminOnly = false }) {
         <div style={S.logoRow}>
           <BrandMark size={46} style={{ filter:'drop-shadow(0 6px 10px rgba(13,92,66,.2))' }} />
           <div>
-            <p style={S.brand}><span style={{ color:'#10b981' }}>Indus</span>Cart {adminOnly ? 'Admin' : '🇵🇰'}</p>
-            <p style={S.brandSub}>{adminOnly ? 'Administrator sign in' : 'Sign in to your account'}</p>
+            <p style={S.brand}><span style={{ color:'#10b981' }}>Indus</span>Cart Valley {adminOnly ? 'Admin' : '🇵🇰'}</p>
+            <p style={S.brandSub}>{adminOnly ? 'IndusCart Valley admin sign in' : 'Sign in to your account'}</p>
           </div>
         </div>
 

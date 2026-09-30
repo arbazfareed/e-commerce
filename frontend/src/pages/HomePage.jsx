@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatPKR, formatUSD } from '../utils/priceUtils';
 
 const MARKET_KEY = 'ic_market_mode';
-const BRAND_NAME = 'IndusCart Ritual';
+const BRAND_NAME = 'IndusCart Valley';
 const CATEGORY_TREE = {
   Electronics: ['Laptops', 'Phones', 'Audio', 'Accessories'],
   Fashion: ['Men', 'Women', 'Children', 'Accessories'],
@@ -510,7 +510,7 @@ export default function HomePage() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '32px',
+      marginBottom: '0',
       flexWrap: 'wrap',
       gap: '16px',
     },
@@ -617,7 +617,7 @@ export default function HomePage() {
             <div className="hero-image-slide"><img src="/home-ritual-still-life.svg" alt="" /></div>
             <div className="hero-image-slide"><img src="/home-botanical-still-life.svg" alt="" /></div>
             <div className="hero-image-slide"><img src="/home-local-craft-still-life.svg" alt="" /></div>
-            <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" /></div>
+            <div className="hero-image-slide"><img src="/honey-cover.jpg" alt="" /></div>
           </div>
         </div>
         <div style={styles.heroGlow} />
@@ -808,30 +808,37 @@ export default function HomePage() {
             )}
           </div>
 
-          <select
-            id="product-sort"
-            name="productSort"
-            aria-label="Sort products"
-            value={sortBy}
-            className="sort-select"
-            onChange={(e) => setSortBy(e.target.value)}
-            style={styles.sortSelect}
-          >
-            <option value="newest">Newest First</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="popular">Most Popular</option>
-            <option value="name">Name: A to Z</option>
-          </select>
-        </div>
+          <div className="collection-control-group" role="group" aria-label="Sort and refine products">
+            <label className="collection-sort-field" htmlFor="product-sort">
+              <span>Sort by</span>
+              <select
+                id="product-sort"
+                name="productSort"
+                aria-label="Sort products"
+                value={sortBy}
+                className="sort-select"
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ ...styles.sortSelect, width:'100%', minWidth:0, height:44 }}
+              >
+                <option value="newest">Newest First</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="popular">Most Popular</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+            </label>
 
-        <div aria-label="Filter products by price" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:10, maxWidth:520, margin:'0 0 20px auto' }}>
-          <label style={{ display:'grid', gap:5, color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:11, fontWeight:800 }}>Minimum price ({market === 'local' ? 'Rs' : '$'})
-            <input aria-label="Minimum price" type="number" min="0" step="0.01" value={minPrice} onChange={event => setMinPrice(event.target.value)} placeholder="No minimum" style={{ minWidth:0, padding:'9px 11px', border:`1px solid ${isDarkTheme ? '#425449' : '#cbd5e1'}`, borderRadius:9, background:isDarkTheme ? '#101a15' : '#fff', color:isDarkTheme ? '#eef7f1' : '#1e293b', fontSize:13 }} />
-          </label>
-          <label style={{ display:'grid', gap:5, color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:11, fontWeight:800 }}>Maximum price ({market === 'local' ? 'Rs' : '$'})
-            <input aria-label="Maximum price" type="number" min="0" step="0.01" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} placeholder="No maximum" style={{ minWidth:0, padding:'9px 11px', border:`1px solid ${isDarkTheme ? '#425449' : '#cbd5e1'}`, borderRadius:9, background:isDarkTheme ? '#101a15' : '#fff', color:isDarkTheme ? '#eef7f1' : '#1e293b', fontSize:13 }} />
-          </label>
+            <div className="collection-price-range" role="group" aria-label="Filter products by price">
+              <label className="collection-price-field" htmlFor="minimum-price">
+                <span>Minimum price ({market === 'local' ? 'Rs' : '$'})</span>
+                <input id="minimum-price" aria-label="Minimum price" type="number" min="0" step="0.01" value={minPrice} onChange={event => setMinPrice(event.target.value)} placeholder="No minimum" />
+              </label>
+              <label className="collection-price-field" htmlFor="maximum-price">
+                <span>Maximum price ({market === 'local' ? 'Rs' : '$'})</span>
+                <input id="maximum-price" aria-label="Maximum price" type="number" min="0" step="0.01" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} placeholder="No maximum" />
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Loading State */}
