@@ -17,6 +17,25 @@ Local development runs the shopper portal at `http://localhost:3000`, the
 admin-only portal at `http://localhost:3001`, and the shared API at
 `http://localhost:5000`.
 
+## DevOps scope and benefits
+
+The DevOps setup supports the existing store; it does not change what shoppers
+can buy. In everyday terms, it makes the app easier to start, checks code
+changes automatically, and gives developers a dashboard to see API activity.
+
+| Before the DevOps setup | With the DevOps setup |
+|---|---|
+| Start the app and database as separate pieces and remember checks manually. | Docker Compose starts the app and database together; GitHub Actions runs checks and builds on configured pushes and pull requests. |
+| Find server activity by reading logs or trying the site. | Prometheus collects API metrics and Grafana shows requests, response times, status codes, and an order counter. |
+| Container replacement can lose data kept only inside a container. | Named Docker volumes preserve MongoDB data and uploaded images across container replacement (but are not backups). |
+
+**Scope limits:** this is a local/demo setup. CI does not deploy the website;
+backups are not scheduled; monitoring alerts are not configured; and the
+Kubernetes manifests are learning examples, not a production deployment.
+Read the [Local DevOps Guide](./docs/LOCAL_DEVOPS_GUIDE.md) for plain-language
+and technical setup instructions, Kali Linux commands, verification steps, and
+security notes.
+
 ### Explore the project
 
 - **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
