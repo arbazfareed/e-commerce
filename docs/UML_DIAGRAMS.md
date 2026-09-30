@@ -12,7 +12,7 @@ diagrams. The counts are files, not lines of code; generated build output,
 |---|---:|---|
 | Backend JS/JSON/Markdown files | 64 | Runtime, API, schemas, scripts, tests, and manifests; excludes `node_modules`, backups, and uploads |
 | Frontend `src` JS/JSX/TS/TSX/CSS files | 44 | Routes, pages, components, contexts, utilities, styles, and tests |
-| UML sections in this guide | 25 | Sections 1–16 reviewed/corrected plus 17–25 for code structure and current workflows |
+| UML and traceability sections in this guide | 29 | Sections 1–29 cover implementation models, security, shopper/admin journeys, and requirements traceability |
 
 For GitHub review, start with sections 1–4 for actors, domain data, components
 and routes; then use the workflows in sections 5 onward.
@@ -531,6 +531,8 @@ sequenceDiagram
 | Frontend route/access map | Section 18 | Routes, providers, guards, page and API dependencies. |
 | Backend route authorization map | Sections 19–20 | Route prefixes, middleware and persistence boundaries. |
 | Password reset sequence/state | Sections 21–22 | Resend delivery, hashed token, expiry and single-use completion. |
+| Admin login/session sequence | Section 28 | Successful login, verified refresh, and in-app expired-session routing. |
+| Requirement-to-phase traceability | Section 29 | Mermaid cross-reference from delivery phases to SRD IDs and implementation diagrams; not a normative UML standard diagram. |
 | Profile | Not applicable | The project defines no UML metamodel profiles or custom stereotypes. |
 
 Mermaid does not provide native UML glyphs for every diagram family. Where noted, flowcharts are readable UML-inspired views. For strict UML modeling/exchange, maintain equivalent models in a UML tool and export PlantUML/XMI as needed.
@@ -868,6 +870,7 @@ binary assets are excluded. Together the current patterns match 108 files
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) gives deployment and system overview.
 - [`API_REFERENCE.md`](./API_REFERENCE.md) is the endpoint/auth source of truth.
 - [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md) distinguishes implemented, partial and missing behavior.
+- [`PROJECT_DELIVERY_PLAN.md`](./PROJECT_DELIVERY_PLAN.md) maps functionality and tracking IDs to status, evidence, and future actions.
 
 All diagrams intentionally use Mermaid syntax supported by GitHub Markdown.
 For exact UML model interchange, use a UML editor and export XMI/PlantUML; the
@@ -953,3 +956,69 @@ Local portal processes share the same API (`:5000`) and database; the separate
 ports and icons are operational navigation, not authorization controls.
 Registration always creates a shopper account; admin accounts must be
 provisioned with the secure bootstrap/reset scripts.
+
+## 28. Admin login, refresh, and expired-session sequence
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant AdminUI as Admin portal :3001
+    participant AuthContext
+    participant API as Express auth/API
+    participant User as MongoDB User
+    participant Router as React AdminRoute
+
+    Admin->>AdminUI: Submit credentials
+    AdminUI->>API: POST /api/auth/admin/login
+    API->>User: Verify password and isAdmin=true
+    User-->>API: Administrator profile
+    API-->>AdminUI: JWT and administrator profile
+    AdminUI->>AuthContext: Persist verified profile and JWT
+    AuthContext->>Router: Navigate to /admin
+    Router-->>AdminUI: Render admin dashboard
+
+    opt Browser refresh
+        AdminUI->>AuthContext: Read locally stored session
+        AuthContext->>API: GET /api/auth/session with JWT
+        API->>User: Verify JWT and load current role
+        User-->>API: Current administrator
+        API-->>AuthContext: Verified session
+        AuthContext->>Router: Restore /admin dashboard
+    end
+
+    opt Protected API responds 401
+        API-->>AuthContext: Dispatch in-app session-expired event
+        AuthContext->>AuthContext: Clear local administrator session
+        AuthContext->>Router: AdminRoute redirects to /admin/login
+    end
+```
+
+The final branch uses client-side routing; an expired session does not force a
+full document reload. An invalid login still receives a server-side 401 and
+does not persist a user session.
+
+## 29. Requirement-to-phase traceability view
+
+This Mermaid flowchart is a navigation/traceability aid rather than a formal
+UML requirement diagram. The phase and tracking IDs are detailed in
+[`PROJECT_DELIVERY_PLAN.md`](./PROJECT_DELIVERY_PLAN.md); FR IDs are defined in
+[`SRD.md`](./SRD.md).
+
+```mermaid
+flowchart LR
+    PH01[PH-01 Platform foundation] --> Runtime[FR-20 health / FR-22 CI]
+    PH02[PH-02 Identity and access] --> Identity[FR-01 to FR-04 / FR-27]
+    PH03[PH-03 Catalog and discovery] --> Catalog[FR-05 to FR-08 / FR-28 / FR-30]
+    PH04[PH-04 Cart and checkout] --> Checkout[FR-09 to FR-11 / FR-26]
+    PH05[PH-05 Orders and support] --> Fulfillment[FR-12 / FR-15 / FR-16 / FR-29]
+    PH06[PH-06 Admin operations] --> Operations[FR-17 to FR-19]
+    PH07[PH-07 Production readiness] -. planned .-> Integrations[FR-13 / FR-14 / FR-24 / FR-25]
+
+    Identity --> LoginSequence[Section 26 role security]
+    Identity --> SessionSequence[Section 28 login and refresh]
+    Catalog --> ProductSequence[Section 6 image upload]
+    Checkout --> CheckoutSequence[Sections 4 and 10]
+    Fulfillment --> OrderState[Sections 7 and 14]
+    Operations --> UseCases[Section 1 use cases]
+    Integrations --> Roadmap[Project delivery plan]
+```

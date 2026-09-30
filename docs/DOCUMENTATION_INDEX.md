@@ -7,13 +7,14 @@ This index explains which document answers which project question.
 | Project overview | [`README.md`](../README.md) | Quick start, stack, major commands, and repository entry point |
 | No-command Windows start | [`START_HERE.md`](./START_HERE.md) | Double-click shopper/admin launchers, sign in, stop services, and troubleshoot startup |
 | Project showcase | [`PROJECT_SHOWCASE.md`](./PROJECT_SHOWCASE.md) | Product capabilities, user journeys, routes, and GitHub presentation |
+| Phased delivery and traceability | [`PROJECT_DELIVERY_PLAN.md`](./PROJECT_DELIVERY_PLAN.md) | Phase/function/tracking IDs, implementation evidence, owners/ETA guidance, handoff, and prioritized future work |
 | Feature coverage | [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md) | Implemented, partial, and missing use cases and recommended next work |
 | Complete project reference | [`COMPLETE_PROJECT_DOCUMENTATION.md`](./COMPLETE_PROJECT_DOCUMENTATION.md) | Consolidated technical, operational, and future-planning reference |
 | SRD / requirements | [`SRD.md`](./SRD.md) | Scope, stakeholders, functional requirements, acceptance criteria, NFRs, and release gates |
 | API reference | [`API_REFERENCE.md`](./API_REFERENCE.md) | Endpoints, authentication levels, fields, statuses, and API limitations |
 | Architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System, deployment, request-flow, and data-model diagrams |
 | Storage architecture | [`STORAGE_ARCHITECTURE.md`](./STORAGE_ARCHITECTURE.md) | Verified MongoDB, uploads, backups, browser storage, encryption, and Docker persistence behavior |
-| UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Source inventory/counts, route/guard and component maps, domain relationships, deployment, role-separated shopper/admin login, checkout/support/product flows, reset-email sequence/state, and classic UML views |
+| UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Use case, activity, class, component, deployment, state, sequence, route/auth maps, admin session refresh, and requirement-to-phase traceability |
 | Technical guide | [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Code structure, security model, local development, and Docker |
 | User guide | [`USER_GUIDE.md`](./USER_GUIDE.md) | Customer and administrator workflows |
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |

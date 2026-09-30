@@ -20,6 +20,7 @@ admin-only portal at `http://localhost:3001`, and the shared API at
 ### Explore the project
 
 - **[Project Showcase](./docs/PROJECT_SHOWCASE.md)** — user journeys, route map, and capabilities that are easy to miss
+- **[Phased Delivery Plan](./docs/PROJECT_DELIVERY_PLAN.md)** — phase IDs, requirement traceability, implementation status, and prioritized future work
 - **[Feature Coverage](./docs/FEATURE_COVERAGE.md)** — implemented, partial, and missing use cases plus next steps
 - **[Complete Project Documentation](./docs/COMPLETE_PROJECT_DOCUMENTATION.md)** — consolidated project reference and recommendations
 - **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** — SRD, API, architecture, testing, deployment, and policy documents

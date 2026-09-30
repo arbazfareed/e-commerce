@@ -433,3 +433,12 @@ The release must not be called production-ready until:
 - Local tests: `backend/test/`, `frontend/src/tests/`
 - CI: `.github/workflows/ci.yml`
 - Android build: `.github/workflows/android-apk.yml`
+
+## 11. Phase and delivery tracking
+
+Functional requirements FR-01 through FR-30 are grouped into delivery phases,
+mapped to functionality IDs, implementation evidence, and next actions in the
+[Phased Delivery and Requirements Traceability Plan](./PROJECT_DELIVERY_PLAN.md).
+That plan also contains a master tracking register and future recommendations.
+Statuses describe repository implementation, not public deployment or business
+sign-off; owners and ETAs remain unset until assigned by the project owner.

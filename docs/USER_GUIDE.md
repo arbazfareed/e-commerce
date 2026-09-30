@@ -7,6 +7,9 @@ workplace. Customers can browse products, choose variants, add items to a
 cart, place orders, and track them. Admins can manage the catalog, orders,
 store settings, and support.
 
+For implementation status, phase IDs, technical evidence, and the future-work
+list, see the [Phased Delivery Plan](./PROJECT_DELIVERY_PLAN.md).
+
 ## What changed from the earlier version
 
 Before the improvements, the project had more manual setup, less responsive
@@ -132,3 +135,20 @@ not included in the repository.
 
 These are deployment and business-service decisions, not missing core
 application features.
+
+## Nontechnical handoff
+
+The shopper and admin websites are separate local portals that share one API
+and database. Customers can currently browse and place COD orders; administrators
+can maintain products, inventory, orders, settings, analytics, and support.
+Online payment capture, automatic courier booking, refunds, and a public
+production deployment are not yet available. Review the phased plan before
+promising a launch date or integration to customers.
+
+## Technical handoff
+
+Use `README.md` and `START_HERE.md` for local startup, `ARCHITECTURE.md` and
+`UML_DIAGRAMS.md` for system behavior, and `TESTING_GUIDE.md` for validation.
+Use private `.env` files for credentials. Before production, close the
+deployment and security gates in `PRODUCTION_DEPLOYMENT.md`; do not treat local
+build/test success as production sign-off.
