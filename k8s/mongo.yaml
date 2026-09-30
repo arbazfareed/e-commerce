@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: induscart-mongo-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: induscart-mongo
+  labels:
+    app: induscart-mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: induscart-mongo
+  template:
+    metadata:
+      labels:
+        app: induscart-mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:8
+          ports:
+            - name: mongo
+              containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          readinessProbe:
+            tcpSocket:
+              port: mongo
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mongo
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: induscart-mongo-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app: induscart-mongo
+  ports:
+    - name: mongo
+      port: 27017
+      targetPort: mongo
+  type: ClusterIP

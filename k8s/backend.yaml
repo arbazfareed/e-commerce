@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: induscart-backend
+  labels:
+    app: induscart-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: induscart-backend
+  template:
+    metadata:
+      labels:
+        app: induscart-backend
+    spec:
+      containers:
+        - name: backend
+          image: induscart-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: induscart-config
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: induscart-secrets
+                  key: JWT_SECRET
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: induscart-backend
+spec:
+  selector:
+    app: induscart-backend
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+  type: ClusterIP

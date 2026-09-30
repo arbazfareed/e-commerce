@@ -7,6 +7,7 @@ const path     = require('path');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { assertEnvironment, getCorsOptions } = require('./config/env');
+const { client, metricsMiddleware } = require('./middleware/metrics');
 
 dotenv.config();
 assertEnvironment();
@@ -18,6 +19,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 app.use(cors(getCorsOptions()));
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.json({ limit: '1mb' }));
+app.use(metricsMiddleware);
 app.use('/uploads', express.static(uploadsDir));
 
 // ─── Routes ───────────────────────────────────────────────────
@@ -42,6 +44,14 @@ app.get('/health/ready', (req, res) => {
     status: ready ? 'ok' : 'unavailable',
     database: ready ? 'connected' : 'disconnected',
   });
+});
+app.get('/metrics', async (req, res, next) => {
+  try {
+    res.setHeader('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use((req, res) => {

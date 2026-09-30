@@ -24,7 +24,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -43,7 +43,7 @@ services:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:80"
     depends_on:
       backend:
         condition: service_healthy

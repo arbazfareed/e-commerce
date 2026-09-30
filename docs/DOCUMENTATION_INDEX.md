@@ -17,6 +17,7 @@ This index explains which document answers which project question.
 | Technical guide | [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Code structure, security model, local development, and Docker |
 | User guide | [`USER_GUIDE.md`](./USER_GUIDE.md) | Customer and administrator workflows |
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |
+| Local DevOps runbook | [`LOCAL_DEVOPS_GUIDE.md`](./LOCAL_DEVOPS_GUIDE.md) | Plain-English DevOps overview, Kali Docker Compose setup, monitoring, CI, security, and production limits |
 | Android runbook | [`ANDROID_GUIDE.md`](./ANDROID_GUIDE.md) | Capacitor builds, GitHub APK artifacts, signing limitations |
 | Test plan | [`TESTING_GUIDE.md`](./TESTING_GUIDE.md) | Unit, integration, UI, Selenium, and manual QA coverage |
 | QA checklist pack | [`qa/README.md`](./qa/README.md) | Implementation-aware boundary, UI/UX, API, security, accessibility, and regression checks |

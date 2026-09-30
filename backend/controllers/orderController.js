@@ -10,6 +10,7 @@ const { dispatchOrder } = require('../services/courierService');
 const { isOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
 const { validateCouponForSubtotal } = require('../utils/couponPricing');
 const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
+const { ordersCounter } = require('../middleware/metrics');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -223,6 +224,7 @@ const placeOrder = async (req, res) => {
       paidAt: null,
       courierDispatchStatus: 'pending',
     });
+    ordersCounter.labels(order.paymentMethod).inc();
     dispatchOrder(order)
       .then(result => Order.findByIdAndUpdate(order._id, {
         courierDispatchStatus: result.dispatched ? 'dispatched' : (result.status || 'unsupported'),
@@ -314,6 +316,7 @@ const recordManualCashSale = async (req, res) => {
       notes: notes || 'Cash sale recorded manually by admin.',
       status: 'Delivered',
     });
+    ordersCounter.labels(manualOrder.paymentMethod).inc();
 
     res.status(201).json(manualOrder);
   } catch (e) {

@@ -30,6 +30,7 @@ admin-only portal at `http://localhost:3001`, and the shared API at
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
 - **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows
 - **[Local Run Guide](./docs/LOCAL_RUN_GUIDE.md)** — desktop, phone, and Android instructions
+- **[Local DevOps Guide](./docs/LOCAL_DEVOPS_GUIDE.md)** — Kali Linux setup, Docker Compose, Grafana/Prometheus, CI, and what remains before production
 - **[Production Deployment](./docs/PRODUCTION_DEPLOYMENT.md)** — launch checklist and limitations
 - **[Contributing](./CONTRIBUTING.md)** — validation and pull request guidelines
 - **[Security Policy](./SECURITY.md)** — safe secret handling and vulnerability reporting
