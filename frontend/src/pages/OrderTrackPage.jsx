@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR } from '../utils/priceUtils';
+import ShipmentTrackingCard from '../components/ShipmentTrackingCard';
 
 const STATUS_CFG = {
   Pending:    { lightColor:'#c2410c', lightBg:'#fff7ed', darkColor:'#ffd7a8', darkBg:'rgba(125, 69, 29, 0.48)', dot:'#f97316', icon:'⏳' },
@@ -51,7 +52,7 @@ export default function OrdersPage() {
   }, [id]);
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', fontFamily:"'DM Sans',sans-serif", background: isDark ? '#0b1510' : '#f8fafc' }}>
+    <div className="responsive-page track-page" style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ textAlign:'center' }}>
         <div style={{ width:'36px', height:'36px', border:'3px solid #e2e8f0', borderTop:'3px solid #10b981', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }} />
         <p style={{ color:isDark ? '#d8f5e5' : '#64748b', marginTop:'12px' }}>Loading orders…</p>
@@ -71,8 +72,8 @@ export default function OrdersPage() {
   );
 
   if (!orders.length) return (
-    <div style={{ minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',sans-serif" }}>
-      <div style={{ textAlign:'center', background:'#fff', borderRadius:'22px', padding:'60px 48px', border:'1px solid #e2e8f0', boxShadow:'0 4px 24px rgba(0,0,0,0.07)' }}>
+    <div className="responsive-page track-page" style={{ minHeight:'80vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'DM Sans',sans-serif" }}>
+      <div style={{ textAlign:'center', background:isDark ? 'rgba(27,34,32,.84)' : 'rgba(255,255,255,.84)', borderRadius:'22px', padding:'60px 48px', border:isDark ? '1px solid rgba(129,151,138,.24)' : '1px solid rgba(68,91,77,.16)', boxShadow:'0 14px 34px rgba(0,0,0,.12)', backdropFilter:'blur(14px)' }}>
         <p style={{ fontSize:'64px', margin:0 }}>📦</p>
         <h2 style={{ margin:'16px 0 8px', color:'#1e293b' }}>{id ? 'Order not found' : 'No orders yet'}</h2>
         <p style={{ color:'#94a3b8', margin:'0 0 24px' }}>{id ? 'This order may have been removed or is not part of your account.' : 'Your orders will appear here once you shop.'}</p>
@@ -84,7 +85,7 @@ export default function OrdersPage() {
   );
 
   return (
-    <div className="responsive-page track-page" style={{ ...S.page, background: isDark ? 'radial-gradient(circle at top, rgba(21,42,33,0.9) 0%, rgba(11,21,16,0.92) 42%, rgba(6,10,9,0.98) 100%)' : '#f8fafc' }}>
+    <div className="responsive-page track-page" style={S.page}>
       <div style={{ ...S.wrap, maxWidth:'760px' }}>
         <div style={{ marginBottom:'28px' }}>
           <h1 style={{ margin:'0 0 6px', fontSize:'26px', fontWeight:'900', color: isDark ? '#f1fff6' : '#0f172a' }}>{id ? '📍 Track Order' : '📦 My Orders'}</h1>
@@ -97,9 +98,10 @@ export default function OrdersPage() {
             return (
               <div key={order._id} style={{
                 ...S.orderCard,
-                background: isDark ? 'linear-gradient(180deg, rgba(17, 30, 24, 0.96), rgba(11, 20, 17, 0.98))' : '#fff',
+                background: isDark ? 'rgba(17, 30, 24, .82)' : 'rgba(255, 255, 255, .82)',
                 border: isDark ? '1px solid rgba(130, 175, 157, 0.24)' : '1px solid #e2e8f0',
                 boxShadow: isDark ? '0 18px 34px rgba(0,0,0,0.26)' : '0 1px 4px rgba(0,0,0,0.05)',
+                backdropFilter:'blur(14px)',
               }}>
                 {/* Header */}
                 <div
@@ -180,6 +182,8 @@ export default function OrdersPage() {
                       </div>
                     )}
 
+                    <ShipmentTrackingCard order={order} isDark={isDark} />
+
                     {/* Products */}
                     <h4 style={{ margin:'0 0 12px', fontSize:'13px', fontWeight:'800', color:'#475569', textTransform:'uppercase', letterSpacing:'0.5px' }}>Items Ordered</h4>
                     {order.products.map((p, i) => (
@@ -238,7 +242,7 @@ export default function OrdersPage() {
 }
 
 const S = {
-  page:       { minHeight:'100vh', background:'#f8fafc', padding:'32px 20px', fontFamily:"'DM Sans','Segoe UI',sans-serif" },
+  page:       { minHeight:'100vh', padding:'32px 20px', fontFamily:"'DM Sans','Segoe UI',sans-serif" },
   wrap:       { maxWidth:'780px', margin:'0 auto' },
   orderCard:  { background:'#fff', borderRadius:'16px', border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.05)', overflow:'hidden' },
   orderHead:  { display:'flex', alignItems:'center', gap:'12px', padding:'18px 22px', cursor:'pointer', userSelect:'none' },

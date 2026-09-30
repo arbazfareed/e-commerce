@@ -1,13 +1,14 @@
 // frontend/src/pages/HomePage.jsx
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import API, { API_BASE } from '../utils/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
+import { formatPKR, formatUSD } from '../utils/priceUtils';
 
 const MARKET_KEY = 'ic_market_mode';
-const BRAND_NAME = 'IndusCart Ritual';
+const BRAND_NAME = 'IndusCart Valley';
 const CATEGORY_TREE = {
   Electronics: ['Laptops', 'Phones', 'Audio', 'Accessories'],
   Fashion: ['Men', 'Women', 'Children', 'Accessories'],
@@ -19,17 +20,27 @@ const CATEGORY_TREE = {
 };
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
   const { addToCart, recentlyViewed = [], addToRecentlyViewed = () => {} } = useCart();
   const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [allSubcategories, setAllSubcategories] = useState([]);
+  const [pagination, setPagination] = useState({ page:1, pageSize:24, total:0, pages:0 });
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [activeSub, setActiveSub] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [market, setMarket] = useState(() => localStorage.getItem(MARKET_KEY) || 'local');
+  const [internationalEnabled, setInternationalEnabled] = useState(true);
+  const [marketSettingsLoaded, setMarketSettingsLoaded] = useState(false);
   const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
   useEffect(() => {
@@ -46,86 +57,94 @@ export default function HomePage() {
 
   const isDarkTheme = themeMode === 'dark';
 
-  // Derive unique categories from products (auto-updates when products change)
-  const categories = ['all', ...new Set(
-    products.map(p => p.category).filter(Boolean).sort((a, b) => a.localeCompare(b))
-  )];
+  useEffect(() => {
+    setSearch(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    API.get('/api/settings/public')
+      .then(({ data }) => {
+        if (!active) return;
+        const enabled = data?.internationalEnabled !== false;
+        setInternationalEnabled(enabled);
+        if (!enabled) {
+          setMarket('local');
+          localStorage.setItem(MARKET_KEY, 'local');
+        }
+      })
+      .catch(() => { if (active) setInternationalEnabled(true); })
+      .finally(() => { if (active) setMarketSettingsLoaded(true); });
+    return () => { active = false; };
+  }, []);
+
+  const categories = ['all', ...new Set(allCategories.filter(value => typeof value === 'string' && value).sort((a, b) => a.localeCompare(b)))];
 
   // Ensure activeCat is valid
   const validCat = categories.includes(activeCat) ? activeCat : 'all';
-  const subcategories = ['all', ...new Set([
-    ...(CATEGORY_TREE[validCat] || []),
-    ...products
-    .filter(p => validCat === 'all' || p.category === validCat)
-    .map(p => p.subcategory).filter(Boolean),
-  ].sort((a, b) => a.localeCompare(b)))];
+  const subcategories = ['all', ...new Set([...(CATEGORY_TREE[validCat] || []), ...allSubcategories.filter(value => typeof value === 'string' && value)].filter(Boolean).sort((a, b) => a.localeCompare(b)))];
   const validSub = subcategories.includes(activeSub) ? activeSub : 'all';
-  const hasFilters = Boolean(search.trim() || validCat !== 'all' || validSub !== 'all');
+  const hasFilters = Boolean(search.trim() || validCat !== 'all' || validSub !== 'all' || minPrice || maxPrice);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 280);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => { setPage(1); }, [validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy]);
+
+  useEffect(() => {
+    API.get('/api/products/categories').then(({ data }) => setAllCategories(Array.isArray(data) ? data.filter(value => typeof value === 'string') : [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    API.get(`/api/products/subcategories${validCat !== 'all' ? `?category=${encodeURIComponent(validCat)}` : ''}`)
+      .then(({ data }) => { if (active) setAllSubcategories(Array.isArray(data) ? data.filter(value => typeof value === 'string') : []); }).catch(() => {});
+    return () => { active = false; };
+  }, [validCat]);
 
   const fetchProducts = useCallback(async () => {
+    if (!marketSettingsLoaded) return;
     setLoading(true);
     setLoadError('');
     try {
-      const res = await API.get('/api/products');
-      setProducts(res.data);
+      const params = new URLSearchParams();
+      if (validCat !== 'all') params.set('category', validCat);
+      if (validSub !== 'all') params.set('subcategory', validSub);
+      if (market === 'global') params.set('isLocal', 'false');
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (minPrice !== '') params.set('minPrice', minPrice);
+      if (maxPrice !== '') params.set('maxPrice', maxPrice);
+      params.set('sort', sortBy);
+      params.set('currency', market === 'local' ? 'PKR' : 'USD');
+      params.set('page', String(page));
+      params.set('limit', '24');
+      const res = await API.get(`/api/products?${params}`);
+      const items = Array.isArray(res.data) ? res.data : res.data.items || [];
+      setProducts(items);
+      setPagination(res.data.pagination || { page:1, pageSize:items.length, total:items.length, pages:1 });
     } catch (err) {
       console.error('Failed to fetch products:', err);
       setLoadError(`Cannot connect to the store server at ${API_BASE}. Check that the phone and computer use the same Wi-Fi, then try again.`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [marketSettingsLoaded, validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy, page]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   const chooseMarket = useCallback((next) => {
+    if (next === 'global' && !internationalEnabled) return;
     localStorage.setItem(MARKET_KEY, next);
     setMarket(next);
-  }, []);
+  }, [internationalEnabled]);
 
   const isLocal = market === 'local';
 
-  // Filter products
-  const filteredProducts = products.filter(p => {
-    // Search filter
-    const matchesSearch = !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description || '').toLowerCase().includes(search.toLowerCase());
-
-    // Category filter
-    const matchesCategory = validCat === 'all' || p.category === validCat;
-    const matchesSubcategory = validSub === 'all' || p.subcategory === validSub;
-
-    // Market filter
-    const matchesMarket = isLocal ? true : !p.isLocal;
-
-    return matchesSearch && matchesCategory && matchesSubcategory && matchesMarket;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-    if (sortBy === 'price-asc') {
-      const currency = isLocal ? 'PKR' : 'USD';
-      const priceA = getDiscountedPrice(isLocal ? a.pricePKR : a.priceUSD, getActiveDiscountPercent(a), currency);
-      const priceB = getDiscountedPrice(isLocal ? b.pricePKR : b.priceUSD, getActiveDiscountPercent(b), currency);
-      return priceA - priceB;
-    }
-    if (sortBy === 'price-desc') {
-      const currency = isLocal ? 'PKR' : 'USD';
-      const priceA = getDiscountedPrice(isLocal ? a.pricePKR : a.priceUSD, getActiveDiscountPercent(a), currency);
-      const priceB = getDiscountedPrice(isLocal ? b.pricePKR : b.priceUSD, getActiveDiscountPercent(b), currency);
-      return priceB - priceA;
-    }
-    if (sortBy === 'name') {
-      return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
-    }
-    return 0;
-  });
+  const sortedProducts = products;
 
   const currentProductsById = new Map(products.map(product => [product._id, product]));
   // Recent history is independent of the active catalog filters: filtering to
@@ -491,7 +510,7 @@ export default function HomePage() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '32px',
+      marginBottom: '0',
       flexWrap: 'wrap',
       gap: '16px',
     },
@@ -598,7 +617,7 @@ export default function HomePage() {
             <div className="hero-image-slide"><img src="/home-ritual-still-life.svg" alt="" /></div>
             <div className="hero-image-slide"><img src="/home-botanical-still-life.svg" alt="" /></div>
             <div className="hero-image-slide"><img src="/home-local-craft-still-life.svg" alt="" /></div>
-            <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" /></div>
+            <div className="hero-image-slide"><img src="/honey-cover.jpg" alt="" /></div>
           </div>
         </div>
         <div style={styles.heroGlow} />
@@ -667,12 +686,13 @@ export default function HomePage() {
               onClick={() => chooseMarket('local')}
               style={{
                 ...styles.marketBtn,
+                gridColumn: internationalEnabled ? undefined : '1 / -1',
                 ...(isLocal ? styles.marketBtnActive : styles.marketBtnInactive)
               }}
             >
               🇵🇰 Pakistan (PKR)
             </button>
-            <button
+            {marketSettingsLoaded && internationalEnabled && <button
               type="button"
               aria-pressed={!isLocal}
               onClick={() => chooseMarket('global')}
@@ -682,7 +702,7 @@ export default function HomePage() {
               }}
             >
               🌍 International (USD)
-            </button>
+            </button>}
           </div>
 
           {/* Search Bar */}
@@ -769,7 +789,7 @@ export default function HomePage() {
             <p className="collection-kicker">SHOP THE COLLECTION</p>
             <h2 className="collection-title">Find something meaningful</h2>
             <p style={styles.stats}>
-              {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} found
+              {pagination.total} {pagination.total === 1 ? 'product' : 'products'} found
             </p>
             {!isLocal && (
               <p role="status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
@@ -781,27 +801,44 @@ export default function HomePage() {
                 <span className="active-filter-chip">
                   {search.trim() ? `Search: “${search.trim()}”` : validSub !== 'all' ? validSub : validCat !== 'all' ? validCat : 'Filtered'}
                 </span>
-                <button type="button" className="clear-filters" onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); }}>
+                <button type="button" className="clear-filters" onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); setMinPrice(''); setMaxPrice(''); setPage(1); }}>
                   Clear filters
                 </button>
               </div>
             )}
           </div>
 
-          <select
-            id="product-sort"
-            name="productSort"
-            aria-label="Sort products"
-            value={sortBy}
-            className="sort-select"
-            onChange={(e) => setSortBy(e.target.value)}
-            style={styles.sortSelect}
-          >
-            <option value="newest">Newest First</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="name">Name: A to Z</option>
-          </select>
+          <div className="collection-control-group" role="group" aria-label="Sort and refine products">
+            <label className="collection-sort-field" htmlFor="product-sort">
+              <span>Sort by</span>
+              <select
+                id="product-sort"
+                name="productSort"
+                aria-label="Sort products"
+                value={sortBy}
+                className="sort-select"
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ ...styles.sortSelect, width:'100%', minWidth:0, height:44 }}
+              >
+                <option value="newest">Newest First</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="popular">Most Popular</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+            </label>
+
+            <div className="collection-price-range" role="group" aria-label="Filter products by price">
+              <label className="collection-price-field" htmlFor="minimum-price">
+                <span>Minimum price ({market === 'local' ? 'Rs' : '$'})</span>
+                <input id="minimum-price" aria-label="Minimum price" type="number" min="0" step="0.01" value={minPrice} onChange={event => setMinPrice(event.target.value)} placeholder="No minimum" />
+              </label>
+              <label className="collection-price-field" htmlFor="maximum-price">
+                <span>Maximum price ({market === 'local' ? 'Rs' : '$'})</span>
+                <input id="maximum-price" aria-label="Maximum price" type="number" min="0" step="0.01" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} placeholder="No maximum" />
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -833,7 +870,7 @@ export default function HomePage() {
                 ? 'No international products available. Switch to Pakistan mode to explore local products.'
                 : 'Try adjusting your search or category filter.'}
             </p>
-            <button onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); }} style={styles.resetBtn}>
+            <button onClick={() => { setSearch(''); setActiveCat('all'); setActiveSub('all'); setMinPrice(''); setMaxPrice(''); setPage(1); }} style={styles.resetBtn}>
               Clear Filters
             </button>
           </div>
@@ -880,6 +917,11 @@ export default function HomePage() {
                 </div>
               );
             })()}
+            {pagination.pages > 1 && <nav aria-label="Product result pages" style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:12, margin:'24px 0 8px' }}>
+              <button type="button" disabled={page <= 1 || loading} onClick={() => setPage(current => Math.max(1, current - 1))} style={{ ...styles.resetBtn, opacity:page <= 1 ? .5 : 1 }}>← Previous</button>
+              <span aria-live="polite" style={{ color:isDarkTheme ? '#d1ded6' : '#475569', fontSize:12, fontWeight:700 }}>Page {pagination.page} of {pagination.pages}</span>
+              <button type="button" disabled={page >= pagination.pages || loading} onClick={() => setPage(current => Math.min(pagination.pages, current + 1))} style={{ ...styles.resetBtn, opacity:page >= pagination.pages ? .5 : 1 }}>Next →</button>
+            </nav>}
           </>
         )}
       </main>
@@ -936,13 +978,12 @@ export default function HomePage() {
           background:linear-gradient(120deg,rgba(5,19,16,.78) 0%,rgba(16,56,48,.70) 42%,rgba(62,52,24,.44) 100%);
         }
 
-        @media (min-width: 761px) and (prefers-reduced-motion: no-preference) {
+        @media (prefers-reduced-motion: no-preference) {
           .hero-image-track { animation:hero-image-carousel 36s ease-in-out infinite; }
         }
 
         @media (max-width:760px) {
           .hero-image-slide img { object-position:68% center; }
-          .hero-image-track { animation:none !important; transform:translateX(0) !important; }
         }
 
         @media (prefers-reduced-motion: reduce) {

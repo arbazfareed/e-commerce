@@ -1,11 +1,15 @@
 const Order   = require('../models/Order');
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { getActiveDiscountPercent, getDiscountedUnitPrice } = require('../utils/discountPricing');
 const { buildSalesAnalytics } = require('../utils/salesAnalytics');
 const { validateManualCashSale } = require('../utils/manualCashSale');
 const SystemSettings = require('../models/SystemSettings');
+const Coupon = require('../models/Coupon');
 const { dispatchOrder } = require('../services/courierService');
 const { isOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
+const { validateCouponForSubtotal } = require('../utils/couponPricing');
+const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -21,7 +25,8 @@ const DEFAULT_ZONE_RATES = {
   rest_of_world: { baseRate:2500,  perKg: 600,  minFee:2500  },
 };
 
-const PAYMENT_METHODS = new Set(['COD', 'Cash', 'Manual Cash', 'JazzCash', 'EasyPaisa', 'Stripe', 'PayPal']);
+// External payment adapters are not implemented yet, so shopper checkout accepts COD only.
+const PAYMENT_METHODS = new Set(['COD']);
 const ZONE_MAP = {
   india:'south_asia', bangladesh:'south_asia', 'sri lanka':'south_asia',
   nepal:'south_asia', bhutan:'south_asia', maldives:'south_asia',
@@ -86,8 +91,20 @@ const calcZoneShipping = (items, toCountry, toCity) => {
 
 const placeOrder = async (req, res) => {
   const reservedItems = [];
+  let reservedCouponId = null;
   try {
     const { products, address, paymentMethod } = req.body;
+    let guestContact = null;
+    if (!req.user) {
+      const submittedContact = req.body?.guestContact || {};
+      const name = typeof submittedContact.name === 'string' ? submittedContact.name.trim() : '';
+      const email = typeof submittedContact.email === 'string' ? submittedContact.email.trim().toLowerCase() : '';
+      const phone = typeof submittedContact.phone === 'string' ? submittedContact.phone.trim() : '';
+      if (!name || name.length > 120 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || phone.length > 40)
+        return res.status(400).json({ message: 'Guest checkout requires a valid name and email address.' });
+      guestContact = { name, email, phone };
+    }
+    const requestedCouponCode = typeof req.body?.couponCode === 'string' ? req.body.couponCode.trim().toUpperCase() : '';
     if (!products || products.length === 0)
       return res.status(400).json({ message: 'No products in order.' });
     if (!PAYMENT_METHODS.has(paymentMethod))
@@ -98,6 +115,10 @@ const placeOrder = async (req, res) => {
 
     const country       = address?.country || 'Pakistan';
     const city          = address?.city    || '';
+    const settings = await SystemSettings.findOne({ key: 'global' }).lean()
+      || { internationalEnabled: true, codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+    if (country !== 'Pakistan' && settings.internationalEnabled === false)
+      return res.status(400).json({ message: 'International orders are currently unavailable.' });
     const enrichedItems = [];
 
     for (const item of products) {
@@ -134,7 +155,17 @@ const placeOrder = async (req, res) => {
       });
     }
 
-    const settings = await SystemSettings.findOne({ key: 'global' }).lean() || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+    const currency = country === 'Pakistan' ? 'PKR' : 'USD';
+    let coupon = null;
+    let couponDiscount = 0;
+    if (requestedCouponCode) {
+      coupon = await Coupon.findOne({ code: requestedCouponCode, isActive: true });
+      if (!coupon) return res.status(400).json({ message: 'That coupon code is not valid.' });
+      const couponResult = validateCouponForSubtotal(coupon, enrichedItems.reduce((sum, item) => sum + item.price * item.quantity, 0), currency);
+      if (couponResult.error) return res.status(400).json({ message: couponResult.error });
+      couponDiscount = couponResult.discountAmount;
+    }
+
     if (paymentMethod === 'COD' && !settings.codEnabled)
       return res.status(400).json({ message: 'Cash on delivery is currently unavailable.' });
 
@@ -156,15 +187,36 @@ const placeOrder = async (req, res) => {
     const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city);
     const productTotal = enrichedItems.reduce((s, i) => s + i.price * i.quantity, 0);
     let codFee = 0;
-    if (paymentMethod === 'COD' && (!settings.codThreshold || productTotal < settings.codThreshold))
+    const discountedProductTotal = Math.max(0, productTotal - couponDiscount);
+    if (paymentMethod === 'COD' && (!settings.codThreshold || discountedProductTotal < settings.codThreshold))
       codFee = settings.codFeeMode === 'percentage'
-        ? Math.round(productTotal * Number(settings.codFee) / 100)
+        ? Math.round(discountedProductTotal * Number(settings.codFee) / 100)
         : Number(settings.codFee) || 0;
-    const totalPrice   = productTotal + shippingFee + codFee;
+    const totalPrice   = discountedProductTotal + shippingFee + codFee;
+
+    if (coupon) {
+      const today = new Date().toISOString().slice(0, 10);
+      const claimFilter = {
+        _id: coupon._id,
+        isActive: true,
+        $or: [{ expiresAt: '' }, { expiresAt: { $gte: today } }, { expiresAt: { $exists: false } }],
+        $expr: { $or: [
+          { $eq: [{ $ifNull: ['$usageLimit', null] }, null] },
+          { $lt: [{ $ifNull: ['$usageCount', 0] }, '$usageLimit'] },
+        ] },
+      };
+      const claimed = await Coupon.findOneAndUpdate(claimFilter, { $inc: { usageCount: 1 } }, { new: true });
+      if (!claimed) {
+        const error = new Error('This coupon has expired or reached its usage limit. Please remove it and try again.');
+        error.statusCode = 409;
+        throw error;
+      }
+      reservedCouponId = coupon._id;
+    }
 
     const order = await Order.create({
-      user: req.user._id, products: enrichedItems,
-      productTotal, shippingFee, codFee, totalWeight, shippingZone, totalPrice,
+      user: req.user?._id || null, guestContact, products: enrichedItems,
+      productTotal, shippingFee, codFee, couponCode: coupon?.code || '', couponDiscount, currency, totalWeight, shippingZone, totalPrice,
       address, paymentMethod, paymentChannel,
       isPaid: false,
       paymentStatus: 'pending',
@@ -183,6 +235,7 @@ const placeOrder = async (req, res) => {
   } catch (e) {
     for (const item of reservedItems)
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+    if (reservedCouponId) await Coupon.findByIdAndUpdate(reservedCouponId, { $inc: { usageCount: -1 } });
     console.error(e);
     res.status(e.statusCode || 500).json({ message: e.message });
   }
@@ -197,7 +250,8 @@ const getOrderById = async (req, res) => {
   try {
     const o = await Order.findById(req.params.id).populate('user','name email');
     if (!o) return res.status(404).json({ message: 'Order not found.' });
-    if (o.user._id.toString() !== req.user._id.toString() && !req.user.isAdmin)
+    const isOwner = o.user && String(o.user._id || o.user) === String(req.user._id);
+    if (!isOwner && !req.user.isAdmin)
       return res.status(403).json({ message: 'Not authorized.' });
     res.json(o);
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -291,6 +345,26 @@ const updateOrderStatus = async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 
+const updateOrderShipment = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Invalid order ID.' });
+  const normalized = normalizeShipmentTracking(req.body);
+  if (normalized.error) return res.status(400).json({ message: normalized.error });
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found.' });
+    if (order.status === 'Cancelled') return res.status(409).json({ message: 'Cancelled orders cannot be assigned tracking details.' });
+    order.shippingProvider = normalized.value.shippingProvider;
+    order.trackingNumber = normalized.value.trackingNumber;
+    order.trackingUrl = normalized.value.trackingUrl;
+    order.trackingUpdatedAt = normalized.value.trackingNumber || normalized.value.trackingUrl ? new Date() : null;
+    // This is an admin-entered tracking reference, not proof an API booked the parcel.
+    order.courierDispatchStatus = order.trackingNumber || order.trackingUrl ? 'manual_tracking' : 'not_configured';
+    res.json(await order.save());
+  } catch (error) {
+    res.status(500).json({ message: 'Shipment tracking details could not be saved.' });
+  }
+};
+
 module.exports = {
   placeOrder,
   getMyOrders,
@@ -299,4 +373,5 @@ module.exports = {
   getSalesAnalytics,
   recordManualCashSale,
   updateOrderStatus,
+  updateOrderShipment,
 };

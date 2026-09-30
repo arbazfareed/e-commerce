@@ -62,8 +62,9 @@ flowchart LR
 | `/` | Everyone | Storefront and product discovery |
 | `/login` | Everyone | Sign in |
 | `/register` | Everyone | Create an account |
+| `/admin/login` | Administrator | Admin-only portal; local admin launcher uses port 3001, storefront shield icon opens it |
 | `/cart` | Customer | Review cart and begin checkout |
-| `/orders` | Customer | View customer orders |
+| `/orders` | Customer | View customer orders and manually supplied shipment tracking details |
 | `/support` | Customer | Contact support and review help content |
 | `/admin` | Admin | Dashboard and management workspace |
 | `/admin/products` | Admin | Catalog and visibility management |
@@ -71,8 +72,14 @@ flowchart LR
 | `/admin/orders` | Admin | Review and update fulfillment |
 | `/admin/settings` | Admin | COD, courier, shipping, and store configuration |
 
-Protected routes redirect unauthenticated users to `/login`; admin routes also
-require an administrator account.
+Protected customer routes redirect unauthenticated users to `/login`. Admin
+routes redirect to `/admin/login` and require an administrator account. The
+shopper and admin sign-in screens use separate role-enforcing API endpoints;
+each rejects credentials for the other role.
+In local development, shopper and admin Vite processes use ports `3000` and
+`3001` respectively; they share the API on `5000` and the same database. The
+admin header's storefront icon returns to the shopper portal without merging
+the sign-in forms.
 
 ## Capabilities that are easy to miss
 
@@ -97,8 +104,9 @@ require an administrator account.
   handling remains a known policy gap.
 - **Payment honesty:** non-COD methods are order metadata until a real gateway
   captures payment; orders expose a separate payment status.
-- **Courier status visibility:** dispatch outcomes are recorded, but carrier
-  booking, labels, and tracking require an adapter that is not implemented.
+- **Courier status visibility:** admins can enter a carrier, tracking number,
+  and secure tracking link for customers. This is manual reference data; carrier
+  booking, labels, and live tracking events still require an API adapter.
 - **Server-backed support:** guests/customers can submit tickets and admins can
   reply or update status through the Mongo-backed support API.
 - **Safer product uploads:** the API enforces five JPG/JPEG/PNG/WEBP images,

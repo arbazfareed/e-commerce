@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <radialGradient id="emerald-haze" cx="0" cy="0" r="1" gradientTransform="matrix(1190 820 -1220 1770 105 5)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D6648" stop-opacity=".19"/>
+      <stop offset=".52" stop-color="#0B503C" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#07110E" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="right-haze" cx="0" cy="0" r="1" gradientTransform="matrix(-540 420 -470 -605 1500 85)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1D7456" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#1D7456" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mesh-fade" x1="650" y1="300" x2="1600" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0"/>
+      <stop offset=".48" stop-color="white" stop-opacity=".12"/>
+      <stop offset="1" stop-color="white" stop-opacity=".58"/>
+    </linearGradient>
+    <linearGradient id="wave-fill" x1="0" y1="755" x2="0" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07543D" stop-opacity=".02"/>
+      <stop offset="1" stop-color="#063B2D" stop-opacity=".16"/>
+    </linearGradient>
+    <pattern id="diagonal-mesh" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <path d="M0 0V26" stroke="#B6DCC7" stroke-opacity=".20" stroke-width="1"/>
+    </pattern>
+    <mask id="mesh-mask">
+      <rect width="1600" height="1000" fill="url(#mesh-fade)"/>
+    </mask>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#emerald-haze)"/>
+  <rect width="1600" height="1000" fill="url(#right-haze)"/>
+  <rect width="1600" height="1000" fill="url(#diagonal-mesh)" mask="url(#mesh-mask)" opacity=".34"/>
+  <path d="M0 822C184 752 351 789 512 830C716 882 845 772 1049 778C1231 783 1392 840 1600 723V1000H0V822Z" fill="url(#wave-fill)"/>
+  <path d="M0 814C190 744 352 780 514 821C718 873 846 763 1050 769C1232 774 1394 831 1600 714" stroke="#B99A63" stroke-opacity=".16" stroke-width="3"/>
+  <path d="M0 844C190 774 352 810 514 851C718 903 846 793 1050 799C1232 804 1394 861 1600 744" stroke="#88B69B" stroke-opacity=".10" stroke-width="1.5"/>
+  <path d="M0 866C190 796 352 832 514 873C718 925 846 815 1050 821C1232 826 1394 883 1600 766" stroke="#B99A63" stroke-opacity=".07" stroke-width="1"/>
+</svg>

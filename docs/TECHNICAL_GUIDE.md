@@ -108,8 +108,9 @@ Health endpoints:
 - Product uploads are local files; production should use object storage such as
   S3-compatible storage or Cloudinary.
 - Payment and courier providers need real production credentials.
-- HTTPS, domain DNS, rate limiting, monitoring, and alerting should be added
-  before taking real payments.
+- HTTPS, domain DNS, monitoring, and alerting should be completed before taking
+  real payments. Admin login has a five-failure-per-IP limiter, but its store is
+  process-local; use a shared store and trusted proxy configuration when scaling.
 - The frontend build still reports a non-blocking large-bundle warning.
 
 ## 9. Full source map and UML guide
@@ -118,7 +119,7 @@ The implementation-based, GitHub-renderable diagrams are maintained in
 [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md). They include the repository/package map,
 frontend route and guard structure, backend layers and authorization, actual
 Mongo relationships, checkout/order lifecycle, and customer password-reset
-email lifecycle. Start with sections 17–25 for the detailed source map and
+email and role-separated admin-login lifecycles. Start with sections 17–26 for the detailed source map and
 flows; sections 1–16 preserve the original UML views.
 
 | Source area | Files matched | Main contents |

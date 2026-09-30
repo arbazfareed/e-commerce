@@ -8,6 +8,7 @@ This is the production handoff checklist. Replace every `example.com` value with
 - MongoDB backup and restore scripts.
 - Helmet security headers.
 - Authentication rate limiting.
+- Separate shopper/admin login endpoints with server-side role checks and a stricter admin failed-attempt limiter.
 - Environment-based JWT and CORS configuration.
 - Docker Compose for the API, frontend, and MongoDB.
 - Capacitor Android release build.
@@ -26,7 +27,8 @@ Set backend production variables:
 NODE_ENV=production
 MONGO_URI=mongodb+srv://USER:PASSWORD@CLUSTER/induscart
 JWT_SECRET=replace-with-a-unique-random-secret-at-least-32-characters
-CORS_ORIGINS=https://shop.example.com
+SETTINGS_ENCRYPTION_KEY=replace-with-a-unique-random-secret-at-least-32-characters
+CORS_ORIGINS=https://shop.example.com,https://admin.example.com
 PORT=5000
 FRONTEND_URL=https://shop.example.com
 RESEND_API_KEY=replace-with-resend-api-key
@@ -36,12 +38,37 @@ EMAIL_FROM="IndusCart <no-reply@your-verified-domain.com>"
 Customer password-reset emails require a Resend API key and an `EMAIL_FROM`
 address whose domain is verified with Resend. Keep the API key in the backend
 environment only; the reset link is single-use and expires after 20 minutes.
+`SETTINGS_ENCRYPTION_KEY` encrypts courier and future payment-provider secrets
+before they are stored in MongoDB. Keep a protected backup of this value; do not
+rotate it until stored credentials have been re-encrypted.
 
-Build the frontend with:
+The admin login limiter is currently in-memory and keyed by the API-observed IP.
+Before using multiple API instances, configure a shared limiter store (such as
+Redis) and trust only the known reverse-proxy hops; otherwise the limiter may
+reset on restart or treat every visitor as the proxy. Add administrator
+MFA/passkeys before granting real operators access.
+
+Build the shopper frontend with:
 
 ```env
 VITE_API_URL=https://api.example.com
+VITE_APP_MODE=shopper
+VITE_ADMIN_PORTAL_URL=https://admin.example.com
 ```
+
+The local developer launchers run shopper and admin-only Vite processes on
+`:3000` and `:3001`, sharing the API at `:5000`. For production, either keep a
+single shared frontend origin (default build mode) or build/deploy separate
+static portal variants. For separate origins, build one copy with
+`VITE_APP_MODE=shopper`, `VITE_ADMIN_PORTAL_URL=https://admin.example.com`, and
+another with `VITE_APP_MODE=admin`, `VITE_SHOPPER_PORTAL_URL=https://shop.example.com`;
+set `VITE_API_URL=https://api.example.com` in both builds and allow both origins
+in `CORS_ORIGINS`. Different origins have separate browser localStorage, so
+shopper sessions/carts are not implicitly shared with the admin portal.
+
+Keep role checks on the API in either hosting shape. A distinct URL/port is
+deployment organization, not authorization; use MFA and shared rate limiting
+for production admin access.
 
 Verify:
 
@@ -67,9 +94,11 @@ Before enabling payments, test:
 - refund and order cancellation
 - stock restoration after cancellation
 
-The current checkout supports payment-method selection but does not claim a
-payment was captured. Add the provider adapter only after receiving the real
-merchant credentials.
+EasyPaisa/provider settings in the admin panel are placeholders only. The
+storefront advertises COD only until a provider adapter is implemented. Add a
+real provider only after reviewing its official docs and receiving sandbox
+access; use server-created transactions, webhook signature verification, and
+idempotency before marking an order paid. Never trust a browser redirect alone.
 
 ## 3. Cloud image storage
 

@@ -19,6 +19,11 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
+  const [reviewInfo, setReviewInfo] = useState({ reviews: [], averageRating: 0, reviewCount: 0, canReview: false, hasReviewed: false });
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState('');
   const isPak = !user || user.country === 'Pakistan';
   const market = localStorage.getItem('ic_market_mode') || 'local';
   const isLocalMarket = market === 'local';
@@ -42,6 +47,32 @@ export default function ProductDetailPage() {
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, [id]);
+
+  useEffect(() => {
+    if (!product?._id) return;
+    let active = true;
+    API.get(`/api/reviews/product/${product._id}`)
+      .then(({ data }) => { if (active) setReviewInfo(data); })
+      .catch(() => { if (active) setReviewInfo({ reviews: [], averageRating: 0, reviewCount: 0, canReview: false, hasReviewed: false }); });
+    return () => { active = false; };
+  }, [product?._id, user?._id]);
+
+  const submitReview = async event => {
+    event.preventDefault();
+    setReviewMessage('');
+    if (!user) { navigate('/login'); return; }
+    if (!reviewRating) { setReviewMessage('Choose a star rating before submitting.'); return; }
+    setReviewSubmitting(true);
+    try {
+      const { data } = await API.post('/api/reviews', { productId: product._id, rating: reviewRating, comment: reviewComment });
+      setReviewInfo(current => ({ ...current, canReview: false, hasReviewed: true }));
+      setReviewComment('');
+      setReviewRating(0);
+      setReviewMessage(data.message || 'Review submitted and is awaiting moderation.');
+    } catch (submitError) {
+      setReviewMessage(submitError.response?.data?.message || 'Your review could not be submitted.');
+    } finally { setReviewSubmitting(false); }
+  };
 
   const images = useMemo(() => product?.images?.length ? product.images : [], [product]);
   const restricted = product?.isLocal && !isPak;
@@ -85,6 +116,10 @@ export default function ProductDetailPage() {
         <div className="product-detail-info" style={S.info}>
           <p style={S.category}>{product.category}</p>
           <h1 style={S.title}>{product.name}</h1>
+          <p aria-label={`${reviewInfo.averageRating || product.averageRating || 0} out of 5 stars from ${reviewInfo.reviewCount || product.reviewCount || 0} reviews`} style={{ margin:'-10px 0 16px', color:'#a66b12', fontSize:14, fontWeight:800 }}>
+            {'★'.repeat(Math.round(reviewInfo.averageRating || product.averageRating || 0))}{'☆'.repeat(5 - Math.round(reviewInfo.averageRating || product.averageRating || 0))}
+            <span style={{ marginLeft:8, color:'#64748b', fontSize:12, fontWeight:600 }}>{(reviewInfo.averageRating || product.averageRating || 0).toFixed(1)} · {reviewInfo.reviewCount || product.reviewCount || 0} reviews</span>
+          </p>
           {(product.subcategory || product.brand || product.model) && (
             <div style={S.meta}>
               {product.subcategory && <span className="product-meta-chip">{product.subcategory}</span>}
@@ -119,6 +154,23 @@ export default function ProductDetailPage() {
           </div>}
         </div>
       </section>
+      <section className="customer-reviews-section" aria-labelledby="customer-reviews-heading" style={{ ...S.related, marginTop:34, padding:24, background:'var(--surface, #fff)', border:'1px solid #e2e8f0', borderRadius:18 }}>
+        <p className="related-kicker">VERIFIED CUSTOMER FEEDBACK</p>
+        <h2 id="customer-reviews-heading" style={{ margin:'0 0 16px', color:'var(--ink, #0f172a)' }}>Customer reviews</h2>
+        {reviewInfo.reviews.length === 0 ? <p style={{ color:'#64748b', fontSize:13 }}>No approved reviews yet. Reviews are shown after moderation.</p> : <div style={{ display:'grid', gap:12, marginBottom:18 }}>
+          {reviewInfo.reviews.map(review => <article className="customer-review-card" key={review._id} style={{ padding:'13px 15px', borderRadius:12, background:'var(--soft-surface, #f8fafc)', border:'1px solid #e2e8f0' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}><strong style={{ color:'var(--ink, #1e293b)', fontSize:13 }}>{review.user?.name || 'Verified customer'}</strong><span style={{ color:'#a66b12', fontSize:14 }} aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span></div>
+            <p style={{ margin:'7px 0 0', color:'var(--body-copy, #475569)', fontSize:13, lineHeight:1.65, whiteSpace:'pre-wrap' }}>{review.comment}</p>
+          </article>)}
+        </div>}
+        {reviewInfo.canReview ? <form onSubmit={submitReview} style={{ display:'grid', gap:11, maxWidth:600 }}>
+          <fieldset style={{ padding:0, border:0, margin:0 }}><legend style={{ marginBottom:7, color:'var(--ink, #334155)', fontSize:12, fontWeight:800 }}>Your rating</legend><div style={{ display:'flex', gap:5 }}>{[1,2,3,4,5].map(star => <button key={star} type="button" aria-label={`${star} star${star === 1 ? '' : 's'}`} aria-pressed={reviewRating === star} onClick={() => setReviewRating(star)} style={{ border:0, padding:3, background:'transparent', color:star <= reviewRating ? '#d69e2e' : '#94a3b8', cursor:'pointer', fontSize:26, lineHeight:1 }}>★</button>)}</div></fieldset>
+          <label htmlFor="review-comment" style={{ color:'var(--ink, #334155)', fontSize:12, fontWeight:800 }}>Your review</label>
+          <textarea className="customer-review-input" id="review-comment" value={reviewComment} onChange={event => setReviewComment(event.target.value)} minLength={3} maxLength={1000} required rows={4} placeholder="Share useful feedback about this product…" style={{ width:'100%', maxWidth:600, boxSizing:'border-box', resize:'vertical', border:'1px solid #cbd5e1', borderRadius:10, padding:12, color:'#1e293b', font:'inherit', lineHeight:1.55 }} />
+          <button type="submit" disabled={reviewSubmitting} style={{ ...S.addButton, width:'fit-content', opacity:reviewSubmitting ? .7 : 1 }}>{reviewSubmitting ? 'Submitting…' : 'Submit review'}</button>
+          {reviewMessage && <p aria-live="polite" style={{ margin:0, color:reviewMessage.includes('awaiting') ? '#047857' : '#b91c1c', fontSize:12, lineHeight:1.5 }}>{reviewMessage}</p>}
+        </form> : user && reviewInfo.hasReviewed ? <p style={{ color:'#047857', fontSize:13 }}>Thank you—your review has been submitted for moderation.</p> : user ? <p style={{ color:'#64748b', fontSize:13, lineHeight:1.6 }}>Reviews are available after this product has been delivered to you.</p> : <p style={{ color:'#64748b', fontSize:13 }}>Sign in and place an order to leave a verified review.</p>}
+      </section>
       {related.length > 0 && <section className="related-products" style={S.related}><p className="related-kicker">YOU MAY ALSO LIKE</p><h2>More from {product.category}</h2><div className="related-products-grid" style={S.relatedGrid}>{related.map(item => { const itemDiscount = getActiveDiscountPercent(item); const original = isLocalMarket ? item.pricePKR : item.priceUSD; const sale = getDiscountedPrice(original, itemDiscount, isLocalMarket ? 'PKR' : 'USD'); return <Link key={item._id} to={`/products/${item._id}`} style={S.relatedCard} aria-label={`View ${item.name}`}><div style={S.relatedImage}>{item.images?.[0] ? <img src={assetUrl(item.images[0])} alt={item.name} /> : item.name[0]}</div><strong>{item.name}</strong><span>{isLocalMarket ? formatPKR(sale) : formatUSD(sale)}</span></Link>; })}</div></section>}
     </main>
   );
@@ -131,8 +183,8 @@ const S = {
   link: { color: '#059669', fontWeight: 700 },
   detail: { display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(340px, .95fr)', gap: 54, alignItems: 'start' },
   gallery: { minWidth: 0 },
-  mainImage: { height: 520, borderRadius: 24, background: 'linear-gradient(145deg, #f8fafc, #eef7f2)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: '0 18px 44px rgba(15,23,42,.08)' },
-  image: { width: '100%', height: '100%', objectFit: 'cover' },
+  mainImage: { height: 520, borderRadius: 24, background: 'radial-gradient(ellipse at center, #fff 0%, #f4f8f4 58%, #e8f1eb 100%)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: '0 18px 44px rgba(15,23,42,.08)' },
+  image: { width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', padding: 16, boxSizing: 'border-box' },
   placeholder: { fontSize: 110, fontWeight: 800, color: '#86efac' },
   thumbs: { display: 'flex', gap: 10, marginTop: 14, overflowX: 'auto' },
   thumb: { width: 76, height: 76, flexShrink: 0, padding: 0, border: '2px solid transparent', borderRadius: 10, overflow: 'hidden', background: '#f8fafc', cursor: 'pointer' },

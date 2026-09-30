@@ -1,4 +1,7 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
+const Order = require('../models/Order');
+const SystemSettings = require('../models/SystemSettings');
 const path    = require('path');
 const fs      = require('fs');
 const { filterRetainedImages, resolveUploadedImagePath } = require('../utils/productImageSafety');
@@ -19,17 +22,106 @@ const isValidDateOnly = (value) => {
 // ─── @GET /api/products ────────────────────────────────────────
 const getProducts = async (req, res) => {
   try {
-    const { category, isLocal, includeHidden } = req.query;
+    const { category, subcategory, isLocal, includeHidden } = req.query;
     let filter = {};
     if (category) filter.category = category;
-    if (isLocal === 'true') filter.isLocal = true;
+    if (subcategory) filter.subcategory = subcategory;
+    if (isLocal === 'false') {
+      const settings = await SystemSettings.findOne({ key: 'global' }).select('internationalEnabled').lean();
+      if (settings?.internationalEnabled === false)
+        return res.status(403).json({ message: 'International shopping is currently unavailable.' });
+      filter.isLocal = false;
+    } else if (isLocal === 'true') filter.isLocal = true;
     const canIncludeHidden = includeHidden === 'true' && req.user?.isAdmin;
     if (!canIncludeHidden) filter.isVisible = { $ne: false };
-    const products = await Product.find(filter).sort({ createdAt: -1 });
-    res.json(products);
+    const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.$or = [
+        { $text: { $search: search } },
+        { brand: { $regex: escaped, $options: 'i' } },
+        { model: { $regex: escaped, $options: 'i' } },
+      ];
+    }
+
+    const paginated = ['search', 'subcategory', 'minPrice', 'maxPrice', 'sort', 'page', 'limit'].some(key => req.query[key] !== undefined);
+    let products;
+    let total = 0;
+    let page = 1;
+    let pageSize = 24;
+    if (paginated) {
+      page = Math.max(1, Math.floor(Number(req.query.page) || 1));
+      pageSize = Math.min(48, Math.max(1, Math.floor(Number(req.query.limit) || 24)));
+      const currency = req.query.currency === 'USD' ? 'USD' : 'PKR';
+      const priceField = currency === 'USD' ? '$priceUSD' : '$pricePKR';
+      const today = new Date().toISOString().slice(0, 10);
+      const effectivePrice = { $let: {
+        vars: { active: { $and: [
+          { $gt: [{ $ifNull: ['$discountPercent', 0] }, 0] },
+          { $or: [{ $eq: [{ $ifNull: ['$discountStartDate', ''] }, ''] }, { $lte: ['$discountStartDate', today] }] },
+          { $or: [{ $eq: [{ $ifNull: ['$discountEndDate', ''] }, ''] }, { $gte: ['$discountEndDate', today] }] },
+        ] } },
+        in: { $cond: ['$$active', { $multiply: [priceField, { $subtract: [1, { $divide: [{ $ifNull: ['$discountPercent', 0] }, 100] }] }] }, priceField] },
+      } };
+      const pipeline = [{ $match: filter }, { $addFields: { _effectivePrice: effectivePrice } }];
+      const minPrice = req.query.minPrice === undefined || req.query.minPrice === '' ? null : Number(req.query.minPrice);
+      const maxPrice = req.query.maxPrice === undefined || req.query.maxPrice === '' ? null : Number(req.query.maxPrice);
+      if ((minPrice !== null && (!Number.isFinite(minPrice) || minPrice < 0)) || (maxPrice !== null && (!Number.isFinite(maxPrice) || maxPrice < 0)))
+        return res.status(400).json({ message: 'Enter valid non-negative price limits.' });
+      if (minPrice !== null && maxPrice !== null && minPrice > maxPrice)
+        return res.status(400).json({ message: 'Minimum price cannot exceed maximum price.' });
+      if (minPrice !== null || maxPrice !== null) {
+        const range = {};
+        if (minPrice !== null) range.$gte = minPrice;
+        if (maxPrice !== null) range.$lte = maxPrice;
+        pipeline.push({ $match: { _effectivePrice: range } });
+      }
+      if (req.query.sort === 'popular') {
+        const popularProducts = await Order.aggregate([
+          { $match: { status: { $ne: 'Cancelled' } } }, { $unwind: '$products' },
+          { $match: { 'products.product': { $ne: null } } },
+          { $group: { _id: '$products.product', units: { $sum: '$products.quantity' } } },
+          { $sort: { units: -1 } },
+        ]);
+        pipeline.push({ $addFields: { _popularity: { $indexOfArray: [popularProducts.map(item => item._id), '$_id'] } } });
+        pipeline.push({ $sort: { _popularity: 1, createdAt: -1 } });
+      } else if (req.query.sort === 'price-asc') pipeline.push({ $sort: { _effectivePrice: 1, createdAt: -1 } });
+      else if (req.query.sort === 'price-desc') pipeline.push({ $sort: { _effectivePrice: -1, createdAt: -1 } });
+      else if (req.query.sort === 'name') pipeline.push({ $sort: { name: 1 } });
+      else pipeline.push({ $sort: { createdAt: -1 } });
+      pipeline.push({ $facet: { metadata: [{ $count: 'total' }], items: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }] } });
+      const [result] = await Product.aggregate(pipeline);
+      products = result?.items || [];
+      total = result?.metadata?.[0]?.total || 0;
+    } else {
+      products = await Product.find(filter).sort({ createdAt: -1 });
+      total = products.length;
+    }
+
+    const ids = products.map(product => product._id);
+    const ratings = ids.length ? await Review.aggregate([
+      { $match: { product: { $in: ids }, status: 'approved' } },
+      { $group: { _id: '$product', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+    ]) : [];
+    const ratingByProduct = new Map(ratings.map(rating => [String(rating._id), rating]));
+    const enriched = products.map(product => {
+      const rating = ratingByProduct.get(String(product._id));
+      const raw = typeof product.toObject === 'function' ? product.toObject() : product;
+      return { ...raw, averageRating: rating ? Number(rating.averageRating.toFixed(1)) : 0, reviewCount: rating?.reviewCount || 0 };
+    });
+    res.json(paginated ? { items: enriched, pagination: { page, pageSize, total, pages: Math.ceil(total / pageSize) } } : enriched);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+const getSubcategories = async (req, res) => {
+  try {
+    const filter = { isVisible: { $ne: false } };
+    if (typeof req.query.category === 'string' && req.query.category) filter.category = req.query.category;
+    const values = await Product.distinct('subcategory', filter);
+    res.json(values.filter(Boolean).sort((a, b) => a.localeCompare(b)));
+  } catch (error) { res.status(500).json({ message: 'Subcategories could not be loaded.' }); }
 };
 
 // ─── @GET /api/products/categories ────────────────────────────
@@ -49,7 +141,11 @@ const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (product && product.isVisible !== false) {
-      res.json(product);
+      const [rating] = await Review.aggregate([
+        { $match: { product: product._id, status: 'approved' } },
+        { $group: { _id: '$product', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+      ]);
+      res.json({ ...product.toObject(), averageRating: rating ? Number(rating.averageRating.toFixed(1)) : 0, reviewCount: rating?.reviewCount || 0 });
     } else {
       res.status(404).json({ message: 'Product not found' });
     }
@@ -201,6 +297,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   getProducts,
   getCategories,
+  getSubcategories,
   getProductById,
   createProduct,
   updateProduct,

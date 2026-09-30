@@ -32,12 +32,17 @@ export default function CartPage() {
     city:    user?.city    || '',
     country: user?.country || 'Pakistan',
   });
+  const [guestContact, setGuestContact] = useState({ name:'', email:'', phone:'' });
   const [payment, setPayment] = useState('COD');
   const [placing, setPlacing] = useState(false);
   const [error,   setError]   = useState('');
   const [orderId, setOrderId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [checkoutSettings, setCheckoutSettings] = useState(null);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
 
   useEffect(() => {
     API.get('/api/settings/public')
@@ -46,17 +51,13 @@ export default function CartPage() {
   }, []);
 
   useEffect(() => {
-    if (checkoutSettings && !checkoutSettings.codEnabled && payment === 'COD') {
-      setPayment('JazzCash');
-    }
-  }, [checkoutSettings, payment]);
-
-  useEffect(() => {
     setAddr(prev => ({ ...prev, city: '', country: user?.country || 'Pakistan' }));
   }, [user?._id]);
 
   // Safe totals — always work even if items is []
   const safeItems  = Array.isArray(items) ? items : [];
+  const cartSignature = safeItems.map(item => `${item._id}:${item.quantity}:${item.selectedColor || ''}:${item.selectedSize || ''}`).join('|');
+  const couponProducts = safeItems.map(item => ({ product: item._id, quantity: item.quantity || 1, selectedColor: item.selectedColor || '', selectedSize: item.selectedSize || '' }));
   const subTotal   = safeItems.reduce((s, i) => s + getItemPrice(i) * (i.quantity||1), 0);
   // ✅ Zone-based shipping: detects domestic (Multan→Karachi), Middle East, US, etc.
   //    Items with no weight (glasses, fruit, etc.) incur only the base/flat rate.
@@ -67,20 +68,61 @@ export default function CartPage() {
   const USD_RATE    = getUSDRate();  // reads from localStorage (admin-configurable)
   const shipFee     = isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2));
   const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
-  const codWaived = codSettings.codThreshold > 0 && subTotal >= codSettings.codThreshold;
+  const supportedPaymentMethods = checkoutSettings?.supportedPaymentMethods || ['COD'];
+  const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codSettings.codEnabled));
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const discountedSubtotal = Math.max(0, subTotal - couponDiscount);
+  const codWaived = codSettings.codThreshold > 0 && discountedSubtotal >= codSettings.codThreshold;
   const codFeePKR = payment === 'COD' && !codWaived
     ? codSettings.codFeeMode === 'percentage'
-      ? Math.round(subTotal * (Number(codSettings.codFee || 0) / 100))
+      ? Math.round(discountedSubtotal * (Number(codSettings.codFee || 0) / 100))
       : Number(codSettings.codFee || 0)
     : 0;
   const codFee = isPak ? codFeePKR : parseFloat((codFeePKR / USD_RATE).toFixed(2));
-  const grandTotal  = subTotal + shipFee + codFee;
+  const grandTotal  = discountedSubtotal + shipFee + codFee;
   const totalQty    = safeItems.reduce((a, i) => a + (i.quantity||1), 0);
+
+  const validateCoupon = async code => {
+    const { data } = await API.post('/api/coupons/validate', { code, products: couponProducts, country: addr.country });
+    return data;
+  };
+
+  const applyCoupon = async () => {
+    setCouponError('');
+    if (!couponInput.trim()) { setCouponError('Enter a promo code first.'); return; }
+    setCouponChecking(true);
+    try {
+      const result = await validateCoupon(couponInput.trim());
+      setAppliedCoupon({ ...result, cartSignature });
+      setCouponInput(result.code);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err.response?.data?.message || 'That promo code could not be applied.');
+    } finally { setCouponChecking(false); }
+  };
+
+  useEffect(() => {
+    if (!appliedCoupon || appliedCoupon.cartSignature === cartSignature) return;
+    let active = true;
+    validateCoupon(appliedCoupon.code)
+      .then(result => { if (active) setAppliedCoupon({ ...result, cartSignature }); })
+      .catch(err => {
+        if (!active) return;
+        setAppliedCoupon(null);
+        setCouponError(err.response?.data?.message || 'The promo code no longer applies to this cart.');
+      });
+    return () => { active = false; };
+  }, [cartSignature, addr.country, appliedCoupon?.code, appliedCoupon?.cartSignature]);
 
   const handlePlaceOrder = async () => {
     setError('');
+    if (!user && (!guestContact.name.trim() || !/^\S+@\S+\.\S+$/.test(guestContact.email.trim()))) {
+      setError('Enter your name and a valid email address for the order.');
+      return;
+    }
     if (!addr.street.trim()) { setError('Please enter your street address.'); return; }
     if (!addr.city.trim())   { setError('Please enter your city.'); return; }
+    if (!payment || !supportedPaymentMethods.includes(payment)) { setError('No working payment method is available. Please contact the store administrator.'); return; }
     setPlacing(true);
     try {
       const orderItems = safeItems.map(i => ({
@@ -96,6 +138,8 @@ export default function CartPage() {
         products:      orderItems,
         address:       addr,
         paymentMethod: payment,
+        couponCode:    appliedCoupon?.code || '',
+        ...(!user ? { guestContact: { name:guestContact.name.trim(), email:guestContact.email.trim(), phone:guestContact.phone.trim() } } : {}),
       });
       setOrderId(data._id);
       setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));
@@ -126,8 +170,9 @@ export default function CartPage() {
               ? `Payment via ${payment} is confirmed.`
               : `Payment via ${payment} is pending. This order flow has not captured your payment.`}
         </p>
+        {!user && <p style={{ margin:'0 0 20px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>Save your order number for reference. Guest orders are not shown in account order history.</p>}
         <div style={{ display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap' }}>
-          <button style={S.greenBtn} onClick={() => navigate('/orders')}>📦 View My Orders</button>
+          {user && <button style={S.greenBtn} onClick={() => navigate('/orders')}>📦 View My Orders</button>}
           <button style={S.ghostBtn} onClick={() => navigate('/')}>Continue Shopping</button>
         </div>
       </div>
@@ -162,11 +207,7 @@ export default function CartPage() {
         {/* Step indicators */}
         <div style={{ display:'flex', gap:'6px', alignItems:'center' }}>
           {[['cart','1. Cart'],['checkout','2. Checkout']].map(([s, lbl]) => (
-            <span key={s} style={{
-              padding:'7px 18px', borderRadius:'999px', fontSize:'12px', fontWeight:'700',
-              background: step === s ? '#10b981' : (step === 'checkout' && s === 'cart') ? '#d1fae5' : '#f1f5f9',
-              color:      step === s ? '#fff'    : (step === 'checkout' && s === 'cart') ? '#059669' : '#94a3b8',
-            }}>
+            <span key={s} className={`cart-step-pill ${step === s ? 'is-active' : (step === 'checkout' && s === 'cart') ? 'is-complete' : 'is-upcoming'}`} aria-current={step === s ? 'step' : undefined}>
               {lbl}
             </span>
           ))}
@@ -180,16 +221,16 @@ export default function CartPage() {
 
           {/* CART STEP */}
           {step === 'cart' && (
-            <div style={S.card}>
+            <div className="cart-items-card" style={S.card}>
               {safeItems.map(item => {
                 const price = getItemPrice(item);
                 const originalPrice = isPak ? (item.pricePKR || 0) : (item.priceUSD || 0);
                 const discount = getActiveDiscountPercent(item);
                 const img   = item.images?.[0];
                 return (
-                  <div key={item._id} className="item-row" style={S.itemRow}>
+                  <div key={item._id} className="item-row">
                     {/* Product image */}
-                    <div style={S.itemImgBox}>
+                    <div className="cart-item-image" style={S.itemImgBox}>
                       {img
                         ? <img
                             src={assetUrl(img)}
@@ -202,13 +243,13 @@ export default function CartPage() {
                     </div>
 
                     {/* Info */}
-                    <div style={{ flex:1, minWidth:0 }}>
+                    <div className="cart-item-details" style={{ flex:1, minWidth:0 }}>
                       <p style={{ margin:'0 0 2px', fontWeight:'700', fontSize:'15px', color:'#1e293b' }}>{item.name}</p>
-                      <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
+                      <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
                         {item.category}
                       </p>
                       {(item.selectedColor || item.selectedSize) && (
-                        <p style={{ margin:'0 0 6px', fontSize:'11px', color:'#047857', fontWeight:'700' }}>
+                        <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#047857', fontWeight:'700' }}>
                           {[item.selectedColor && `Colour: ${item.selectedColor}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -218,24 +259,27 @@ export default function CartPage() {
                       {discount > 0 && <span className="cart-discount-note">You save {discount}%</span>}
                     </div>
 
-                    {/* Quantity controls */}
-                    <div style={S.qtyBox}>
-                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity - 1)}>−</button>
-                      <span style={S.qtyNum}>{item.quantity}</span>
-                      <button style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)} disabled={Number.isFinite(Number(item.stock)) && item.quantity >= Number(item.stock)} aria-label={`Increase ${item.name} quantity`}>+</button>
-                    </div>
+                    <div className="cart-item-actions">
+                      {/* Quantity controls */}
+                      <div className="cart-quantity-control" style={S.qtyBox}>
+                        <button type="button" className="cart-quantity-button" style={S.qtyBtn} onClick={() => updateQty(item, item.quantity - 1)} aria-label={`Decrease ${item.name} quantity`}>−</button>
+                        <span className="cart-quantity-value" style={S.qtyNum}>{item.quantity}</span>
+                        <button type="button" className="cart-quantity-button" style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)} disabled={Number.isFinite(Number(item.stock)) && item.quantity >= Number(item.stock)} aria-label={`Increase ${item.name} quantity`}>+</button>
+                      </div>
 
-                    {/* Subtotal */}
-                    <div style={{ textAlign:'right', minWidth:'95px' }}>
-                      <p style={{ margin:'0 0 6px', fontWeight:'800', fontSize:'16px', color:'#10b981' }}>
-                        {fmt(price * item.quantity)}
-                      </p>
-                      <button
-                        style={{ background:'none', border:'none', color:'#ef4444', fontSize:'12px', cursor:'pointer', fontWeight:'600', padding:0 }}
-                        onClick={() => removeFromCart(item)}
-                      >
-                        Remove
-                      </button>
+                      {/* Subtotal */}
+                      <div className="cart-item-subtotal">
+                        <p className="cart-item-price" style={{ margin:'0 0 6px', fontWeight:'800', fontSize:'16px', color:'#10b981' }}>
+                          {fmt(price * item.quantity)}
+                        </p>
+                        <button
+                          type="button"
+                          className="cart-remove-button"
+                          onClick={() => removeFromCart(item)}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -246,13 +290,31 @@ export default function CartPage() {
           {/* CHECKOUT STEP */}
           {step === 'checkout' && (
             <div style={S.card}>
+              {!user && <>
+                <h3 style={S.secTitle}>Contact Details</h3>
+                <p style={{ margin:'-10px 0 14px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>No account needed. We’ll use these details for your COD order.</p>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px', marginBottom:22 }}>
+                  <div>
+                    <label htmlFor="guest-name" style={S.lbl}>Full name *</label>
+                    <input id="guest-name" style={S.inp} autoComplete="name" maxLength={120} value={guestContact.name} onChange={event => setGuestContact(contact => ({ ...contact, name:event.target.value }))} required />
+                  </div>
+                  <div>
+                    <label htmlFor="guest-email" style={S.lbl}>Email *</label>
+                    <input id="guest-email" style={S.inp} type="email" autoComplete="email" maxLength={254} value={guestContact.email} onChange={event => setGuestContact(contact => ({ ...contact, email:event.target.value }))} required />
+                  </div>
+                  <div>
+                    <label htmlFor="guest-phone" style={S.lbl}>Phone (optional)</label>
+                    <input id="guest-phone" style={S.inp} type="tel" autoComplete="tel" maxLength={40} value={guestContact.phone} onChange={event => setGuestContact(contact => ({ ...contact, phone:event.target.value }))} />
+                  </div>
+                </div>
+              </>}
               <h3 style={S.secTitle}>📍 Delivery Address</h3>
               {error && <div style={S.errBox}>⚠️ {error}</div>}
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
                 <div style={{ gridColumn:'1/-1' }}>
-                  <label style={S.lbl}>Street / Area *</label>
-                  <input style={S.inp}
+                  <label htmlFor="delivery-street" style={S.lbl}>Street / Area *</label>
+                  <input id="delivery-street" style={S.inp}
                     placeholder="e.g. House 12, Block B, DHA Phase 5"
                     autoComplete="street-address"
                     value={addr.street}
@@ -260,8 +322,8 @@ export default function CartPage() {
                   />
                 </div>
                 <div>
-                  <label style={S.lbl}>City *</label>
-                  <input style={S.inp}
+                  <label htmlFor="delivery-city" style={S.lbl}>City *</label>
+                  <input id="delivery-city" style={S.inp}
                     placeholder="Lahore"
                     value={addr.city}
                     autoComplete="off"
@@ -269,26 +331,27 @@ export default function CartPage() {
                   />
                 </div>
                 <div>
-                  <label style={S.lbl}>Country</label>
-                  <input style={{ ...S.inp, background:'#f1f5f9', color:'#64748b' }}
+                  <label htmlFor="delivery-country" style={S.lbl}>Country</label>
+                  <input id="delivery-country" style={{ ...S.inp, background:'#f1f5f9', color:'#64748b' }}
                     value={addr.country} readOnly />
                 </div>
               </div>
 
               <h3 style={{ ...S.secTitle, marginTop:'24px' }}>💳 Payment Method</h3>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                {PAYMENTS.filter(pm => pm.id !== 'COD' || codSettings.codEnabled).map(pm => (
+                {availablePaymentOptions.map(pm => (
                   <label key={pm.id} style={{ ...S.payOpt, ...(payment === pm.id ? S.payOn : {}) }}>
                     <input type="radio" name="pm" style={{ display:'none' }}
                       checked={payment === pm.id} onChange={() => setPayment(pm.id)} />
                     <span style={{ fontSize:'20px' }}>{pm.icon}</span>
                     <div>
                       <p style={{ margin:0, fontWeight:'700', fontSize:'13px', color:'#1e293b' }}>{pm.label}</p>
-                      <p style={{ margin:0, fontSize:'11px', color:'#64748b' }}>{pm.desc}</p>
+                      <p style={{ margin:0, fontSize:'12px', color:'#64748b', lineHeight:1.45 }}>{pm.desc}</p>
                     </div>
                   </label>
                 ))}
               </div>
+              {availablePaymentOptions.length === 0 && <p role="status" style={{ margin:'10px 0 0', color:'#b91c1c', fontSize:12, lineHeight:1.5 }}>No payment method is currently available. Online payment providers must be integrated and verified before they can be enabled.</p>}
             </div>
           )}
         </div>
@@ -311,13 +374,24 @@ export default function CartPage() {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <p style={{ margin:0, fontSize:'12px', fontWeight:'600', color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
-                  <p style={{ margin:0, fontSize:'11px', color:'#94a3b8' }}>×{item.quantity}</p>
+                  <p style={{ margin:0, fontSize:'12px', color:'#94a3b8' }}>×{item.quantity}</p>
                 </div>
-                <span style={{ fontSize:'12px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
+                <span style={{ fontSize:'13px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
                   {fmt(getItemPrice(item) * item.quantity)}
                 </span>
               </div>
             ))}
+          </div>
+
+          <div className="cart-coupon-box" style={{ padding:'12px', borderRadius:12, border:'1px solid #dbe7df', background:'#f8fcf9', marginBottom:14 }}>
+            <label htmlFor="coupon-code" style={{ ...S.lbl, marginBottom:7 }}>Promo code</label>
+            <div style={{ display:'flex', gap:7 }}>
+              <input className="cart-coupon-input" id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value.toUpperCase())} placeholder="e.g. WELCOME10" autoComplete="off" style={{ ...S.inp, minWidth:0, flex:1, textTransform:'uppercase' }} aria-describedby="coupon-feedback" />
+              {appliedCoupon ? <button type="button" onClick={() => { setAppliedCoupon(null); setCouponError(''); setCouponInput(''); }} style={{ ...S.ghostBtn, padding:'8px 10px', fontSize:12 }}>Remove</button> : <button type="button" onClick={applyCoupon} disabled={couponChecking} style={{ ...S.greenBtn, padding:'8px 11px', fontSize:12, whiteSpace:'nowrap' }}>{couponChecking ? 'Checking…' : 'Apply'}</button>}
+            </div>
+            <p id="coupon-feedback" className={`cart-coupon-feedback${couponError ? ' is-error' : appliedCoupon ? ' is-success' : ''}`} aria-live="polite" style={{ margin:'8px 0 0', fontSize:13, fontWeight:600, lineHeight:1.5, color: couponError ? '#b91c1c' : '#047857' }}>
+              {couponError || (appliedCoupon ? `${appliedCoupon.code} applied — you save ${fmt(couponDiscount)}.` : 'Enter a valid promo code to check eligibility.')}
+            </p>
           </div>
 
           <div style={S.divider} />
@@ -326,6 +400,10 @@ export default function CartPage() {
             <span style={S.sumLbl}>Subtotal ({totalQty} items)</span>
             <span style={S.sumVal}>{fmt(subTotal)}</span>
           </div>
+          {couponDiscount > 0 && <div style={S.sumRow}>
+            <span style={S.sumLbl}>Promo discount</span>
+            <span style={{ ...S.sumVal, color:'#047857' }}>−{fmt(couponDiscount)}</span>
+          </div>}
           {payment === 'COD' && (
             <div style={S.sumRow}>
               <span style={S.sumLbl}>
@@ -338,10 +416,10 @@ export default function CartPage() {
           <div style={S.sumRow}>
             <span style={S.sumLbl}>
               Shipping
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'400' }}>
+              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12 }}>
                 {shipCalc.zoneLabel}
               </small>
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'400', fontSize:'10px' }}>
+              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12, lineHeight:1.45, marginTop:2 }}>
                 {shipBreak}
               </small>
             </span>
@@ -357,7 +435,7 @@ export default function CartPage() {
 
           {step === 'cart' && (
             <button style={{ ...S.greenBtn, width:'100%' }}
-              onClick={() => { if (!user) { navigate('/login'); return; } setStep('checkout'); }}>
+                onClick={() => setStep('checkout')}>
               Proceed to Checkout →
             </button>
           )}
@@ -377,7 +455,7 @@ export default function CartPage() {
             </>
           )}
 
-          <p style={{ textAlign:'center', fontSize:'11px', color:'#94a3b8', marginTop:'14px', lineHeight:'1.5' }}>
+          <p style={{ textAlign:'center', fontSize:'12px', color:'#94a3b8', marginTop:'14px', lineHeight:'1.5' }}>
             🔒 Secure checkout · IndusCart 🇵🇰
           </p>
         </div>
@@ -393,8 +471,6 @@ const S = {
   layout:  { maxWidth:'1040px', margin:'0 auto', display:'flex', gap:'24px', alignItems:'flex-start', flexWrap:'wrap' },
 
   card:    { background:'#fff', borderRadius:'16px', padding:'24px', border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.05)', flex:1, minWidth:'280px' },
-  itemRow: { display:'flex', alignItems:'center', gap:'16px', padding:'18px 0', borderBottom:'1px solid #f1f5f9' },
-
   itemImgBox: { width:'72px', height:'72px', borderRadius:'12px', overflow:'hidden', flexShrink:0, border:'1px solid #e2e8f0', background:'#f8fafc', position:'relative' },
   itemImgPh:  { width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', fontWeight:'900', color:'#10b981', background:'linear-gradient(135deg,#f0fdf4,#dcfce7)' },
 
@@ -409,7 +485,7 @@ const S = {
   sumLbl:  { fontSize:'13px', color:'#64748b', lineHeight:'1.5' },
   sumVal:  { fontSize:'14px', fontWeight:'700', color:'#334155' },
 
-  lbl:     { display:'block', fontSize:'11px', fontWeight:'800', color:'#475569', marginBottom:'6px', textTransform:'uppercase', letterSpacing:'0.3px' },
+  lbl:     { display:'block', fontSize:'12px', fontWeight:'800', color:'#475569', marginBottom:'6px', textTransform:'uppercase', letterSpacing:'0.3px' },
   inp:     { width:'100%', padding:'11px 13px', border:'1.5px solid #e2e8f0', borderRadius:'10px', fontSize:'13px', outline:'none', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b', fontFamily:'inherit', marginBottom:'0' },
   errBox:  { background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', padding:'10px 14px', borderRadius:'10px', fontSize:'13px', fontWeight:'600', marginBottom:'16px' },
   payOpt:  { display:'flex', alignItems:'center', gap:'10px', padding:'12px', border:'2px solid #e2e8f0', borderRadius:'12px', cursor:'pointer', transition:'all 0.15s', userSelect:'none' },

@@ -11,6 +11,15 @@ export const AuthProvider = ({ children }) => {
 
   const [authReady, setAuthReady] = useState(false);
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      localStorage.removeItem('user');
+      setUser(null);
+    };
+    window.addEventListener('ic-session-expired', handleSessionExpired);
+    return () => window.removeEventListener('ic-session-expired', handleSessionExpired);
+  }, []);
+
   const persist = (data) => {
     const normalized = { ...data, city: data?.city || '' };
     setUser(normalized);
@@ -53,8 +62,14 @@ export const AuthProvider = ({ children }) => {
     persist(data); return data;
   };
 
-  const login = async (email, password) => {
-    const { data } = await API.post('/api/auth/login', { email: email.trim(), password });
+  const login = async (email, password, { adminOnly = false } = {}) => {
+    const loginEndpoint = adminOnly ? '/api/auth/admin/login' : '/api/auth/login';
+    const { data } = await API.post(loginEndpoint, { email: email.trim(), password });
+    if (adminOnly && !data.isAdmin) {
+      const error = new Error('This account does not have administrator access.');
+      error.code = 'ADMIN_ACCESS_REQUIRED';
+      throw error;
+    }
     persist(data); return data;
   };
 

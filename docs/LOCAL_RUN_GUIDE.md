@@ -1,6 +1,6 @@
 # IndusCart Local Run Guide
 
-This guide explains how to run IndusCart in Chrome on the computer, open it on a phone over Wi-Fi, and build/install the Android APK.
+This guide explains how to run IndusCart in Chrome on the computer, open it on a phone over Wi-Fi, and build/install the Android APK. For normal Windows use without typing commands, start with [`START_HERE.md`](./START_HERE.md).
 
 ## Current computer address
 
@@ -20,6 +20,18 @@ Use the `IPv4 Address` under the connected Wi-Fi adapter. Do not use an IPv6 add
 
 ## 1. Start the backend API
 
+For separate entry points, double-click `START-SHOPPER.cmd` or `START-ADMIN.cmd`
+in the repository root. Shopper Vite runs on port `3000`; the admin-only Vite
+mode runs on port `3001`; both call the shared API on port `5000` and use the
+same MongoDB database. Run both launchers to use both portals simultaneously.
+`START-LOCAL.cmd` is the shared launcher. Keep each started terminal window
+open, and close it or press `Ctrl+C` to stop that process.
+In hosted split-origin deployments, set `VITE_ADMIN_PORTAL_URL` in the shopper
+build and `VITE_SHOPPER_PORTAL_URL` in the admin build. Local links derive the
+current host/IP automatically.
+The manual commands below remain available if you prefer starting one service
+at a time.
+
 Make sure MongoDB is running, then open PowerShell Terminal 1:
 
 ```powershell
@@ -38,26 +50,43 @@ A successful response contains `"status":"ok"`.
 
 ## 2. Start the website
 
-Open PowerShell Terminal 2:
+Open PowerShell Terminal 2 for the shopper portal:
 
 ```powershell
 cd "C:\Users\ZS computers\Documents\e-commerce\frontend"
-npm.cmd start -- --host 0.0.0.0
+$env:VITE_APP_MODE="shopper"
+npm.cmd start -- --host 0.0.0.0 --port 3000 --strictPort
+```
+
+For a separate admin-only portal, open Terminal 3:
+
+```powershell
+cd "C:\Users\ZS computers\Documents\e-commerce\frontend"
+$env:VITE_APP_MODE="admin"
+npm.cmd start -- --host 0.0.0.0 --port 3001 --strictPort
 ```
 
 Open the website in Chrome on the computer:
 
 <http://localhost:3000>
 
+Open the administrator portal in Chrome on the computer:
+
+<http://localhost:3001/admin/login>
+
 Open the website from a phone on the same Wi-Fi:
 
 <http://YOUR_COMPUTER_IP:3000>
+
+Open the separate administrator portal from the phone (only on a trusted LAN):
+
+<http://YOUR_COMPUTER_IP:3001/admin/login>
 
 Download the signed Android release APK from the same phone:
 
 <http://YOUR_COMPUTER_IP:3000/IndusCart-release.apk>
 
-Keep both terminals open while using the local website. Stop either service with `Ctrl+C`.
+Keep the API and each portal terminal open while using IndusCart. Stop a service with `Ctrl+C` in its terminal.
 
 ## 3. Sign up and sign in
 
@@ -68,7 +97,11 @@ Keep both terminals open while using the local website. Stop either service with
 5. Open `/login` and enter the same email and password.
 6. A successful login returns you to the shop.
 
-The login form accepts either an email address or username. A wrong password stays on the login page and shows an error message.
+The shopper login form accepts either an email address or username. From the
+storefront home page, select the shield icon for `/admin/login`. Shopper login
+and administrator login use separate API endpoints: shopper credentials cannot
+obtain an admin token, and non-admin credentials cannot obtain an admin session.
+Admin pages send signed-out users to the admin-specific sign-in page.
 
 The current database administrator email is `admin@induscart.com`. If its
 password is unknown, reset it from the backend terminal using the secure reset
@@ -87,18 +120,19 @@ VITE_API_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
 - The backend terminal is still running.
-- Windows Firewall allows inbound TCP ports `3000` and `5000`.
+- Windows Firewall allows inbound TCP ports `3000` (shopper), `3001` (admin, if needed), and `5000` (API).
 - Test the API URL from the phone first:
   <http://YOUR_COMPUTER_IP:5000/health/live>
 - If that health URL works but products do not load, test the product endpoint:
   <http://YOUR_COMPUTER_IP:5000/api/products>
 
-If Windows Firewall blocks access, allow Node.js on private networks or create inbound rules for TCP ports `3000` and `5000` using Windows Firewall settings.
+If Windows Firewall blocks access, allow Node.js on private networks or create inbound rules for TCP ports `3000`, `3001`, and `5000` using Windows Firewall settings.
 
 From an elevated PowerShell window, the rules can be created with:
 
 ```powershell
 New-NetFirewallRule -DisplayName "IndusCart frontend 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "IndusCart admin portal 3001" -Direction Inbound -Protocol TCP -LocalPort 3001 -Action Allow -Profile Private
 New-NetFirewallRule -DisplayName "IndusCart API 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow -Profile Private
 ```
 
@@ -161,5 +195,6 @@ The production website output is `frontend/dist`. It can be served by the includ
 | API health on computer | <http://localhost:5000/health/live> |
 | API health on same Wi-Fi | <http://YOUR_COMPUTER_IP:5000/health/live> |
 | Sign in | <http://localhost:3000/login> |
+| Administrator sign in | <http://localhost:3000/admin/login> |
 | Sign up | <http://localhost:3000/register> |
 | Admin | <http://localhost:3000/admin> |

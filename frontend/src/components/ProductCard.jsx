@@ -4,9 +4,24 @@ import { useAuth } from '../context/AuthContext';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
 import { assetUrl } from '../utils/axiosConfig';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+
+export const getPromotionCountdown = (endDate, now) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate || '')) return '';
+  const deadline = new Date(`${endDate}T23:59:59.999Z`).getTime();
+  const remaining = deadline - now.getTime();
+  if (!Number.isFinite(deadline) || remaining <= 0) return '';
+  const days = Math.floor(remaining / 86400000);
+  if (days > 0) return `ENDS IN ${days}D`;
+  const hours = Math.floor((remaining % 86400000) / 3600000);
+  if (hours > 0) return `ENDS IN ${hours}H`;
+  const minutes = Math.max(1, Math.ceil((remaining % 3600000) / 60000));
+  return `ENDS IN ${minutes}M`;
+};
 
 export default function ProductCard({ product: p, onAddToCart }) {
   const { user } = useAuth();
+  const { addToWishlist, removeFromWishlist, isWishlisted } = useCart();
   const navigate = useNavigate();
   const isPak = !user || user.country === 'Pakistan';
 
@@ -14,6 +29,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const multi = imgs.length > 1;
   const [idx, setIdx] = useState(0);
   const [imgErrors, setImgErrors] = useState({});
+  const [clockNow, setClockNow] = useState(() => new Date());
   const touchStartX = useRef(null);
 
   // Reset index when product changes
@@ -21,6 +37,12 @@ export default function ProductCard({ product: p, onAddToCart }) {
     setIdx(0);
     setImgErrors({});
   }, [p._id]);
+
+  useEffect(() => {
+    if (!p.discountEndDate || !p.discountPercent) return undefined;
+    const timer = setInterval(() => setClockNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, [p.discountEndDate, p.discountPercent]);
 
   const prev = (e) => { 
     e.stopPropagation(); 
@@ -53,12 +75,13 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const isOut = p.stock === 0;
   const isRestricted = p.isLocal && !isPak;
   const configuredDiscountPercent = Math.min(100, Math.max(0, Number(p.discountPercent) || 0));
-  const discountPercent = getActiveDiscountPercent(p);
-  const today = new Date().toISOString().slice(0, 10);
+  const discountPercent = getActiveDiscountPercent(p, clockNow);
+  const today = clockNow.toISOString().slice(0, 10);
   const hasUpcomingDiscount = configuredDiscountPercent > 0 && discountPercent === 0 && p.discountStartDate && today < p.discountStartDate;
   const upcomingDateLabel = hasUpcomingDiscount
     ? new Date(`${p.discountStartDate}T00:00:00Z`).toLocaleDateString('en', { month:'short', day:'numeric', timeZone:'UTC' }).toUpperCase()
     : '';
+  const promotionCountdown = discountPercent > 0 ? getPromotionCountdown(p.discountEndDate, clockNow) : '';
   const originalPrice = Number(isPak ? p.pricePKR : p.priceUSD) || 0;
   const currentPrice = getDiscountedPrice(originalPrice, discountPercent, isPak ? 'PKR' : 'USD');
   const alternatePrice = isPak
@@ -164,6 +187,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
         {/* Badges */}
         <div style={styles.badges}>
           {discountPercent > 0 && <span style={styles.badgeDiscount}>SAVE {discountPercent}%</span>}
+          {promotionCountdown && <span className="product-discount-countdown" title={`Promotion ends ${p.discountEndDate}`} aria-label={`Promotion ends in ${promotionCountdown.replace('ENDS IN ', '')}`}>⏳ {promotionCountdown}</span>}
           {hasUpcomingDiscount && <span className="product-discount-upcoming" style={styles.badgeDiscountUpcoming} title={`Promotion starts ${p.discountStartDate}`}>{configuredDiscountPercent}% OFF · {upcomingDateLabel}</span>}
           {p.isLocal && !isRestricted && (
             <span style={styles.badgeLocal}>🇵🇰 Local</span>
@@ -172,7 +196,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
             <span style={styles.badgeRestricted}>🇵🇰 Pakistan Only</span>
           )}
           {!isOut && isLow && (
-            <span style={styles.badgeLowStock}>⚠️ Only {p.stock} left</span>
+            <span className="product-scarcity-badge" style={styles.badgeLowStock} aria-label={`Low stock: only ${p.stock} left`}>⚠️ Only {p.stock} left</span>
           )}
           {isOut && (
             <span style={styles.badgeSoldOut}>✕ Sold Out</span>
@@ -185,6 +209,9 @@ export default function ProductCard({ product: p, onAddToCart }) {
         <h3 style={styles.name}>
           <Link to={`/products/${p._id}`} onClick={event => event.stopPropagation()} style={styles.nameLink}>{p.name}</Link>
         </h3>
+        {Number(p.reviewCount) > 0 && <p aria-label={`${p.averageRating} out of 5 stars, ${p.reviewCount} reviews`} style={{ margin:'-7px 0 9px', color:'#a66b12', fontSize:12, fontWeight:800 }}>
+          {'★'.repeat(Math.round(Number(p.averageRating) || 0))}{'☆'.repeat(5 - Math.round(Number(p.averageRating) || 0))} <span style={{ color:'#64748b', fontWeight:600 }}>({p.reviewCount})</span>
+        </p>}
         {(p.subcategory || p.brand || p.model) && (
           <p style={styles.productMeta}>
             {[p.subcategory, p.brand, p.model].filter(Boolean).join(' · ')}
@@ -206,20 +233,23 @@ export default function ProductCard({ product: p, onAddToCart }) {
           Approx. {isPak ? formatUSD(alternatePrice) : formatPKR(alternatePrice)}
         </span>
 
-        <button
-          className="product-card-add-button"
-          style={{
-            ...styles.addButton,
-            ...((isOut || isRestricted) ? styles.addButtonDisabled : {})
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isOut && !isRestricted) onAddToCart(p);
-          }}
-          disabled={isOut || isRestricted}
-        >
-          {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
-        </button>
+        <div style={{ display:'flex', gap:8, alignItems:'stretch' }}>
+          <button
+            className="product-card-add-button"
+            style={{ ...styles.addButton, flex:1, ...((isOut || isRestricted) ? styles.addButtonDisabled : {}) }}
+            onClick={(e) => { e.stopPropagation(); if (!isOut && !isRestricted) onAddToCart(p); }}
+            disabled={isOut || isRestricted}
+          >
+            {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
+          </button>
+          <button type="button" aria-label={isWishlisted(p._id) ? `Remove ${p.name} from wishlist` : `Save ${p.name} to wishlist`} aria-pressed={isWishlisted(p._id)} onClick={event => {
+            event.stopPropagation();
+            if (!user) { navigate('/login'); return; }
+            if (isWishlisted(p._id)) removeFromWishlist(p._id); else addToWishlist(p);
+          }} className="product-card-wishlist" style={{ minWidth:42, minHeight:42, display:'inline-flex', alignItems:'center', justifyContent:'center', border:'1px solid #fda4af', borderRadius:10, background:isWishlisted(p._id) ? '#fff1f2' : '#fff', color:isWishlisted(p._id) ? '#be123c' : '#64748b', fontSize:22, lineHeight:1, cursor:'pointer', flexShrink:0 }}>
+            {isWishlisted(p._id) ? '♥' : '♡'}
+          </button>
+        </div>
       </div>
 
       <style>{`
@@ -300,21 +330,24 @@ const styles = {
   },
   imageWrapper: {
     position: 'relative',
-    height: '190px',
-    backgroundColor: '#edf7f1',
+    height: '220px',
+    background: 'radial-gradient(ellipse at center, #ffffff 0%, #f3f8f3 56%, #e8f2eb 100%)',
     overflow: 'hidden',
     flexShrink: 0,
   },
   imageOverlay: {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(180deg, rgba(16, 39, 28, 0.04) 0%, rgba(16, 39, 28, 0.18) 100%)',
+    background: 'linear-gradient(180deg, rgba(16, 39, 28, 0.01) 0%, rgba(16, 39, 28, 0.05) 100%)',
     pointerEvents: 'none',
   },
   image: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    boxSizing: 'border-box',
+    padding: '10px',
     transition: 'transform 0.45s cubic-bezier(.2,.8,.2,1)',
     display: 'block',
   },

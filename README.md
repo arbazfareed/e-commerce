@@ -4,13 +4,18 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)](./frontend/package.json)
 [![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](./backend/package.json)
 [![MongoDB](https://img.shields.io/badge/MongoDB-ready-47A248?logo=mongodb&logoColor=white)](./docker-compose.yml)
-[![License](https://img.shields.io/badge/license-ISC-blue)](./backend/package.json)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](./LICENSE)
 
-> IndusCart is a Pakistan-focused, full-stack e-commerce demo/MVP: a React and
-> Capacitor storefront backed by an Express/MongoDB API, with customer accounts,
-> a protected admin workspace, local/international catalog modes, COD checkout,
-> server-validated orders, and support tickets. Online payment capture and live
+> IndusCart is a Pakistan-focused, full-stack commerce platform with a separate
+> shopper storefront and role-protected admin portal. Built with React, Vite,
+> Capacitor, Express, and MongoDB, it supports customer accounts, local and
+> international catalog modes, COD checkout, server-validated orders, inventory
+> management, analytics, and support workflows. Online payment capture and live
 > courier booking are not yet integrated.
+
+Local development runs the shopper portal at `http://localhost:3000`, the
+admin-only portal at `http://localhost:3001`, and the shared API at
+`http://localhost:5000`.
 
 ### Explore the project
 
@@ -38,18 +43,16 @@ IndusCart is an e-commerce application with:
 
 ## Current scope and limitations
 
-- This is a full-stack e-commerce demo/MVP. The cart is stored in the current
-    browser's `localStorage`; it survives reloads in that browser but does not
-    sync across devices and is lost if browser storage is cleared.
-- Payment choices other than COD/cash are order metadata only; real payment
-    capture, refunds, and webhooks are not integrated.
-- Courier settings are present, but provider booking, labels, and tracking are
-    not implemented.
+- Signed-in customer carts and wishlists are stored in MongoDB; guest carts
+    remain browser-local until login.
+- COD is the only available checkout payment method. Online payment capture,
+    refunds, and payment webhooks are not integrated.
+- Admins can enter manual courier tracking details, but automatic provider
+    booking and live carrier updates are not integrated.
 - Product images are stored on the backend's local disk (or the Docker uploads
     volume). Multi-instance production hosting should move uploads to shared object
     storage before deployment.
-- Catalog search/filter/sort currently run in the frontend after loading the
-    product list; server-side search and pagination are not implemented.
+- Catalog search, price filters, sorting, and pagination run server-side.
 
 Additional documentation:
 
@@ -63,8 +66,10 @@ the steps in the [Android Guide](./docs/ANDROID_GUIDE.md).
 - Node.js LTS and npm
 - MongoDB Community Server running locally, or a MongoDB Atlas connection string
 
-The frontend uses the `VITE_API_URL` value from `frontend/.env` for the API and
-runs on `http://localhost:3000` by default. Product image files are persisted in
+The local shopper portal runs on `http://localhost:3000`; the separate local
+admin-only portal runs on `http://localhost:3001` and both use the API on
+`http://localhost:5000`. `VITE_API_URL` in `frontend/.env` selects the API.
+Product image files are persisted in
 `backend/uploads/` and served by the API; keep that directory with the backend
 when moving or deploying the application.
 
@@ -125,7 +130,11 @@ when testing from a phone.
 
 ## Run in development
 
-Open two PowerShell windows.
+For a no-command Windows start, see [`docs/START_HERE.md`](./docs/START_HERE.md)
+and double-click `START-SHOPPER.cmd` or `START-ADMIN.cmd` in the repository
+root. Both launchers share the existing frontend and API and reuse services
+already running. `START-LOCAL.cmd` is the shared launcher underneath. Or open
+two PowerShell windows to start services manually.
 
 **Terminal 1 - API:**
 
@@ -159,7 +168,8 @@ npm run admin:bootstrap
 
 The bootstrap command never prints the password, refuses to overwrite an
 existing account, and does not store credentials in source control. Sign in at
-`/login` and open `/admin`.
+`/admin/login` (or choose the shield icon on the storefront home page). Shopper
+login at `/login` cannot issue administrator sessions.
 
 If the existing administrator password is unknown, reset it without exposing
 it in source control:

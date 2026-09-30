@@ -35,14 +35,37 @@ HTTPS URL that can be used by the frontend and Android APK.
 1. Keep the current monolithic Express API; do not split into microservices.
 2. Keep MongoDB for the MVP; migrate to PostgreSQL only when transaction and
    reporting needs justify the migration.
-3. Do not add Redis, Kubernetes, Elasticsearch, or a queue system until traffic
-   demonstrates a need.
+3. Keep the current process-local admin login limiter for a single instance;
+   add Redis/shared storage when multi-instance rate limits are required. Do not
+   add Kubernetes, Elasticsearch, or a queue until measured requirements justify
+   their operational cost.
 4. Use image resizing and compression before paying for more storage/bandwidth.
 5. Configure database backups with retention limits and test restores.
 6. Monitor free-tier usage to avoid surprise overage charges.
 7. Keep production, staging, and local environment variables separate.
 8. Never commit credentials, tokens, database dumps, APK signing keys, or real
    customer data.
+
+## Cost model and scale gates
+
+There is no fixed monthly quote in this repository: provider, region, traffic,
+retention, and support level change the total. Estimate these categories before
+launch and check current provider pricing:
+
+| Cost area | Development/demo | Production growth trigger |
+|---|---|---|
+| Frontend hosting | Local or a free static tier | Custom domain, CDN, access logs, uptime/SLA |
+| API compute | Local or a low-cost single instance | Always-on capacity, multiple instances, shared Redis limiter |
+| Database | Local MongoDB or a shared tier | Backups/PITR, replica set, storage growth, transaction workload |
+| Product media | Local `uploads/` | Object storage, image transforms, CDN egress, retention |
+| Business operations | Email/domain basics | Payment transaction fees, per-parcel courier charges, SMS, tax/accounting |
+| Reliability/security | CI and manual checks | Monitoring, alerting, restore drills, MFA, audit retention |
+
+Use a total-cost worksheet covering API compute, database/backups, media/egress,
+domain/DNS, email/monitoring, CI, and variable payment/courier fees. Free/shared
+tiers are useful for prototypes but may sleep, lack recovery guarantees, or
+impose usage caps. Set billing alerts and a monthly owner review; payment and
+delivery fees are variable costs and should be modeled per order.
 
 ## GitHub Actions cost controls
 
@@ -64,12 +87,22 @@ HTTPS URL that can be used by the frontend and Android APK.
 7. Create a version tag only when an APK artifact is needed.
 8. Publish release notes describing features, limitations, and deployment values.
 
+Do not push an unreviewed mixed worktree or push feature commits directly to
+`main`. Inspect staged files, run checks, push the feature branch, and merge via
+a reviewed pull request after required CI checks pass.
+
 ## Current technology recommendation
 
 Keep React, Vite, Express, MongoDB, Mongoose, Docker Compose, Capacitor, and
 GitHub Actions for the current MVP. The largest savings come from managed free
 or shared tiers and avoiding premature infrastructure—not from rewriting the
 application.
+
+The administrator entry icon and `/admin/login` route currently share the same
+SPA/API deployment as the shop; the backend login endpoint and role checks are
+separate. A separate admin hostname can be considered for organizational
+isolation, but it does not replace authorization, MFA, rate limiting, or audit
+logging.
 
 Before public commerce launch, budget for payment transaction fees, courier
 charges, image storage/bandwidth, managed database backups, monitoring, and

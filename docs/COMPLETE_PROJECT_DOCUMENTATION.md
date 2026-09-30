@@ -230,27 +230,66 @@ reviews enabled if human approval is part of your release policy.
 
 ### Priority 1 — required for real customers
 
-1. Deploy the API to a public HTTPS host and set `VITE_API_URL` to it.
-2. Move product images from local disk to S3-compatible storage or Cloudinary.
-3. Add a real payment provider with server-side webhooks and refunds.
-4. Configure managed MongoDB backups, restore drills, and monitoring.
-5. Replace draft legal pages with reviewed production policies.
+1. Add admin MFA/passkeys, a shared rate-limit store, trusted-proxy configuration,
+  and security audit events. Current shopper/admin login endpoints are role-
+  separated; admin throttling is process-local and IP-based, not distributed-
+  attack protection.
+2. Deploy the API to a public HTTPS host and set `VITE_API_URL` to it. Add a
+  separate admin hostname only if operational isolation requires it; retain
+  API role checks regardless of host or icon visibility.
+3. Configure managed MongoDB backups, restore drills, monitoring, and alerts.
+  Test backup restoration before storing real customer/order data.
+4. Move product images from local disk to S3-compatible storage or Cloudinary
+  before running multiple API instances.
+5. Add a real payment provider with server-created intents, signed/idempotent
+  webhooks, reconciliation, refunds, and order-cancellation rules.
+6. Replace draft legal pages with reviewed local privacy, consumer, tax, and
+  returns policies before taking real orders.
 
 ### Priority 2 — reliability and growth
 
 1. Add API request validation with a schema library and consistent error codes.
-2. Add pagination and database indexes for products, orders, and analytics.
-3. Add automated end-to-end checkout tests using a test payment provider.
-4. Add error tracking with sensitive-data filtering.
-5. Add role-based admin permissions instead of one administrator flag.
+2. Add pagination and database indexes for admin orders and analytics; product search/filter pagination is implemented.
+3. Use MongoDB transactions (on a replica-set-capable deployment) or a tested
+  idempotent compensation design for stock, coupon, and order writes; cover
+  simultaneous last-item checkouts.
+4. Add automated end-to-end checkout tests using a test payment provider and
+  error tracking with sensitive-data filtering.
+5. Add role-based admin permissions and an audit trail instead of relying only
+  on one `isAdmin` flag.
+6. Use a shared Redis-backed rate-limit store only when multiple API instances
+  or cross-instance limits are required; avoid adding a cache/queue stack early.
 
 ### Priority 3 — product experience
 
-1. Add product reviews, wishlists, coupons, and abandoned-cart recovery.
+1. Add abandoned-cart recovery and notifications; coupons, verified reviews, wishlists, invoices, low-stock alerts, and server-side product browsing are implemented.
 2. Add courier tracking webhooks and customer delivery notifications.
 3. Add image optimization, lazy loading, and CDN caching.
 4. Add accessibility audits and localization beyond PKR/USD.
-5. Publish a signed Android release through Google Play after security review.
+5. Define returns, refunds, warranty, tax, and dispute workflows before
+  implementing them; model status ownership, eligibility, inventory effects,
+  and payment-provider reconciliation explicitly.
+6. Publish a signed Android release through Google Play after security review.
+
+### Technology and cost decision rules
+
+- Keep the React/Vite + Express monolith and MongoDB/Mongoose for the current
+  product stage. A separate admin hostname is optional isolation, not a security
+  substitute; do not split microservices without measured scaling/team needs.
+- Keep MongoDB while the document model and existing team skills fit. Prefer
+  indexes, backups, replica-set transactions, and query measurement before a
+  database migration. Consider PostgreSQL only if relational reporting,
+  accounting, or cross-entity constraints justify the migration cost.
+- Treat local disk uploads as single-instance development storage. For
+  multi-instance production, use S3-compatible storage/Cloudinary and account
+  for image egress and backup retention.
+- Build a monthly cost estimate from API compute, database/storage/backups,
+  image storage/egress, domain/DNS, email/monitoring, payment transaction fees,
+  courier charges, and CI/build minutes. Free/shared tiers may suit demos, but
+  sleeping services, limited backups, and no SLA are not production readiness.
+- Recheck provider pricing in the target region before launch; estimates change
+  and payment/courier fees scale with orders. Set budget alerts and a monthly
+  usage review instead of adopting Redis, Kubernetes, or a queue by default.
 
 ## 14. Documentation index
 
