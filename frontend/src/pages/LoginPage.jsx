@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/axiosConfig';
 import BrandMark from '../components/BrandMark';
 
-export default function LoginPage() {
+export default function LoginPage({ adminOnly = false }) {
   const { login }  = useAuth();
   const navigate   = useNavigate();
   const [email,    setEmail]    = useState('');
@@ -17,15 +17,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const u = await login(email.trim(), password);
-      navigate(u.isAdmin ? '/admin' : '/');
+      const u = await login(email.trim(), password, { adminOnly });
+      navigate(adminOnly || u.isAdmin ? '/admin' : '/');
     } catch (err) {
-      setError(err.response?.data?.message || `Cannot connect to the server at ${API_BASE}.`);
+      setError(err.code === 'ADMIN_ACCESS_REQUIRED' ? err.message : err.response?.data?.message || `Cannot connect to the server at ${API_BASE}.`);
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="responsive-page login-page" style={S.page}>
+    <div className={`responsive-page login-page${adminOnly ? ' admin-login-page' : ''}`} style={S.page}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&display=swap');
         .inp-focus:focus { border-color:#16845d !important; background:#fff !important; box-shadow:0 0 0 4px rgba(22,132,93,0.12), 0 3px 10px rgba(13,92,66,0.06) !important; }
@@ -145,13 +145,11 @@ export default function LoginPage() {
         <section className="login-visual">
           <img className="auth-visual-image" src="/signin-welcome.svg" alt="Pakistani artisan basket and pottery" />
           <div className="login-visual-overlay">
-            <span className="login-kicker">WELCOME TO INDUSCART</span>
-            <h1>Thoughtful finds.<br /><em>Made in Pakistan.</em></h1>
-            <p>Discover beautiful products from trusted local makers and sellers, delivered with care.</p>
+            <span className="login-kicker">{adminOnly ? 'ADMINISTRATOR ACCESS' : 'WELCOME TO INDUSCART'}</span>
+            <h1>{adminOnly ? <>Store operations.<br /><em>Admin sign in.</em></> : <>Thoughtful finds.<br /><em>Made in Pakistan.</em></>}</h1>
+            <p>{adminOnly ? 'Sign in with your administrator account to manage products, orders, and store settings.' : 'Discover beautiful products from trusted local makers and sellers, delivered with care.'}</p>
             <div className="login-perks">
-              <span>✦ Curated collection</span>
-              <span>✦ Trusted local sellers</span>
-              <span>✦ Easy, secure ordering</span>
+              {adminOnly ? <><span>✦ Restricted workspace</span><span>✦ Secure administrator access</span></> : <><span>✦ Curated collection</span><span>✦ Trusted local sellers</span><span>✦ Easy, secure ordering</span></>}
             </div>
           </div>
         </section>
@@ -160,8 +158,8 @@ export default function LoginPage() {
         <div style={S.logoRow}>
           <BrandMark size={46} style={{ filter:'drop-shadow(0 6px 10px rgba(13,92,66,.2))' }} />
           <div>
-            <p style={S.brand}><span style={{ color:'#10b981' }}>Indus</span>Cart 🇵🇰</p>
-            <p style={S.brandSub}>Sign in to your account</p>
+            <p style={S.brand}><span style={{ color:'#10b981' }}>Indus</span>Cart {adminOnly ? 'Admin' : '🇵🇰'}</p>
+            <p style={S.brandSub}>{adminOnly ? 'Administrator sign in' : 'Sign in to your account'}</p>
           </div>
         </div>
 
@@ -211,6 +209,7 @@ export default function LoginPage() {
                 {showPw ? '🙈' : '👁️'}
               </button>
             </div>
+            {!adminOnly && <Link className="login-forgot-password" to="/forgot-password">Forgot password?</Link>}
           </div>
 
           <button
@@ -223,21 +222,11 @@ export default function LoginPage() {
               ? <span style={{ display:'flex', alignItems:'center', gap:'8px', justifyContent:'center' }}>
                   <span style={S.spinner} /> Signing in…
                 </span>
-              : 'Sign In →'}
+              : adminOnly ? 'Sign In to Admin →' : 'Sign In →'}
           </button>
         </form>
 
-        {/* ✅ FIX: No admin credential hints shown to users */}
-        <div style={S.divider}>
-          <span style={S.divLine} />
-          <span style={S.divTxt}>or</span>
-          <span style={S.divLine} />
-        </div>
-
-        <p style={S.footer}>
-          Don't have an account?{' '}
-          <Link to="/register" style={S.link}>Create one free →</Link>
-        </p>
+        {!adminOnly && <p style={S.footer}>Don't have an account? <Link to="/register" style={S.link}>Create one free →</Link></p>}
       </div>
       </div>
     </div>
@@ -312,10 +301,6 @@ const S = {
     borderTop:'2px solid #fff', borderRadius:'50%',
     display:'inline-block', animation:'spin 0.7s linear infinite',
   },
-
-  divider: { display:'flex', alignItems:'center', gap:'12px', margin:'26px 0 22px' },
-  divLine: { flex:1, height:'1px', background:'#e2e8f0' },
-  divTxt:  { fontSize:'12px', color:'#94a3b8', fontWeight:'600' },
 
   footer: { textAlign:'center', fontSize:'13px', color:'#64748b', margin:0 },
   link:   { color:'#10b981', fontWeight:'700', textDecoration:'none' },

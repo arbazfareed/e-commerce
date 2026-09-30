@@ -42,7 +42,7 @@ export default function InvoicePage() {
         <div className="invoice-order-meta"><strong>Order #{orderNumber}</strong><span>{new Date(order.createdAt).toLocaleDateString('en-PK', { day:'numeric', month:'long', year:'numeric' })}</span><span>Status: {order.status}</span></div>
       </header>
       <div className="invoice-addresses">
-        <section><h2>Deliver to</h2><strong>{order.user?.name || 'Customer'}</strong><p>{address || 'Address not available'}</p>{order.user?.email && <p>{order.user.email}</p>}</section>
+        <section><h2>Deliver to</h2><strong>{order.user?.name || order.guestContact?.name || 'Customer'}</strong><p>{address || 'Address not available'}</p>{(order.user?.email || order.guestContact?.email) && <p>{order.user?.email || order.guestContact.email}</p>}{order.guestContact?.phone && <p>{order.guestContact.phone}</p>}</section>
         <section><h2>Order details</h2><p>Payment: {order.paymentMethod}</p><p>Payment status: {order.paymentStatus || (order.isPaid ? 'paid' : 'pending')}</p>{order.shippingZone && <p>Shipping zone: {order.shippingZone.replaceAll('_', ' ')}</p>}</section>
       </div>
       <table className="invoice-items">

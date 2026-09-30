@@ -28,17 +28,29 @@ flowchart LR
     API --> Email
 ```
 
+Shopper and administrator portals are built from the same React source but can
+run as separate frontend processes: shopper Vite on port `3000`, admin-only
+Vite mode on port `3001`. Both use one Express API on port `5000` and one MongoDB
+database. A production deployment may serve the two builds on separate origins;
+the shopper shield opens the admin portal and the admin header's shopping-bag
+icon opens the shopper portal. Both are navigation shortcuts; server-side role
+checks remain the security boundary.
+
 ## Local and Docker deployment
 
 ```mermaid
 flowchart TB
     subgraph Local[Local development]
-        Browser[Chrome or phone browser]
-        Vite[Vite dev server\n:3000]
+        ShopperBrowser[Shopper browser]
+        AdminBrowser[Admin browser]
+        ShopperVite[Shopper Vite\n:3000]
+        AdminVite[Admin-only Vite\n:3001]
         Node[Node.js Express API\n:5000]
         LocalMongo[(Local MongoDB)]
-        Browser --> Vite
-        Vite --> Node
+        ShopperBrowser --> ShopperVite
+        AdminBrowser --> AdminVite
+        ShopperVite --> Node
+        AdminVite --> Node
         Node --> LocalMongo
     end
 
@@ -77,11 +89,51 @@ sequenceDiagram
     UI-->>User: Render page, cart, order, or admin result
 ```
 
+### Role-separated authentication
+
+```mermaid
+sequenceDiagram
+    actor Shopper
+    actor Admin
+    participant UI as React sign-in screens
+    participant API as Express auth routes
+    participant Limit as Admin failure limiter
+    participant Auth as authController
+    participant Users as MongoDB User
+
+    Shopper->>UI: Open /login
+    UI->>API: POST /api/auth/login
+    API->>Auth: Validate shopper credentials
+    Auth->>Users: Verify password and isAdmin=false
+    alt shopper account
+        Auth-->>UI: Shopper profile and JWT
+    else administrator or invalid credentials
+        Auth-->>UI: Generic 401, no token
+    end
+
+    Admin->>UI: Open /admin/login or use storefront shield icon
+    UI->>API: POST /api/auth/admin/login
+    API->>Limit: Count failed requests by observed IP
+    Limit-->>API: Allow up to five failures per 15 minutes
+    API->>Auth: Validate administrator credentials
+    Auth->>Users: Verify password and isAdmin=true
+    alt administrator account
+        Auth-->>UI: Admin profile and JWT
+    else shopper or invalid credentials
+        Auth-->>UI: Generic 401, no token
+    end
+```
+
+The current admin limiter is process-local and IP-based. It is a baseline, not
+protection from distributed attacks; production multi-instance deployments need
+a shared limiter store, correct trusted-proxy configuration, and preferably
+administrator MFA/passkeys.
+
 ## Main backend modules
 
 | Area | Entry points | Responsibility |
 |---|---|---|
-| Authentication | `routes/authRoutes.js`, `controllers/authController.js` | Registration, login, session verification, own-password change, one-time customer reset links |
+| Authentication | `routes/authRoutes.js`, `controllers/authController.js` | Role-separated shopper/admin login, session verification, own-password change, one-time customer reset links |
 | Products | `routes/productRoutes.js`, `controllers/productController.js` | Catalog, visibility, categories, variants, images, stock |
 | Orders | `routes/orderRoutes.js`, `controllers/orderController.js` | Checkout validation, order creation, status updates, analytics |
 | Support | `routes/supportRoutes.js`, `controllers/supportController.js` | Customer support tickets and admin handling |
@@ -139,6 +191,7 @@ erDiagram
     }
     SYSTEM_SETTINGS {
         string id
+        boolean internationalEnabled
         boolean codEnabled
         string courierProvider
         number codFee
@@ -174,6 +227,8 @@ erDiagram
 | `VITE_API_URL` | `frontend/.env` | API and upload base URL |
 | Product images | `backend/uploads/` or Docker `uploads_data` | Uploaded product files |
 | MongoDB data | MongoDB or Docker `mongo_data` | Application records |
+
+For verified localStorage keys, embedded cart/wishlist persistence, provider-secret encryption, and the backup-volume limitation, see [`STORAGE_ARCHITECTURE.md`](./STORAGE_ARCHITECTURE.md).
 
 Never commit `.env` files, database credentials, signing keys, or production
 API keys. See [`PRODUCTION_DEPLOYMENT.md`](./PRODUCTION_DEPLOYMENT.md) before

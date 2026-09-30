@@ -94,6 +94,16 @@ const placeOrder = async (req, res) => {
   let reservedCouponId = null;
   try {
     const { products, address, paymentMethod } = req.body;
+    let guestContact = null;
+    if (!req.user) {
+      const submittedContact = req.body?.guestContact || {};
+      const name = typeof submittedContact.name === 'string' ? submittedContact.name.trim() : '';
+      const email = typeof submittedContact.email === 'string' ? submittedContact.email.trim().toLowerCase() : '';
+      const phone = typeof submittedContact.phone === 'string' ? submittedContact.phone.trim() : '';
+      if (!name || name.length > 120 || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254 || phone.length > 40)
+        return res.status(400).json({ message: 'Guest checkout requires a valid name and email address.' });
+      guestContact = { name, email, phone };
+    }
     const requestedCouponCode = typeof req.body?.couponCode === 'string' ? req.body.couponCode.trim().toUpperCase() : '';
     if (!products || products.length === 0)
       return res.status(400).json({ message: 'No products in order.' });
@@ -105,6 +115,10 @@ const placeOrder = async (req, res) => {
 
     const country       = address?.country || 'Pakistan';
     const city          = address?.city    || '';
+    const settings = await SystemSettings.findOne({ key: 'global' }).lean()
+      || { internationalEnabled: true, codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+    if (country !== 'Pakistan' && settings.internationalEnabled === false)
+      return res.status(400).json({ message: 'International orders are currently unavailable.' });
     const enrichedItems = [];
 
     for (const item of products) {
@@ -152,7 +166,6 @@ const placeOrder = async (req, res) => {
       couponDiscount = couponResult.discountAmount;
     }
 
-    const settings = await SystemSettings.findOne({ key: 'global' }).lean() || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
     if (paymentMethod === 'COD' && !settings.codEnabled)
       return res.status(400).json({ message: 'Cash on delivery is currently unavailable.' });
 
@@ -202,7 +215,7 @@ const placeOrder = async (req, res) => {
     }
 
     const order = await Order.create({
-      user: req.user._id, products: enrichedItems,
+      user: req.user?._id || null, guestContact, products: enrichedItems,
       productTotal, shippingFee, codFee, couponCode: coupon?.code || '', couponDiscount, currency, totalWeight, shippingZone, totalPrice,
       address, paymentMethod, paymentChannel,
       isPaid: false,
@@ -237,7 +250,8 @@ const getOrderById = async (req, res) => {
   try {
     const o = await Order.findById(req.params.id).populate('user','name email');
     if (!o) return res.status(404).json({ message: 'Order not found.' });
-    if (o.user._id.toString() !== req.user._id.toString() && !req.user.isAdmin)
+    const isOwner = o.user && String(o.user._id || o.user) === String(req.user._id);
+    if (!isOwner && !req.user.isAdmin)
       return res.status(403).json({ message: 'Not authorized.' });
     res.json(o);
   } catch (e) { res.status(500).json({ message: e.message }); }

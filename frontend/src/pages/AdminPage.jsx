@@ -5,6 +5,7 @@ import BrandMark from '../components/BrandMark';
 import { assetUrl } from '../utils/axiosConfig';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
+import { downloadCsv, ordersToCsvRows, productsToCsvRows } from './admin/csvExport';
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
 import CouponsPanel from './admin/CouponsPanel';
 import ReviewsPanel from './admin/ReviewsPanel';
@@ -70,6 +71,7 @@ export default function AdminPage() {
   const [zoneRates, setZoneRates] = useState(getZoneRates());
   const [zoneSaved, setZoneSaved] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
+    internationalEnabled: true,
     codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0,
     courierProvider: '', courierEnabled: false, courierMode: 'sandbox', courierApiKey: '',
     easypaisaEnabled: false, easypaisaMode: 'sandbox', easypaisaMerchantId: '', easypaisaApiKey: '',
@@ -108,7 +110,7 @@ export default function AdminPage() {
 
   /* auth guard */
   useEffect(() => {
-    if (!user)         { navigate('/login'); return; }
+    if (!user)         { navigate('/admin/login'); return; }
     if (!user.isAdmin) { navigate('/');      return; }
   }, [user, navigate]);
 
@@ -483,14 +485,15 @@ export default function AdminPage() {
       ...((analytics?.insights?.recommendedActions || []).slice(0, 6).map((action) => [action, 'Recommended'])),
     ];
 
-    const csvContent = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'induscart-sales-report.csv';
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv('induscart-sales-report.csv', rows);
+  };
+
+  const exportProductsCsv = () => {
+    downloadCsv('induscart-products.csv', productsToCsvRows(products));
+  };
+
+  const exportOrdersCsv = () => {
+    downloadCsv('induscart-orders.csv', ordersToCsvRows(orders));
   };
 
   const generatePdfReport = () => {
@@ -1119,7 +1122,7 @@ export default function AdminPage() {
             <p style={{ margin:0, fontSize:12, fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" }}>{user?.name}</p>
             <p style={{ margin:0, fontSize:10, color: themeMode === 'dark' ? '#a7f3d0' : '#08734e', fontWeight:600 }}>Administrator</p>
           </div>
-          <button title="Logout" style={{ ...S.logoutBtn, color: themeMode === 'dark' ? '#e2f9ef' : '#475569', borderColor: themeMode === 'dark' ? 'rgba(255,255,255,.15)' : '#d6e2da', background: themeMode === 'dark' ? 'rgba(255,255,255,.04)' : '#fff' }} onClick={() => { logout(); navigate('/login'); }}>⏻</button>
+          <button title="Logout" style={{ ...S.logoutBtn, color: themeMode === 'dark' ? '#e2f9ef' : '#475569', borderColor: themeMode === 'dark' ? 'rgba(255,255,255,.15)' : '#d6e2da', background: themeMode === 'dark' ? 'rgba(255,255,255,.04)' : '#fff' }} onClick={() => { logout(); navigate('/admin/login'); }}>⏻</button>
         </div>
       </aside>
 
@@ -1727,7 +1730,10 @@ export default function AdminPage() {
                 <h1 style={S.pgTitle}>Products</h1>
                 <p style={S.pgSub}>{products.length} total · {localCnt} local · {globalCnt} global · {oos} out of stock</p>
               </div>
-              <button className="admin-green-button" style={S.greenBtn} onClick={() => openSection('add')}>+ Add Product</button>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportProductsCsv}>⬇ Export products CSV</button>
+                <button className="admin-green-button" style={S.greenBtn} onClick={() => openSection('add')}>+ Add Product</button>
+              </div>
             </div>
 
             {/* filter bar */}
@@ -2078,6 +2084,7 @@ export default function AdminPage() {
                 <h1 style={S.pgTitle}>Orders</h1>
                 <p style={S.pgSub}>{orders.length} total · {pending} pending · {delivered} delivered</p>
               </div>
+              <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportOrdersCsv}>⬇ Export orders CSV</button>
             </div>
 
             <div style={{ display:'flex', gap:8, marginBottom:18, flexWrap:'wrap' }}>
@@ -2123,8 +2130,8 @@ export default function AdminPage() {
                         <tr key={o._id} className="row-hover">
                           <td style={{ ...S.td, fontFamily:"'JetBrains Mono',monospace", fontWeight:700, color: themeMode === 'dark' ? '#9ae6b4' : '#6366f1', fontSize:13 }}>#{o._id.slice(-6).toUpperCase()}</td>
                           <td style={S.td}>
-                            <p style={{ margin:'0 0 2px', fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontSize:13, fontFamily:"'Sora',sans-serif" }}>{o.user?.name||'—'}</p>
-                            <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#94a3b8' : '#94a3b8' }}>{o.address?.city || '—'}</p>
+                            <p style={{ margin:'0 0 2px', fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontSize:13, fontFamily:"'Sora',sans-serif" }}>{o.user?.name || o.guestContact?.name || '—'}</p>
+                            <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#aebbb3' : '#64748b' }}>{o.guestContact?.email || o.user?.email || o.address?.city || '—'}</p>
                           </td>
                           <td style={{ ...S.td, maxWidth:160 }}>
                             <p style={{ margin:0, fontSize:12, color: themeMode === 'dark' ? '#dbeafe' : '#475569', lineHeight:1.7 }}>
@@ -2251,6 +2258,11 @@ export default function AdminPage() {
               {!storeSettings.credentialEncryptionReady && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>Provider secrets are locked until <code>SETTINGS_ENCRYPTION_KEY</code> is added to the backend environment (at least 32 characters). Secret inputs are disabled rather than saving credentials in plaintext.</p>}
               {storeSettings.legacySecretsNeedEncryption && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>An older courier secret is still stored unencrypted. Set <code>SETTINGS_ENCRYPTION_KEY</code>; the server will encrypt it when settings are next loaded.</p>}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:14, marginBottom:16 }}>
+                <label style={{ gridColumn:'1 / -1', display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'12px 14px', borderRadius:12, border:themeMode === 'dark' ? '1px solid rgba(110,231,183,0.22)' : '1px solid #bbf7d0', background:themeMode === 'dark' ? 'rgba(6,95,70,0.18)' : '#f0fdf4' }}>
+                  <input type="checkbox" checked={storeSettings.internationalEnabled !== false} onChange={e => setStoreSettings(s => ({ ...s, internationalEnabled:e.target.checked }))} />
+                  <span style={{ fontWeight:800, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Enable international shopping</span>
+                  <span style={{ fontWeight:500, color:themeMode === 'dark' ? '#b9c7bf' : '#64748b', fontSize:11 }}>Shows the USD market option and allows international orders.</span>
+                </label>
                 <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'12px 14px', borderRadius:12, border:themeMode === 'dark' ? '1px solid rgba(110,231,183,0.22)' : '1px solid #bbf7d0', background:themeMode === 'dark' ? 'rgba(6,95,70,0.18)' : '#f0fdf4' }}>
                   <input type="checkbox" checked={storeSettings.codEnabled} onChange={e => setStoreSettings(s => ({ ...s, codEnabled:e.target.checked }))} />
                   <span style={{ fontWeight:800, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Enable COD checkout</span>

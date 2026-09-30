@@ -61,6 +61,45 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
       const instance = app.listen(0, () => resolve(instance));
     });
 
+    const shopperLoginWithAdminCredentials = await send(server, 'POST', '/api/auth/login', {
+      email:adminEmail, password:'Initial admin passphrase 123!',
+    });
+    assert.equal(shopperLoginWithAdminCredentials.status, 401);
+    const adminLoginWithCustomerCredentials = await send(server, 'POST', '/api/auth/admin/login', {
+      email:customerEmail, password:'Initial customer passphrase 123!',
+    });
+    assert.equal(adminLoginWithCustomerCredentials.status, 401);
+    const adminLogin = await send(server, 'POST', '/api/auth/admin/login', {
+      email:adminEmail, password:'Initial admin passphrase 123!',
+    });
+    assert.equal(adminLogin.status, 200);
+    assert.equal(adminLogin.body.isAdmin, true);
+    const customerLogin = await send(server, 'POST', '/api/auth/login', {
+      email:customerEmail, password:'Initial customer passphrase 123!',
+    });
+    assert.equal(customerLogin.status, 200);
+    assert.equal(customerLogin.body.isAdmin, false);
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const failedLogin = await send(server, 'POST', '/api/auth/admin/login', {
+        email:adminEmail, password:`Wrong admin password ${attempt}`,
+      });
+      assert.equal(failedLogin.status, 401);
+    }
+    const rateLimitedLogin = await send(server, 'POST', '/api/auth/admin/login', {
+      email:adminEmail, password:'One more wrong admin password',
+    });
+    assert.equal(rateLimitedLogin.status, 429);
+    assert.match(rateLimitedLogin.body.message, /administrator sign-in attempts/i);
+
+    const missingPublicReset = await send(server, 'POST', '/api/auth/password/reset/request', { email:`missing-${suffix}@example.test` });
+    const existingPublicReset = await send(server, 'POST', '/api/auth/password/reset/request', { email:customerEmail });
+    assert.equal(missingPublicReset.status, 202);
+    assert.equal(existingPublicReset.status, 202);
+    assert.equal(missingPublicReset.body.message, existingPublicReset.body.message);
+    assert.equal(sentResetEmails.length, 1);
+    assert.equal(sentResetEmails[0].to, customerEmail);
+
     const unauthenticatedChange = await send(server, 'PATCH', '/api/auth/password', { newPassword:updatedAdminPassword });
     assert.equal(unauthenticatedChange.status, 401);
     const unauthenticatedEmail = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:customerEmail });
@@ -73,9 +112,9 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
 
     const customerReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:customerEmail }, token);
     assert.equal(customerReset.status, 200);
-    assert.equal(sentResetEmails.length, 1);
-    assert.equal(sentResetEmails[0].to, customerEmail);
-    const resetUrl = new URL(sentResetEmails[0].resetUrl);
+    assert.equal(sentResetEmails.length, 2);
+    assert.equal(sentResetEmails[1].to, customerEmail);
+    const resetUrl = new URL(sentResetEmails[1].resetUrl);
     const resetToken = resetUrl.pathname.split('/').pop();
     assert.ok(resetToken.length >= 32);
     customer = await User.findById(customer._id).select('+passwordResetTokenHash +passwordResetExpiresAt');
@@ -92,7 +131,7 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
 
     const otherAdminReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:adminEmail }, token);
     assert.equal(otherAdminReset.status, 403);
-    assert.equal(sentResetEmails.length, 1);
+    assert.equal(sentResetEmails.length, 2);
   } finally {
     if (server) await new Promise(resolve => server.close(resolve));
     if (admin) await User.deleteOne({ _id:admin._id });

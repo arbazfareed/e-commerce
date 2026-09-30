@@ -25,8 +25,11 @@ describe('checkout provider availability', () => {
   test('does not show unimplemented gateways even when their admin config is stored', async () => {
     API.get.mockResolvedValue({ data: { codEnabled: true, supportedPaymentMethods: ['COD'], easypaisaEnabled: true } });
     render(<MemoryRouter><CartPage /></MemoryRouter>);
+    expect(screen.getByText('2. Checkout')).toHaveClass('cart-step-pill', 'is-upcoming');
     fireEvent.click(screen.getByRole('button', { name: /proceed to checkout/i }));
     await waitFor(() => expect(screen.getByText(/payment method/i)).toBeInTheDocument());
+    expect(screen.getByText('1. Cart')).toHaveClass('cart-step-pill', 'is-complete');
+    expect(screen.getByText('2. Checkout')).toHaveClass('cart-step-pill', 'is-active');
     expect(screen.getByText(/cash on delivery/i)).toBeInTheDocument();
     expect(screen.queryByText(/easypaisa/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/stripe|paypal|jazzcash/i)).not.toBeInTheDocument();

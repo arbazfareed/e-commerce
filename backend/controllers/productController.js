@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
+const SystemSettings = require('../models/SystemSettings');
 const path    = require('path');
 const fs      = require('fs');
 const { filterRetainedImages, resolveUploadedImagePath } = require('../utils/productImageSafety');
@@ -25,7 +26,12 @@ const getProducts = async (req, res) => {
     let filter = {};
     if (category) filter.category = category;
     if (subcategory) filter.subcategory = subcategory;
-    if (isLocal === 'true' || isLocal === 'false') filter.isLocal = isLocal === 'true';
+    if (isLocal === 'false') {
+      const settings = await SystemSettings.findOne({ key: 'global' }).select('internationalEnabled').lean();
+      if (settings?.internationalEnabled === false)
+        return res.status(403).json({ message: 'International shopping is currently unavailable.' });
+      filter.isLocal = false;
+    } else if (isLocal === 'true') filter.isLocal = true;
     const canIncludeHidden = includeHidden === 'true' && req.user?.isAdmin;
     if (!canIncludeHidden) filter.isVisible = { $ne: false };
     const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';

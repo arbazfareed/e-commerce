@@ -6,6 +6,19 @@ import { assetUrl } from '../utils/axiosConfig';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
+export const getPromotionCountdown = (endDate, now) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate || '')) return '';
+  const deadline = new Date(`${endDate}T23:59:59.999Z`).getTime();
+  const remaining = deadline - now.getTime();
+  if (!Number.isFinite(deadline) || remaining <= 0) return '';
+  const days = Math.floor(remaining / 86400000);
+  if (days > 0) return `ENDS IN ${days}D`;
+  const hours = Math.floor((remaining % 86400000) / 3600000);
+  if (hours > 0) return `ENDS IN ${hours}H`;
+  const minutes = Math.max(1, Math.ceil((remaining % 3600000) / 60000));
+  return `ENDS IN ${minutes}M`;
+};
+
 export default function ProductCard({ product: p, onAddToCart }) {
   const { user } = useAuth();
   const { addToWishlist, removeFromWishlist, isWishlisted } = useCart();
@@ -16,6 +29,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const multi = imgs.length > 1;
   const [idx, setIdx] = useState(0);
   const [imgErrors, setImgErrors] = useState({});
+  const [clockNow, setClockNow] = useState(() => new Date());
   const touchStartX = useRef(null);
 
   // Reset index when product changes
@@ -23,6 +37,12 @@ export default function ProductCard({ product: p, onAddToCart }) {
     setIdx(0);
     setImgErrors({});
   }, [p._id]);
+
+  useEffect(() => {
+    if (!p.discountEndDate || !p.discountPercent) return undefined;
+    const timer = setInterval(() => setClockNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, [p.discountEndDate, p.discountPercent]);
 
   const prev = (e) => { 
     e.stopPropagation(); 
@@ -55,12 +75,13 @@ export default function ProductCard({ product: p, onAddToCart }) {
   const isOut = p.stock === 0;
   const isRestricted = p.isLocal && !isPak;
   const configuredDiscountPercent = Math.min(100, Math.max(0, Number(p.discountPercent) || 0));
-  const discountPercent = getActiveDiscountPercent(p);
-  const today = new Date().toISOString().slice(0, 10);
+  const discountPercent = getActiveDiscountPercent(p, clockNow);
+  const today = clockNow.toISOString().slice(0, 10);
   const hasUpcomingDiscount = configuredDiscountPercent > 0 && discountPercent === 0 && p.discountStartDate && today < p.discountStartDate;
   const upcomingDateLabel = hasUpcomingDiscount
     ? new Date(`${p.discountStartDate}T00:00:00Z`).toLocaleDateString('en', { month:'short', day:'numeric', timeZone:'UTC' }).toUpperCase()
     : '';
+  const promotionCountdown = discountPercent > 0 ? getPromotionCountdown(p.discountEndDate, clockNow) : '';
   const originalPrice = Number(isPak ? p.pricePKR : p.priceUSD) || 0;
   const currentPrice = getDiscountedPrice(originalPrice, discountPercent, isPak ? 'PKR' : 'USD');
   const alternatePrice = isPak
@@ -166,6 +187,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
         {/* Badges */}
         <div style={styles.badges}>
           {discountPercent > 0 && <span style={styles.badgeDiscount}>SAVE {discountPercent}%</span>}
+          {promotionCountdown && <span className="product-discount-countdown" title={`Promotion ends ${p.discountEndDate}`} aria-label={`Promotion ends in ${promotionCountdown.replace('ENDS IN ', '')}`}>⏳ {promotionCountdown}</span>}
           {hasUpcomingDiscount && <span className="product-discount-upcoming" style={styles.badgeDiscountUpcoming} title={`Promotion starts ${p.discountStartDate}`}>{configuredDiscountPercent}% OFF · {upcomingDateLabel}</span>}
           {p.isLocal && !isRestricted && (
             <span style={styles.badgeLocal}>🇵🇰 Local</span>
@@ -174,7 +196,7 @@ export default function ProductCard({ product: p, onAddToCart }) {
             <span style={styles.badgeRestricted}>🇵🇰 Pakistan Only</span>
           )}
           {!isOut && isLow && (
-            <span style={styles.badgeLowStock}>⚠️ Only {p.stock} left</span>
+            <span className="product-scarcity-badge" style={styles.badgeLowStock} aria-label={`Low stock: only ${p.stock} left`}>⚠️ Only {p.stock} left</span>
           )}
           {isOut && (
             <span style={styles.badgeSoldOut}>✕ Sold Out</span>

@@ -49,6 +49,8 @@ but the complete external integration or operational behavior is missing.
   visibility, discounts, and local/global market rules
 - Server-side product search, price filters, sorting, and pagination
 - Persistent guest cart and account-synced customer cart with product/color/size identity
+- Guest COD checkout with contact details and authenticated account checkout
+- Customer self-service, email-based password reset with a single-use expiring token
 - Admin-managed promo coupons with server-side eligibility and usage verification
 - Verified-purchase product reviews with administrator moderation
 - Customer wishlist and printable invoices/packing slips
@@ -65,7 +67,7 @@ but the complete external integration or operational behavior is missing.
 - Real payment capture, webhooks, refunds, and payment reconciliation
 - Real courier booking, labels, tracking, and delivery webhooks
 - Automated returns/refunds workflow
-- Email, SMS, push, and transactional notifications
+- Email/SMS/push notifications beyond account recovery
 - Public production hosting, object storage, monitoring, and legal sign-off
 - Multi-vendor settlement and automated returns/refunds workflow
 
@@ -127,9 +129,9 @@ as completed capabilities.
 flowchart TD
       Start((Start)) --> Cart[Customer opens cart]
       Cart --> Auth{Authenticated?}
-      Auth -- No --> Login[Register or sign in]
+      Auth -- No --> GuestContact[Enter name, email, optional phone]
       Auth -- Yes --> Address[Enter street, city, country]
-      Login --> Address
+      GuestContact --> Address
       Address --> Items[Submit products, variants, and payment method]
       Items --> Validate[API validates request]
       Validate --> Available{Products visible,<br/>variants valid,<br/>stock available?}
@@ -162,7 +164,7 @@ sequenceDiagram
       participant Courier as Courier service
 
       Customer->>UI: Submit address, items, variants, payment method
-      UI->>API: POST /api/orders with JWT
+      UI->>API: POST /api/orders with optional JWT and guest contact when signed out
       API->>Product: Reload each product
       Product-->>API: Visibility, stock, price, variants, weight
       API->>Settings: Read COD configuration
@@ -237,12 +239,13 @@ classDiagram
       }
       class SystemSettings {
          +String key
+         +Boolean internationalEnabled
          +Boolean codEnabled
          +String codFeeMode
          +Number codFee
          +String courierProvider
       }
-      User "1" --> "0..*" Order : places
+      User "0..1" --> "0..*" Order : owns (guest order has null user)
       Order "1" *-- "1..*" OrderItem : embeds
       OrderItem "0..*" --> "0..1" Product : optional source reference
       User "0..1" --> "0..*" SupportTicket : submits
@@ -331,9 +334,9 @@ requirements-level behavioral models.
 | ID | Requirement | Status | Acceptance summary |
 |---|---|---|---|
 | FR-01 | Register with account details | Implemented | Valid name/email/password creates a user and returns JWT |
-| FR-02 | Login with email or username | Implemented | Valid credentials return a 30-day JWT session |
+| FR-02 | Role-separated shopper and administrator sign-in | Implemented | Shopper `/api/auth/login` refuses admins; `/api/auth/admin/login` refuses non-admins, checks role server-side, and limits failed attempts |
 | FR-03 | Verify authenticated session | Implemented | Protected session endpoint returns current user |
-| FR-04 | Restrict admin operations | Implemented | JWT user must have `isAdmin` for admin API routes |
+| FR-04 | Restrict admin operations | Implemented | Admin UI route, dedicated login API, and protected admin APIs independently require an administrator identity |
 | FR-05 | Browse visible catalog | Implemented | Public routes exclude hidden products |
 | FR-06 | Search/filter/sort catalog | Implemented | UI supports text, category, market, and sort controls |
 | FR-07 | Manage product details and variants | Implemented | Admin can set prices, images, category, brand, model, colors, sizes, stock, weight |
@@ -348,13 +351,18 @@ requirements-level behavioral models.
 | FR-16 | Support tickets | Implemented | Guest/user creation, user list, admin list, reply, and status endpoints exist |
 | FR-17 | Admin sales analytics | Implemented | Revenue, channel, period, product, hour, day, and region aggregates exist |
 | FR-18 | Manual cash-sale recording | Implemented | Admin can record a cash sale without a catalog product |
-| FR-19 | Store settings | Implemented | Admin can configure COD and courier settings; public API exposes checkout-safe fields |
+| FR-19 | Store settings | Implemented | Admin can enable/disable international shopping and configure COD/courier settings; public API exposes checkout-safe availability fields |
 | FR-20 | Public health checks | Implemented | Live and readiness endpoints report process/database state |
 | FR-21 | Android package | Implemented | Capacitor packages the web build; public HTTPS API is required outside local Wi-Fi |
 | FR-22 | Automated build validation | Implemented | GitHub Actions validates backend syntax/tests and frontend tests/build |
 | FR-23 | Automated APK artifact | Implemented | Tag/manual workflow builds debug APK when `VITE_API_URL` is a public HTTPS URL |
 | FR-24 | Returns/refunds workflow | Planned | Requires model, API, UI, eligibility, approval, refund, and stock rules |
 | FR-25 | Notifications | Planned | Requires email/SMS/push provider, templates, retry, and preferences |
+| FR-26 | Guest COD checkout | Implemented | Guest submits contact/address details; order creation is rate-limited and cannot be read through a public order lookup |
+| FR-27 | Public password reset request | Implemented | Public request is rate-limited, uses a generic response to reduce account enumeration, and emails an eligible customer a single-use 20-minute link |
+| FR-28 | Navbar live product search | Implemented | Debounced suggestions link to products and full shop results |
+| FR-29 | Admin order/product CSV export | Implemented | Admin can download full loaded datasets with spreadsheet-formula-safe CSV values |
+| FR-30 | Promotion countdown/scarcity badges | Partial | Dated discounts show countdowns; stock badges indicate 1–4 remaining; no stock reservation timer exists |
 
 ## 6. Core business rules
 

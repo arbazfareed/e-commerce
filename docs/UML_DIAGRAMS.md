@@ -1,6 +1,6 @@
 # IndusCart UML Diagrams
 
-These diagrams document the repository as implemented, not an idealized future system. Mermaid renders them in GitHub. Payment-provider capture and courier booking are shown as future integrations; support tickets are stored by the current Express/MongoDB API. The cart and recently viewed list are browser-local. Customer password reset uses a one-time, 20-minute link delivered through Resend when configured.
+These diagrams document the repository as implemented, not an idealized future system. Mermaid renders them in GitHub. Payment-provider capture and courier booking are shown as future integrations; support tickets are stored by the current Express/MongoDB API. Guest carts and recently viewed items are browser-local; signed-in carts and wishlists are synchronized with the API and stored on the user's MongoDB document, with local browser caches. Customer password reset uses a one-time, 20-minute link delivered through Resend when configured.
 
 ## Repository inventory snapshot
 
@@ -10,8 +10,8 @@ diagrams. The counts are files, not lines of code; generated build output,
 
 | Area | Files found | Notes |
 |---|---:|---|
-| Backend JS/JSON/Markdown files | 47 | Runtime, API, schemas, scripts, tests, manifests and backend guide |
-| Frontend `src` JS/JSX/TS/TSX/CSS files | 32 | Routes, pages, components, contexts, utilities and tests |
+| Backend JS/JSON/Markdown files | 64 | Runtime, API, schemas, scripts, tests, and manifests; excludes `node_modules`, backups, and uploads |
+| Frontend `src` JS/JSX/TS/TSX/CSS files | 44 | Routes, pages, components, contexts, utilities, styles, and tests |
 | UML sections in this guide | 25 | Sections 1–16 reviewed/corrected plus 17–25 for code structure and current workflows |
 
 For GitHub review, start with sections 1–4 for actors, domain data, components
@@ -31,7 +31,8 @@ flowchart LR
         Browse((Browse and filter catalog))
         Details((View product details))
         LocalCart((Maintain local cart))
-        Account((Register or sign in))
+        Account((Register or shopper sign in))
+        AdminLogin((Administrator sign in))
         Checkout((Place order))
         Track((View order history/status))
         Ticket((Submit support ticket))
@@ -47,6 +48,7 @@ flowchart LR
     Guest --> Browse
     Guest --> Details
     Guest --> Account
+    Guest -->|storefront shield icon| AdminLogin
     Guest --> Ticket
     Guest --> CompleteReset
     Customer --> Browse
@@ -56,6 +58,7 @@ flowchart LR
     Customer --> Track
     Customer --> Ticket
     Admin --> AdminCatalog
+    Admin --> AdminLogin
     Admin --> AdminOrders
     Admin --> AdminSupport
     Admin --> AdminSettings
@@ -155,6 +158,7 @@ classDiagram
     }
     class SystemSettings {
         +String key
+        +Boolean internationalEnabled
         +Boolean codEnabled
         +String codFeeMode
         +Number codFee
@@ -170,7 +174,7 @@ classDiagram
         +Number exchangeRate
     }
 
-    User "1" --> "0..*" Order : places
+    User "0..1" --> "0..*" Order : account owns (guest orders have no User)
     Order "1" *-- "1..*" OrderItem : snapshots
     OrderItem "0..*" --> "0..1" Product : optional source reference
     User "0..1" --> "0..*" SupportTicket : submits
@@ -179,7 +183,7 @@ classDiagram
     SystemSettings ..> Order : read during checkout
 ```
 
-**Storage distinction:** `CartLine` and `BrowserStorage` are conceptual browser state, not MongoDB models. `OrderItem` is an embedded subdocument in `Order`, not a separate collection; manual cash items may have a null `Product` reference. `SystemSettings` is read while creating an order but has no persisted relation to it. Password reset token hashes/expiry are hidden `User` fields. Courier keys are excluded from normal settings responses but are not encrypted at rest.
+**Storage distinction:** `CartLine` and `BrowserStorage` are conceptual browser state, not MongoDB models. `OrderItem` is an embedded subdocument in `Order`, not a separate collection; manual cash items may have a null `Product` reference. `SystemSettings` is read while creating an order but has no persisted relation to it. Password reset token hashes/expiry are hidden `User` fields. Courier keys are excluded from normal settings responses and encrypted at rest when `SETTINGS_ENCRYPTION_KEY` is configured.
 
 ## 3. Component diagram
 
@@ -236,7 +240,7 @@ sequenceDiagram
 
     Customer->>UI: Confirm address and method
     UI->>Cart: Read local cart lines
-    UI->>API: POST /api/orders with JWT and product IDs/quantities
+    UI->>API: POST /api/orders with optional JWT, guest contact (if guest), and product IDs/quantities
     API->>Product: Reload products and validate visibility, market, variants, stock
     Product-->>API: Current prices, stock, variants, weight
     API->>Settings: Read COD configuration
@@ -341,11 +345,14 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Device[Customer or admin device]
-        Browser[Browser / Android WebView]
-        WebApp[React + Vite assets]
+        ShopperBrowser[Shopper browser / Android WebView]
+        AdminBrowser[Admin browser]
+        ShopperApp[React + Vite shopper mode]
+        AdminApp[React + Vite admin-only mode]
         LocalState[(localStorage cart / recent items)]
-        Browser --> WebApp
-        WebApp --> LocalState
+        ShopperBrowser --> ShopperApp
+        AdminBrowser --> AdminApp
+        ShopperApp --> LocalState
     end
 
     subgraph AppHost[Application host or Docker Compose]
@@ -364,8 +371,10 @@ flowchart TB
         Resend[Resend HTTPS API]
     end
 
-    WebApp -->|HTTPS/REST + JWT| Proxy
-    WebApp -->|local development / REST| API
+    ShopperApp -->|HTTPS/REST + JWT| Proxy
+    AdminApp -->|HTTPS/REST + JWT| Proxy
+    ShopperApp -->|local :3000 -> :5000| API
+    AdminApp -->|local :3001 -> :5000| API
     API --> Mongo
     API -. configured password-reset email .-> Resend
 ```
@@ -377,7 +386,7 @@ In local development Vite serves the UI and Express serves the API. In the Docke
 ```mermaid
 flowchart TD
     Start((Start)) --> Browse[Browse visible catalog]
-    Browse --> Cart[Add product/variant to browser-local cart]
+    Browse --> Cart[Add product/variant to guest cart or signed-in account cart]
     Cart --> Auth{Signed in?}
     Auth -- No --> SignIn[Register or sign in]
     SignIn --> Checkout[Open protected cart/checkout]
@@ -540,10 +549,10 @@ flowchart TB
 
         Backend --> Server[server.js]
         Backend --> Config[config: env, DB, API URL helper]
-        Backend --> Routes[routes: auth, products, orders, support, settings]
+        Backend --> Routes[routes: auth, cart, coupons, orders, products, reviews, settings, support, wishlist]
         Backend --> Middleware[middleware: JWT/admin, image upload checks]
-        Backend --> Controllers[controllers: auth, products, orders, support, settings]
-        Backend --> Models[models: User, Product, Order, SupportTicket, SystemSettings]
+        Backend --> Controllers[controllers: auth, cart, coupons, orders, products, reviews, settings, support, wishlist]
+        Backend --> Models[models: User, Product, Order, Coupon, Review, SupportTicket, SystemSettings]
         Backend --> Services[services: email/Resend, courier seam]
         Backend --> Utils[utils: pricing, status, images, analytics, cash sales]
         Backend --> Scripts[scripts: admin, backup, restore]
@@ -557,9 +566,10 @@ flowchart TB
         Frontend --> UiTests[tests: routes, cart, error boundary]
 ```
 
-The current source inventory matched 47 backend JS/JSON/Markdown files and 32
-frontend `src` JS/JSX/TS/TSX/CSS files. It excludes generated `dist`, Android
-build outputs, `node_modules`, uploads and other binary/generated content.
+The current scoped source inventory is 64 backend JS/JSON/Markdown files and 44
+frontend `src` JS/JSX/TS/TSX/CSS files. Backend counts exclude `node_modules`,
+backups, and uploads; frontend counts are limited to `frontend/src`. Generated
+`dist`, Android build outputs, and other binary/generated content are excluded.
 
 ## 18. Frontend route, guard and provider diagram
 
@@ -579,9 +589,11 @@ flowchart TB
         AppRoutes --> GuestGuard[GuestRoute]
         GuestGuard --> Login["LoginPage /login"]
         GuestGuard --> Register["RegisterPage /register"]
+        AppRoutes --> AdminLoginRoute["LoginPage /admin/login"]
         AppRoutes --> Reset["PasswordResetPage /reset-password/:token"]
+        AppRoutes --> Forgot["ForgotPasswordPage /forgot-password"]
+        AppRoutes --> Cart["CartPage /cart (guest or signed-in)"]
         AppRoutes --> PrivateGuard[PrivateRoute]
-        PrivateGuard --> Cart["CartPage /cart"]
         PrivateGuard --> Orders["OrdersPage /orders"]
         PrivateGuard --> Track["OrderTrackPage /orders/:id"]
         AppRoutes --> AdminGuard[AdminRoute]
@@ -590,6 +602,8 @@ flowchart TB
         AppRoutes --> NotFound[NotFoundPage / wildcard]
 
         Home --> ProductCard[ProductCard]
+        Navbar --> LiveSearch[Debounced public product suggestions]
+        Navbar --> AdminPortalEntry[Shield icon opens admin portal]
         ProductDetail --> CartProvider
         Cart --> CartProvider
         Orders --> API["axiosConfig / VITE_API_URL"]
@@ -603,6 +617,8 @@ flowchart TB
 
 `GuestRoute` redirects authenticated users away from login/register;
 `PrivateRoute` requires a user; `AdminRoute` additionally requires `isAdmin`.
+The storefront shield opens the distinct admin route; login UI separation is
+backed by different API endpoints and server-side role checks.
 The reset-link route is intentionally public and accepts only the expiring
 one-time token; it does not create a logged-in session.
 
@@ -651,9 +667,9 @@ customer-reset request when Resend settings are configured.
 
 | Route family | Representative operations | Access enforced by route middleware |
 |---|---|---|
-| `/api/auth` | register, login, profile, session, own password, admin reset-email, public reset-token completion | Login/register/reset completion are rate-limited; own password requires `protect`; admin reset email requires `protect` + `admin` |
+| `/api/auth` | shopper/admin login, register, profile, session, own password, admin reset-email, public reset request/completion | `/login` rejects admins; `/admin/login` rejects non-admins and allows five failed attempts per observed IP per 15 minutes; own password requires `protect`; admin reset email requires `protect` + `admin` |
 | `/api/products` | catalog/categories/detail, create/update/delete | Public reads use optional admin identity for hidden items; mutations require admin |
-| `/api/orders` | place, own list/detail, all orders, analytics, manual cash, status | Checkout/history require user; all-orders/analytics/manual cash/status require admin; detail enforces owner/admin in controller |
+| `/api/orders` | guest/account place, own list/detail, all orders, analytics, manual cash, status | Guest/account checkout is rate-limited and validates guest contact when no JWT is present; history requires user; admin operations require admin; detail enforces owner/admin in controller |
 | `/api/support` | user/guest create, own list, admin list/status/reply | User routes use `protect`; guest creation is public; administration requires user + admin |
 | `/api/settings` | public COD settings, private settings read/update | public checkout read is unauthenticated; private settings require user + admin |
 
@@ -671,6 +687,7 @@ sequenceDiagram
         participant Mail as emailService
         participant Resend as Resend API
         participant ResetUI as PasswordResetPage
+        participant PublicReset as ForgotPasswordPage
 
         Admin->>AdminUI: Enter customer email
         AdminUI->>API: PUT /api/auth/admin/customer-password (admin JWT)
@@ -682,6 +699,18 @@ sequenceDiagram
         Mail->>Resend: POST email request (server-side API key)
         Resend-->>Customer: Email with one-time reset link
         Auth-->>AdminUI: Sent confirmation, or delivery error
+        Customer->>PublicReset: Enter account email
+        PublicReset->>API: POST /api/auth/password/reset/request
+        API->>Auth: Apply public per-IP rate limit
+        Auth->>User: Find eligible non-admin account
+        alt Eligible customer and email accepted
+            Auth->>Auth: Store token hash and 20-minute expiry
+            Auth->>Mail: Send one-time reset URL
+            Mail->>Resend: POST email request
+        else Unknown/admin account or email failure
+            Auth->>Auth: Do not reveal account or delivery state
+        end
+        Auth-->>PublicReset: Generic accepted confirmation
         Customer->>ResetUI: Open /reset-password/:token
         Customer->>ResetUI: Enter and confirm new password
         ResetUI->>API: POST /api/auth/password/reset with token and new password
@@ -779,6 +808,7 @@ classDiagram
         }
         class SystemSettings {
             +String key
+            +Boolean internationalEnabled
             +Boolean codEnabled
             +String codFeeMode
             +Number codFee
@@ -800,7 +830,7 @@ classDiagram
             +String selectedSize
         }
 
-        User "1" --> "0..*" Order : places
+        User "0..1" --> "0..*" Order : account owns; guest has null user
         Order "1" *-- "1..*" OrderItem : embeds
         OrderItem "0..*" --> "0..1" Product : source reference
         User "0..1" --> "0..*" SupportTicket : submits
@@ -809,7 +839,8 @@ classDiagram
 ```
 
 `User.password` is a bcrypt hash. The password-reset fields are hidden from
-normal queries; `SystemSettings.courierApiKey` is also `select: false`.
+normal queries; `SystemSettings.courierApiKey` is also `select: false` and is
+encrypted at rest when the settings encryption key is configured.
 `OrderItem` is embedded in an Order; `OrderItem.product` can be null for manual
 cash lines. A guest SupportTicket has `user: null`. BrowserStorage and CartLine
 are conceptual client-side data, not MongoDB models. SystemSettings is read at
@@ -819,14 +850,15 @@ checkout but is not directly persisted as an Order relationship.
 
 | Package | Files / responsibilities |
 |---|---|
-| `frontend/src` (32 matched source files) | `App.jsx`; 11 top-level pages + 3 admin helpers; 4 shared components; 2 contexts; 2 utilities; 4 tests/setup files; app entry, styles and support files |
-| `backend` (47 matched JS/JSON/Markdown files) | Express entry; 3 config files; 5 route modules; 5 controllers; 5 models; 2 middleware modules; 2 services; 6 utilities; 4 scripts; 12 tests; 2 package manifests |
+| `frontend/src` (44 matched source/style files) | App/router, customer and admin pages, shared components, contexts, utilities, styles, and tests |
+| `backend` (64 matched JS/JSON/Markdown files) | Express API, config, 9 route modules, controllers, 7 models, middleware, services, utilities, scripts, tests, and package manifests |
 | `docs` | Requirements, API, architecture/UML, QA, user guides, deployment, release and policy documents |
 
-The counts use the workspace file search patterns and include backend
-manifests/tests/guides; they are not LOC counts. Generated Android build
-outputs, frontend `dist`, `node_modules`, uploads and binary assets are excluded.
-Together, the two source patterns match 79 files (47 backend and 32 frontend).
+The counts use the extension/path scopes in the repository inventory above;
+they are not LOC counts or a list of every repository file. Generated Android
+build outputs, frontend `dist`, backend `node_modules`, backups, uploads, and
+binary assets are excluded. Together the current patterns match 108 files
+(64 backend and 44 frontend).
 
 ## 25. GitHub documentation map
 
@@ -840,3 +872,84 @@ Together, the two source patterns match 79 files (47 backend and 32 frontend).
 All diagrams intentionally use Mermaid syntax supported by GitHub Markdown.
 For exact UML model interchange, use a UML editor and export XMI/PlantUML; the
 Mermaid views are readable, reviewable source documentation rather than XMI.
+
+## 26. Shopper/admin login security sequence
+
+```mermaid
+sequenceDiagram
+    actor Shopper
+    actor Admin
+    participant ShopUI as Shopper login
+    participant AdminUI as Admin login
+    participant API as Auth routes
+    participant Limiter as Admin IP limiter
+    participant Auth as authController
+    participant DB as User collection
+
+    Shopper->>ShopUI: Submit identifier and password
+    ShopUI->>API: POST /api/auth/login
+    API->>Auth: Shopper-only credential check
+    Auth->>DB: Verify password and isAdmin=false
+    alt shopper account
+        Auth-->>ShopUI: Shopper JWT and profile
+    else admin or invalid account
+        Auth-->>ShopUI: Generic 401 without a token
+    end
+
+    Admin->>AdminUI: Submit credentials at /admin/login
+    AdminUI->>API: POST /api/auth/admin/login
+    API->>Limiter: Check failed attempts for observed IP
+    alt more than five failures in 15 minutes
+        Limiter-->>AdminUI: 429 throttled response
+    else within limit
+        API->>Auth: Admin-only credential check
+        Auth->>DB: Verify password and isAdmin=true
+        alt administrator account
+            Auth-->>AdminUI: Admin JWT and profile
+        else shopper or invalid account
+            Auth-->>AdminUI: Generic 401 without a token
+        end
+    end
+```
+
+The limiter is in-memory and per API process today. Use a shared store for
+multiple instances, configure only trusted proxies, and add MFA/passkeys before
+a high-risk production launch. A distinct icon or URL is not an authorization
+control; role checks on the server remain mandatory.
+
+## 27. Registration and portal activity
+
+```mermaid
+flowchart TD
+    Start((Open app)) --> Portal{Choose portal}
+    Portal -->|Shopper :3000| ShopHome[Browse shopper portal]
+    ShopHome --> ShopChoice{Already registered?}
+    ShopChoice -->|No| Signup[Enter registration details]
+    Signup --> RegisterAPI[POST /api/auth/register]
+    RegisterAPI --> Valid{Details valid and unique?}
+    Valid -->|No| SignupError[Show validation error]
+    SignupError --> Signup
+    Valid -->|Yes| CreateShopper[Create user with isAdmin=false]
+    CreateShopper --> ShopperJWT[Return shopper JWT]
+    ShopChoice -->|Yes| ShopperLogin[Submit email/username and password]
+    ShopperLogin --> ShopperAPI[POST /api/auth/login]
+    ShopperAPI --> ShopperRole{Password valid and isAdmin=false?}
+    ShopperRole -->|Yes| ShopperJWT
+    ShopperRole -->|No| ShopperError[Generic 401; issue no token]
+    ShopperError --> ShopperLogin
+
+    Portal -->|Admin :3001| AdminLogin[Open admin-only portal]
+    AdminLogin --> AdminCreds[Submit admin credentials]
+    AdminCreds --> AdminAPI[POST /api/auth/admin/login]
+    AdminAPI --> Attempts{Five failed attempts in 15 minutes?}
+    Attempts -->|Yes| Throttle[Return 429]
+    Attempts -->|No| AdminRole{Password valid and isAdmin=true?}
+    AdminRole -->|Yes| AdminJWT[Return admin JWT]
+    AdminRole -->|No| AdminError[Generic 401; issue no token]
+    AdminError --> AdminCreds
+```
+
+Local portal processes share the same API (`:5000`) and database; the separate
+ports and icons are operational navigation, not authorization controls.
+Registration always creates a shopper account; admin accounts must be
+provisioned with the secure bootstrap/reset scripts.

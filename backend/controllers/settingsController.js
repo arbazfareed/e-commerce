@@ -2,6 +2,7 @@ const SystemSettings = require('../models/SystemSettings');
 const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../config/credentialVault');
 
 const publicSettings = (settings) => ({
+  internationalEnabled: settings.internationalEnabled !== false,
   codEnabled: settings.codEnabled,
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
@@ -22,6 +23,7 @@ const publicSettings = (settings) => ({
 });
 
 const checkoutSettings = (settings) => ({
+  internationalEnabled: settings.internationalEnabled !== false,
   codEnabled: settings.codEnabled,
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
@@ -54,13 +56,13 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   const allowed = [
-    'codEnabled', 'codFeeMode', 'codFee', 'codThreshold',
+    'internationalEnabled', 'codEnabled', 'codFeeMode', 'codFee', 'codThreshold',
     'courierProvider', 'courierEnabled', 'courierMode',
     'easypaisaEnabled', 'easypaisaMode', 'easypaisaMerchantId',
   ];
   const update = {};
   for (const field of allowed) if (req.body[field] !== undefined) update[field] = req.body[field];
-  for (const field of ['codEnabled', 'courierEnabled', 'easypaisaEnabled'])
+  for (const field of ['internationalEnabled', 'codEnabled', 'courierEnabled', 'easypaisaEnabled'])
     if (update[field] !== undefined && typeof update[field] !== 'boolean')
       return res.status(400).json({ message: `${field} must be true or false.` });
   if (update.codFeeMode && !['flat', 'percentage'].includes(update.codFeeMode))

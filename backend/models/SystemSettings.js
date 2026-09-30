@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const systemSettingsSchema = new mongoose.Schema({
   key: { type: String, default: 'global', unique: true, immutable: true },
+  internationalEnabled: { type: Boolean, default: true },
   codEnabled: { type: Boolean, default: true },
   codFeeMode: { type: String, enum: ['flat', 'percentage'], default: 'flat' },
   codFee: { type: Number, min: 0, default: 0 },

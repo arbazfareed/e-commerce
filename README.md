@@ -61,8 +61,10 @@ the steps in the [Android Guide](./docs/ANDROID_GUIDE.md).
 - Node.js LTS and npm
 - MongoDB Community Server running locally, or a MongoDB Atlas connection string
 
-The frontend uses the `VITE_API_URL` value from `frontend/.env` for the API and
-runs on `http://localhost:3000` by default. Product image files are persisted in
+The local shopper portal runs on `http://localhost:3000`; the separate local
+admin-only portal runs on `http://localhost:3001` and both use the API on
+`http://localhost:5000`. `VITE_API_URL` in `frontend/.env` selects the API.
+Product image files are persisted in
 `backend/uploads/` and served by the API; keep that directory with the backend
 when moving or deploying the application.
 
@@ -123,8 +125,11 @@ when testing from a phone.
 
 ## Run in development
 
-For a one-click local start, double-click `START-LOCAL.cmd` in the repository
-root. Or open two PowerShell windows to start services manually.
+For a no-command Windows start, see [`docs/START_HERE.md`](./docs/START_HERE.md)
+and double-click `START-SHOPPER.cmd` or `START-ADMIN.cmd` in the repository
+root. Both launchers share the existing frontend and API and reuse services
+already running. `START-LOCAL.cmd` is the shared launcher underneath. Or open
+two PowerShell windows to start services manually.
 
 **Terminal 1 - API:**
 
@@ -158,7 +163,8 @@ npm run admin:bootstrap
 
 The bootstrap command never prints the password, refuses to overwrite an
 existing account, and does not store credentials in source control. Sign in at
-`/login` and open `/admin`.
+`/admin/login` (or choose the shield icon on the storefront home page). Shopper
+login at `/login` cannot issue administrator sessions.
 
 If the existing administrator password is unknown, reset it without exposing
 it in source control:

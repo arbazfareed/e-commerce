@@ -67,8 +67,8 @@ const registerUser = async (req, res) => {
   }
 };
 
-// ─── @POST /api/auth/login ─────────────────────────────────────
-const loginUser = async (req, res) => {
+// Shopper and administrator sessions are issued by separate endpoints.
+const loginWithRole = async (req, res, isAdminLogin) => {
   const identifier = req.body.identifier ?? req.body.login ?? req.body.email ?? req.body.username;
   const password = req.body.password;
 
@@ -82,7 +82,7 @@ const loginUser = async (req, res) => {
       $or: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
     }).collation({ locale: 'en', strength: 2 });
 
-    if (user && (await user.matchPassword(password))) {
+    if (user && (await user.matchPassword(password)) && Boolean(user.isAdmin) === isAdminLogin) {
       res.json({
         _id:     user._id,
         name:    user.name,
@@ -102,6 +102,9 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+const loginUser = (req, res) => loginWithRole(req, res, false);
+const loginAdminUser = (req, res) => loginWithRole(req, res, true);
 
 const changeOwnPassword = async (req, res) => {
   const { newPassword } = req.body || {};
@@ -128,6 +131,27 @@ const changeOwnPassword = async (req, res) => {
   }
 };
 
+const issueCustomerPasswordReset = async customer => {
+  const token = crypto.randomBytes(32).toString('base64url');
+  customer.passwordResetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  customer.passwordResetExpiresAt = new Date(Date.now() + 20 * 60 * 1000);
+  await customer.save();
+
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  try {
+    await emailService.sendCustomerPasswordResetEmail({
+      to: customer.email,
+      name: customer.name,
+      resetUrl: `${frontendUrl}/reset-password/${token}`,
+    });
+  } catch (error) {
+    customer.passwordResetTokenHash = undefined;
+    customer.passwordResetExpiresAt = undefined;
+    await customer.save().catch(() => {});
+    throw error;
+  }
+};
+
 const resetCustomerPassword = async (req, res) => {
   const { email } = req.body || {};
   if (typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email.trim())) {
@@ -141,32 +165,40 @@ const resetCustomerPassword = async (req, res) => {
       return res.status(403).json({ message: 'Admin passwords must be changed by that administrator.' });
     }
 
-    const token = crypto.randomBytes(32).toString('base64url');
-    customer.passwordResetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    customer.passwordResetExpiresAt = new Date(Date.now() + 20 * 60 * 1000);
-    await customer.save();
-
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
-    const resetUrl = `${frontendUrl}/reset-password/${token}`;
     try {
-      await emailService.sendCustomerPasswordResetEmail({
-        to: customer.email,
-        name: customer.name,
-        resetUrl,
-      });
+      await issueCustomerPasswordReset(customer);
     } catch (error) {
-      customer.passwordResetTokenHash = undefined;
-      customer.passwordResetExpiresAt = undefined;
-      await customer.save().catch(() => {});
       console.error('Password reset email delivery failed:', error.code || 'EMAIL_ERROR');
       return res.status(503).json({ message: 'Reset email could not be sent. Check email service settings and try again.' });
     }
-
     return res.json({ message: 'Password reset email sent to the customer.' });
   } catch (error) {
     console.error('Customer password reset request error:', error.message);
-    return res.status(500).json({ message: 'Password reset request could not be completed.' });
+    return res.status(500).json({ message: 'Customer password reset request could not be completed.' });
   }
+};
+
+const requestCustomerPasswordReset = async (req, res) => {
+  const genericMessage = 'If an eligible account exists for that email, a password reset link will be sent shortly.';
+  const { email } = req.body || {};
+  if (typeof email !== 'string' || !/^\S+@\S+\.\S+$/.test(email.trim()))
+    return res.status(400).json({ message: 'Enter a valid email address.' });
+
+  try {
+    const customer = await User.findOne({ email: email.trim().toLowerCase() });
+    if (customer && !customer.isAdmin) {
+      try {
+        await issueCustomerPasswordReset(customer);
+      } catch (error) {
+        // Keep the public response identical whether a user exists or email delivery fails.
+        console.error('Public password reset email delivery failed:', error.code || 'EMAIL_ERROR');
+      }
+    }
+  } catch (error) {
+    // Avoid account enumeration through a public endpoint, including on database errors.
+    console.error('Public password reset request failed:', error.message);
+  }
+  return res.status(202).json({ message: genericMessage });
 };
 
 const completeCustomerPasswordReset = async (req, res) => {
@@ -229,4 +261,4 @@ const getUserProfile = async (req, res) => {
 
 const verifySession = (req, res) => res.json({ valid: true, user: req.user });
 
-module.exports = { registerUser, loginUser, changeOwnPassword, resetCustomerPassword, completeCustomerPasswordReset, getUserProfile, verifySession };
+module.exports = { registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession };

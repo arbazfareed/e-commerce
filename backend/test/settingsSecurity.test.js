@@ -30,3 +30,10 @@ test('provider configuration never enables online checkout without a payment ada
   const settings = checkoutSettings({ codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0, easypaisaEnabled: true });
   assert.deepEqual(settings.supportedPaymentMethods, ['COD']);
 });
+
+test('international shopping defaults on for existing stores and follows the saved setting', () => {
+  assert.equal(publicSettings({}).internationalEnabled, true);
+  assert.equal(checkoutSettings({}).internationalEnabled, true);
+  assert.equal(publicSettings({ internationalEnabled: false }).internationalEnabled, false);
+  assert.equal(checkoutSettings({ internationalEnabled: false }).internationalEnabled, false);
+});

@@ -33,10 +33,12 @@ API.interceptors.response.use(
   (res) => res,
   (err) => {
     const requestUrl = err.config?.url || '';
-    const isAuthRequest = requestUrl.includes('/api/auth/login') || requestUrl.includes('/api/auth/register');
+    const isAuthRequest = requestUrl.includes('/api/auth/login')
+      || requestUrl.includes('/api/auth/admin/login')
+      || requestUrl.includes('/api/auth/register');
     if (err.response?.status === 401 && !isAuthRequest && localStorage.getItem('user')) {
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = window.location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
     }
     return Promise.reject(err);
   }

@@ -22,9 +22,11 @@ Admin endpoints additionally require the authenticated user's `isAdmin` flag.
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
 | POST | `/api/auth/register` | Public/rate limited | Creates account and returns user plus JWT |
-| POST | `/api/auth/login` | Public/rate limited | Accepts email/username-compatible identifier and password |
+| POST | `/api/auth/login` | Shopper/public, rate limited | Accepts email/username and password; never issues tokens for administrator accounts |
+| POST | `/api/auth/admin/login` | Public credential login; admin account required | Separately rate limited; accepts credentials only when the account has `isAdmin: true`; failures use a generic credential response |
 | PATCH | `/api/auth/password` | User | Changes the authenticated user's password |
 | PUT | `/api/auth/admin/customer-password` | Admin | Emails a non-admin customer a one-time reset link |
+| POST | `/api/auth/password/reset/request` | Public/rate limited | Requests an email reset link; returns the same generic confirmation for unknown/admin addresses and email delivery failures |
 | POST | `/api/auth/password/reset` | Public/rate limited | Consumes a reset token and saves the customer's new password |
 | GET | `/api/auth/profile` | User | Returns current profile without password |
 | GET | `/api/auth/session` | User | Verifies JWT session and returns current user |
@@ -32,11 +34,20 @@ Admin endpoints additionally require the authenticated user's `isAdmin` flag.
 Registration accepts `name`, `username`, `email`, `password`, `phone`, `country`,
 and `city`. Passwords must be at least eight characters. Production credentials
 must use stronger operational policy than the minimum application rule.
-Changed/reset passwords must be at least 12 characters. Admin reset requests
-email a random, single-use link that expires after 20 minutes; only its SHA-256
-hash and expiry are stored. Resend delivery requires `RESEND_API_KEY`, a verified
-`EMAIL_FROM` sender, and `FRONTEND_URL` in the backend environment. Keep admin
-sessions private; do not send passwords directly by email.
+Administrator login is isolated from shopper login at the API boundary; the
+browser route alone does not grant admin access. The admin endpoint permits five
+failed attempts per IP per 15 minutes, while successful requests are excluded
+from the failure count. The current limiter uses process-local memory; use a
+shared rate-limit store and configure trusted proxy hops correctly for a
+multi-instance/reverse-proxy production deployment. This is a baseline, not a
+replacement for administrator MFA/passkeys.
+Changed/reset passwords must be at least 12 characters. Public and admin reset
+requests email a random, single-use link that expires after 20 minutes; only its
+SHA-256 hash and expiry are stored. Public requests are limited to five per 15
+minutes per IP and use a generic response to reduce account enumeration. Resend
+delivery requires `RESEND_API_KEY`, a verified `EMAIL_FROM` sender, and
+`FRONTEND_URL` in the backend environment. Keep admin sessions private; do not
+send passwords directly by email.
 
 ## Products
 
@@ -67,7 +78,7 @@ defaults to 24 and is capped at 48.
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| POST | `/api/orders` | User | Validates products/address/payment and optional `couponCode`, recalculates totals, decrements stock, creates order |
+| POST | `/api/orders` | Public/user optional | Guests are limited to eight requests per 15 minutes per IP and must include `guestContact.name` and `guestContact.email` (optional phone); signed-in orders use the account. Both paths validate products/address/payment and optional `couponCode`, recalculate totals, decrement stock, and create the order |
 | GET | `/api/orders/my` | User | Lists current user's orders |
 | GET | `/api/orders/:id` | User/owner or admin | Returns one authorized order |
 | GET | `/api/orders` | Admin | Lists all orders |
@@ -85,6 +96,11 @@ created. Existing `isPaid` remains for compatibility.
 Orders save `currency`, `couponCode`, and `couponDiscount`; historic orders
 without an explicit currency infer it from the saved delivery country. Coupon
 discounts are applied to the product subtotal before shipping and COD fees.
+ 
+Guest orders are stored with `user: null` and a `guestContact` snapshot. They do
+not appear in `/api/orders/my`; `/api/orders/:id` remains authenticated and
+owner/admin-only, so there is no public order-ID lookup. Admin order lists can
+identify guest orders by their saved contact details.
 
 Order statuses are `Pending`, `Processing`, `Shipped`, `Delivered`, and
 `Cancelled`. The admin UI retains all five status choices; the API validates
@@ -99,7 +115,7 @@ weight. Courier dispatch outcome is recorded in `courierDispatchStatus`
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| POST | `/api/coupons/validate` | User | Validates a code against current database prices, market, stock, currency, expiry, minimum order, and usage limit |
+| POST | `/api/coupons/validate` | Public/rate limited | Limited to 30 checks per 15 minutes per IP; validates a code against current database prices, market, stock, currency, expiry, minimum order, and usage limit |
 | GET | `/api/coupons` | Admin | Lists coupons and usage counts |
 | POST | `/api/coupons` | Admin | Creates percentage or flat coupon |
 | PUT | `/api/coupons/:id` | Admin | Updates coupon configuration |
@@ -150,9 +166,9 @@ Ticket creation accepts `name`, `email`, `subject`, `message`, and optional
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| GET | `/api/settings/public` | Public | Returns COD settings and the server-supported checkout methods (`COD` only until an online payment adapter is verified) |
-| GET | `/api/settings` | Admin | Returns COD/courier/EasyPaisa configuration and secret-configured flags, never secret values |
-| PUT | `/api/settings` | Admin | Updates COD and provider placeholders; secret inputs are encrypted before MongoDB storage |
+| GET | `/api/settings/public` | Public | Returns international-market availability, COD settings, and server-supported checkout methods (`COD` only until an online payment adapter is verified) |
+| GET | `/api/settings` | Admin | Returns international/COD/courier/EasyPaisa configuration and secret-configured flags, never secret values |
+| PUT | `/api/settings` | Admin | Updates international-market availability, COD and provider placeholders; secret inputs are encrypted before MongoDB storage |
 
 `courierEnabled` and `easypaisaEnabled` are configuration flags only. Courier
 booking and online payment capture remain disabled until a provider adapter,

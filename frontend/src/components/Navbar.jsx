@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import BrandMark from './BrandMark';
+import API, { assetUrl } from '../utils/axiosConfig';
 
 const THEME_KEY = 'ic_theme_preference';
 const ADMIN_THEME_KEY = 'ic_admin_theme';
@@ -16,18 +17,23 @@ function readThemePreference() {
   }
 }
 
-export default function Navbar() {
+export default function Navbar({ adminPortal = false }) {
   const { user, logout } = useAuth();
   const { totalItems }   = useCart();
   const { pathname }     = useLocation();
   const navigate         = useNavigate();
   const [open, setOpen]  = useState(false);
   const [theme, setTheme] = useState(readThemePreference);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef(null);
 
   const on = (p) => pathname === p;
   const adminOn = pathname.startsWith('/admin');
 
-  const doLogout = () => { logout(); navigate('/login'); setOpen(false); };
+  const doLogout = () => { const loginPath = user?.isAdmin ? '/admin/login' : '/login'; logout(); navigate(loginPath); setOpen(false); };
   const isDark = theme === 'dark';
   const toggleTheme = () => setTheme(current => {
     const nextTheme = current === 'dark' ? 'light' : 'dark';
@@ -48,20 +54,63 @@ export default function Navbar() {
     return () => window.removeEventListener('ic-theme-change', syncTheme);
   }, []);
 
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return undefined;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      setSearchLoading(true);
+      API.get('/api/products', { params:{ search:query, page:1, limit:6 } })
+        .then(({ data }) => {
+          if (active) setSearchResults(Array.isArray(data) ? data : data?.items || []);
+        })
+        .catch(() => { if (active) setSearchResults([]); })
+        .finally(() => { if (active) setSearchLoading(false); });
+    }, 220);
+    return () => { active = false; clearTimeout(timer); };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const closeOnOutsidePress = event => {
+      if (!searchRef.current?.contains(event.target)) setSearchOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePress);
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePress);
+  }, []);
+
   // Admins get a different nav — only Admin panel + Support
   // Regular users get Shop, Cart, Orders, Support
   const isAdmin = user?.isAdmin;
+  const adminPortalUrl = import.meta.env.VITE_ADMIN_PORTAL_URL
+    || (import.meta.env.VITE_APP_MODE === 'shopper' ? `${window.location.protocol}//${window.location.hostname}:3001/admin/login` : '/admin/login');
+  const shopperPortalUrl = import.meta.env.VITE_SHOPPER_PORTAL_URL
+    || (import.meta.env.VITE_APP_MODE === 'admin' ? `${window.location.protocol}//${window.location.hostname}:3000/` : '/');
+  const showAdminEntry = !adminPortal && !user;
+
+  const goToAdminPortal = event => {
+    if (adminPortalUrl.startsWith('http')) {
+      event.preventDefault();
+      window.location.assign(adminPortalUrl);
+    }
+  };
 
   return (
     <>
       <nav className="site-nav" style={S.bar}>
         {/* Brand */}
-        <Link to={isAdmin ? '/admin' : '/'} style={S.brand} onClick={() => setOpen(false)}>
+        <Link to={isAdmin ? '/admin' : adminPortal ? '/admin/login' : '/'} style={S.brand} onClick={() => setOpen(false)}>
           <BrandMark size={34} style={{ filter:'drop-shadow(0 7px 12px rgba(13,92,66,.22))' }} />
           <span className="brandText" style={S.brandText}>
-            <span style={{ color:'#b58a4a' }}>IndusCart</span> Ritual <span style={{ opacity: 0.9 }}>🇵🇰</span>
+            <span style={{ color:'#b58a4a' }}>IndusCart</span> {adminPortal ? 'Admin Console' : <>Ritual <span style={{ opacity: 0.9 }}>🇵🇰</span></>}
           </span>
         </Link>
+        {adminPortal && <a className="navbar-portal-entry" href={shopperPortalUrl} aria-label="Shopper storefront" title="Shopper storefront" style={S.portalEntryBtn}>
+          <span aria-hidden="true">🛍</span>
+        </a>}
 
         {/* Desktop nav */}
         <div className="site-nav-links" style={S.links}>
@@ -71,15 +120,15 @@ export default function Navbar() {
               <Link to="/admin" className={`site-nav-link${adminOn ? ' is-active' : ''}`} style={{ ...S.lnk, color:'#6366f1', ...(adminOn ? { background:'#eef2ff' } : {}) }}>⚙️ Admin Panel</Link>
               <Link to="/support" className={`site-nav-link${on('/support') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/support') ? S.lnkOn : {}) }}>🎧 Support</Link>
             </>
-          ) : (
+          ) : adminPortal ? null : (
             /* ── User nav ── */
             <>
               <Link to="/" className={`site-nav-link${on('/') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/') ? S.lnkOn : {}) }}>🏪 Shop</Link>
+              <Link to="/cart" className={`site-nav-link${on('/cart') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/cart') ? S.lnkOn : {}), position: 'relative' }}>
+                🛒 Cart
+                {totalItems > 0 && <span style={S.bdg}>{totalItems}</span>}
+              </Link>
               {user && <>
-                <Link to="/cart" className={`site-nav-link${on('/cart') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/cart') ? S.lnkOn : {}), position: 'relative' }}>
-                  🛒 Cart
-                  {totalItems > 0 && <span style={S.bdg}>{totalItems}</span>}
-                </Link>
                 <Link to="/orders" className={`site-nav-link${on('/orders') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/orders') ? S.lnkOn : {}) }}>📦 Orders</Link>
                 <Link to="/wishlist" className={`site-nav-link${on('/wishlist') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/wishlist') ? S.lnkOn : {}) }}>♥ Wishlist</Link>
               </>}
@@ -87,6 +136,41 @@ export default function Navbar() {
             </>
           )}
         </div>
+
+        {!isAdmin && !adminPortal && <div className="navbar-live-search" ref={searchRef}>
+          <form className="navbar-search-form" role="search" onSubmit={event => {
+            event.preventDefault();
+            if (searchQuery.trim()) {
+              navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+              setSearchOpen(false);
+            }
+          }}>
+            <span aria-hidden="true" className="navbar-search-icon">⌕</span>
+            <input
+              className="navbar-search-input"
+              type="search"
+              aria-label="Search products"
+              aria-controls="navbar-search-results"
+              aria-expanded={searchOpen && searchQuery.trim().length >= 2}
+              placeholder="Search products"
+              value={searchQuery}
+              onFocus={() => setSearchOpen(true)}
+              onChange={event => { setSearchQuery(event.target.value); setSearchOpen(true); }}
+              onKeyDown={event => { if (event.key === 'Escape') setSearchOpen(false); }}
+            />
+            {searchQuery && <button className="navbar-search-clear" type="button" aria-label="Clear search" onClick={() => { setSearchQuery(''); setSearchOpen(false); }}>×</button>}
+          </form>
+          {searchOpen && searchQuery.trim().length >= 2 && <div className="navbar-search-popover" id="navbar-search-results" aria-label="Search results">
+            {searchLoading ? <p className="navbar-search-state" role="status">Searching…</p>
+              : searchResults.length ? searchResults.slice(0, 6).map(product => <Link key={product._id} className="navbar-search-result" to={`/products/${product._id}`} onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
+                <span className="navbar-search-thumb">{product.images?.[0] ? <img src={assetUrl(product.images[0])} alt="" /> : product.name?.[0] || 'I'}</span>
+                <span className="navbar-search-result-copy"><strong>{product.name}</strong><small>{[product.category, product.subcategory].filter(Boolean).join(' · ') || 'View product'}</small></span>
+                <span className="navbar-search-arrow" aria-hidden="true">↗</span>
+              </Link>)
+              : <p className="navbar-search-state" role="status">No matching products found.</p>}
+            {searchResults.length > 0 && <Link className="navbar-search-all" to={`/?search=${encodeURIComponent(searchQuery.trim())}`} onClick={() => setSearchOpen(false)}>See all search results <span aria-hidden="true">→</span></Link>}
+          </div>}
+        </div>}
 
         <button
           className="desktop-theme-toggle"
@@ -102,7 +186,21 @@ export default function Navbar() {
 
         {/* Desktop auth */}
         <div className="site-nav-auth" style={S.auth}>
-          {user ? (
+          {showAdminEntry && (
+            <a
+              href={adminPortalUrl}
+              className="navbar-admin-entry"
+              aria-label="Administrator portal"
+              title="Administrator portal"
+              style={S.adminEntryBtn}
+              onClick={goToAdminPortal}
+            >
+              <span aria-hidden="true">🛡</span>
+            </a>
+          )}
+          {adminPortal && !user ? (
+            <span className="navbar-portal-label">ADMIN PORTAL</span>
+          ) : user ? (
             <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
               <div style={S.avatar}>{user.name[0].toUpperCase()}</div>
               <span style={{ fontSize:'13px', fontWeight:'600', color:'#334155' }}>
@@ -120,14 +218,14 @@ export default function Navbar() {
         </div>
 
         {/* Burger */}
-        <button
+        {(!adminPortal || user) && <button
           className="site-nav-burger"
           style={S.burger}
           type="button"
           aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={open}
           onClick={() => setOpen(o => !o)}
-        >{open ? '✕' : '☰'}</button>
+        >{open ? '✕' : '☰'}</button>}
       </nav>
 
       {/* Mobile menu */}
@@ -154,16 +252,16 @@ export default function Navbar() {
                 <span className="mobile-nav-icon" aria-hidden="true">◌</span><span className="mobile-nav-text">Support</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
               </Link>
             </>
-          ) : (
+          ) : adminPortal ? null : (
             /* ── User mobile nav ── */
             <>
               <Link to="/" className={`mobile-nav-link${on('/') ? ' is-active' : ''}`} aria-current={on('/') ? 'page' : undefined} onClick={() => setOpen(false)}>
                 <span className="mobile-nav-icon" aria-hidden="true">⌂</span><span className="mobile-nav-text">Shop</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
               </Link>
+              <Link to="/cart" className={`mobile-nav-link${on('/cart') ? ' is-active' : ''}`} aria-current={on('/cart') ? 'page' : undefined} onClick={() => setOpen(false)}>
+                <span className="mobile-nav-icon" aria-hidden="true">▱</span><span className="mobile-nav-text">Cart{totalItems ? ` (${totalItems})` : ''}</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
+              </Link>
               {user && <>
-                <Link to="/cart" className={`mobile-nav-link${on('/cart') ? ' is-active' : ''}`} aria-current={on('/cart') ? 'page' : undefined} onClick={() => setOpen(false)}>
-                  <span className="mobile-nav-icon" aria-hidden="true">▱</span><span className="mobile-nav-text">Cart{totalItems ? ` (${totalItems})` : ''}</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
-                </Link>
                 <Link to="/orders" className={`mobile-nav-link${on('/orders') ? ' is-active' : ''}`} aria-current={on('/orders') ? 'page' : undefined} onClick={() => setOpen(false)}>
                   <span className="mobile-nav-icon" aria-hidden="true">▤</span><span className="mobile-nav-text">Orders</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
                 </Link>
@@ -194,6 +292,14 @@ export default function Navbar() {
               </div>
             )}
           </div>
+          {showAdminEntry && <div className="mobile-admin-entry">
+            <span className="mobile-admin-entry-label">STAFF ACCESS</span>
+            <Link to="/admin/login" className="mobile-admin-entry-link" aria-label="Administrator sign-in" onClick={() => setOpen(false)}>
+              <span className="mobile-admin-entry-icon" aria-hidden="true">🛡</span>
+              <span>Administrator sign-in</span>
+              <span className="mobile-nav-arrow" aria-hidden="true">›</span>
+            </Link>
+          </div>}
           <button
             className="mobile-theme-toggle"
             type="button"
@@ -209,6 +315,32 @@ export default function Navbar() {
         </div>
       )}
       <style>{`
+        .navbar-admin-entry {
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          width:44px;
+          height:44px;
+          border-radius:14px;
+          border:1px solid rgba(143, 204, 164, 0.42);
+          background:linear-gradient(180deg, rgba(12, 58, 42, 0.9), rgba(8, 32, 25, 0.96));
+          color:#f3fff7;
+          box-shadow:0 8px 18px rgba(11, 93, 67, 0.2);
+          font-size:20px;
+          transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, filter .15s ease;
+          text-decoration:none;
+        }
+        .navbar-admin-entry:hover {
+          transform:translateY(-1px);
+          box-shadow:0 10px 22px rgba(11, 93, 67, 0.25);
+          border-color:#bfe5cc !important;
+          filter:brightness(1.08);
+        }
+        .navbar-admin-entry:focus-visible { outline:2px solid #d7f3e3; outline-offset:3px; }
+        .navbar-portal-label { color:#37654e; font-size:10px; font-weight:900; letter-spacing:1.2px; }
+        .navbar-portal-entry { transition:transform .15s ease, border-color .15s ease, background .15s ease; }
+        .navbar-portal-entry:hover { transform:translateY(-1px); border-color:#9fcab0 !important; background:#eef8f1 !important; }
+        .navbar-portal-entry:focus-visible { outline:2px solid #16845d; outline-offset:3px; }
         @media (max-width: 760px) {
           .site-nav {
             height: 64px !important;
@@ -231,6 +363,7 @@ export default function Navbar() {
           }
 
           .site-nav-links,
+          .navbar-live-search,
           .site-nav-auth,
           .desktop-theme-toggle {
             display: none !important;
@@ -494,6 +627,10 @@ export default function Navbar() {
             margin-top:12px;
             padding-top:12px;
           }
+          .mobile-admin-entry { margin:12px 4px 0; }
+          .mobile-admin-entry-label { display:block; margin:0 8px 6px; color:#789084; font-size:9px; font-weight:800; letter-spacing:1.2px; }
+          .mobile-drawer .mobile-admin-entry-link { display:flex; min-height:44px; padding:0 10px !important; border:1px solid #dce9e0 !important; border-radius:12px !important; background:rgba(255,255,255,.8); color:#315945; font-size:11px; font-weight:800; text-decoration:none; }
+          .mobile-admin-entry-icon { display:grid; width:30px; height:30px; flex:0 0 30px; place-items:center; border:1px solid #dce9e0; border-radius:10px; background:#f4faf6; font-size:15px; }
           .mobile-theme-toggle {
             display:flex !important;
             align-items:center;
@@ -576,6 +713,8 @@ const S = {
   lnkOn:    { background:'linear-gradient(135deg, #e7f7ef, #d9f1e7)', color:'#075c43', boxShadow:'inset 0 0 0 1px rgba(13,92,66,0.14)' },
   bdg:      { position:'absolute', top:'-2px', right:'-2px', background:'linear-gradient(135deg,#f5b04c,#e77a2d)', color:'#fff', borderRadius:'999px', fontSize:'10px', fontWeight:'800', minWidth:'16px', height:'16px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px', boxShadow:'0 8px 16px rgba(231,122,45,0.25)' },
   auth:     { display:'flex', alignItems:'center' },
+  adminEntryBtn: { display:'grid', placeItems:'center', width:'36px', height:'36px', marginRight:'3px', border:'1px solid rgba(13,92,66,.18)', borderRadius:'11px', background:'#f4faf6', color:'#0d5c42', fontSize:'17px', textDecoration:'none' },
+  portalEntryBtn: { display:'grid', placeItems:'center', width:'36px', height:'36px', border:'1px solid rgba(13,92,66,.18)', borderRadius:'11px', background:'#f4faf6', color:'#0d5c42', fontSize:'17px', textDecoration:'none' },
   avatar:   { width:'30px', height:'30px', borderRadius:'50%', background:'linear-gradient(135deg,#19a76d,#0f4d39)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'800', color:'#fff', boxShadow:'0 10px 22px rgba(13,92,66,0.22)' },
   outBtn:   { background:'rgba(245,250,247,0.9)', border:'1px solid #dfece4', color:'#587163', borderRadius:'9px', padding:'5px 12px', fontSize:'12px', fontWeight:'600', cursor:'pointer' },
   loginBtn: { padding:'7px 16px', borderRadius:'10px', fontSize:'13px', fontWeight:'600', color:'#355145', textDecoration:'none', border:'1px solid #dfece4', background:'#fff' },

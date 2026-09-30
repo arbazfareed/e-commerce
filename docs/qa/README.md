@@ -4,11 +4,12 @@ This is an implementation-aware QA checklist for the current IndusCart repositor
 
 ## Current implementation facts to use as expected behavior
 
-- Cart contents are stored in browser `localStorage`; there is no `/api/cart` endpoint and no server cart merge on login.
-- `/cart` is a protected frontend route. A guest can browse products and add them to local storage, but opening the cart or proceeding to checkout requires login.
-- Product search, category/subcategory filtering, market filtering, and sorting happen in the browser after fetching `/api/products`. Search is immediate (not debounced); the API does not implement pagination, search, or sort query parameters.
+- Guest cart contents are cached in browser `localStorage`; signed-in carts synchronize through `/api/cart` and the `User` document, with account-scoped local caches and a guest-cart merge at login.
+- `/cart` is public. Guests can place COD orders after providing name, email, and a delivery address. Guest orders store `user: null` and contact details, are rate-limited, and have no public order-history or order-ID lookup; account order/history routes remain protected.
+- Catalog search, category/subcategory filtering, market filtering, sorting, and pagination are server-side. The shop search is debounced; the navbar search popover queries the same public product API and links to suggestions or full search results.
 - Selecting **All Products** resets category and subcategory filters but preserves the market choice. International mode intentionally hides Pakistan-only products (for example, Honey); the storefront displays a note explaining this. Recently Viewed is independent of active catalog filters and continues to show still-available products from the user's history.
-- Order placement is `POST /api/orders` and requires a JWT. The server reloads product prices, checks visibility, market, variants, and stock, calculates shipping/COD, then creates the order.
+- Order placement is `POST /api/orders`; the JWT is optional. Guests must include valid `guestContact.name` and `guestContact.email`. The server reloads product prices, checks visibility, market, variants, and stock, calculates shipping/COD, then creates the order. Coupon checks are public and separately rate-limited; admin coupon management remains private.
+- Public password reset starts at `/forgot-password` and is rate-limited to five requests per 15 minutes per IP. Eligible non-admin customers receive a single-use 20-minute link; existing/non-existing accounts get the same generic confirmation. Admin password reset remains a separate protected action.
 - COD availability and fees are configurable. The COD threshold waives the fee when the product subtotal is greater than or equal to the threshold; a threshold of zero disables the threshold rule.
 - JazzCash, EasyPaisa, Stripe, and PayPal may be recorded as order payment methods, but no payment capture is implemented; customer orders now report `paymentStatus: pending` until paid through a real integration. Courier dispatch outcome is stored on the order, but booking/tracking adapters are not implemented.
 - Product uploads accept JPG/JPEG/PNG/WEBP with matching extension, MIME type, and file signature, at most 5 MiB per file and five images per product/request. The API does not re-encode images.
@@ -43,8 +44,10 @@ This is an implementation-aware QA checklist for the current IndusCart repositor
 
 - Registration: missing name/email/password, malformed email, duplicate email/username (case variants), password lengths 7 and 8, and valid longer passwords.
 - The implemented minimum password length is **8**. Passwords are bcrypt-hashed with 10 salt rounds.
+- Shopper login must reject a valid admin account; admin login must reject a valid shopper account. Verify both API endpoints return no cross-role token and that the shopper UI calls only `/api/auth/login` while the admin UI calls only `/api/auth/admin/login`.
+- Admin login permits five failed attempts per IP per 15 minutes; successful admin logins are excluded. Test the sixth failed attempt returns `429`, and verify the limiter key uses the correct client IP behind the production proxy.
+- Other auth routes are limited to 30 requests per 15 minutes per limiter key; public recovery has a separate five-per-15-minute limiter, guest order creation eight-per-15-minute, and coupon checks 30-per-15-minute. Rate limits currently use in-memory stores; verify a shared store before multi-instance deployment.
 - Login: email and username identifiers, uppercase/leading/trailing spaces, wrong password, unknown identifier, missing values, expired/tampered/missing JWT, and authenticated non-admin access to admin endpoints.
-- Auth routes are rate-limited to 30 requests per 15 minutes per limiter key. Verify the returned throttling response; do not assume admin routes have their own rate limiter.
 - Address: missing/blank street, city, or country; long values; punctuation and Unicode. Checkout UI requires street/city and uses a read-only country field; the API requires all three fields.
 - The proposed 254-character email edge is useful as a robustness probe, but no application-level maximum is currently specified.
 
@@ -65,6 +68,7 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 ### Storefront and product details
 
 - [ ] Initial loading, successful empty catalog, API error, and retry behavior.
+- [ ] Navbar search waits for the debounce, shows loading/results/empty states, opens a selected product, supports Escape/outside-click dismissal, and sends “See all” to shop results.
 - [ ] Search matches name/description and brand/model; combine search with category/subcategory, market, min/max price, and sorting; verify pagination resets when filters change.
 - [ ] Sort by newest, discounted price ascending/descending, popularity, and name; verify selected market currency is used for price sorting.
 - [ ] Product detail and variant selection; add to cart; verify distinct variants and cart count.
@@ -80,7 +84,10 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 - [ ] Guest cart survives reload; signed-in cart syncs across browsers and merges at sign-in without leaking between accounts.
 - [ ] Change cart quantities/variants across devices; verify server stock bounds and checkout revalidates stock.
 - [ ] Apply percentage and flat coupons; test currency mismatch, minimum total, expiry, inactive code, and usage limits. Tamper with browser discount data and confirm server totals remain authoritative.
-- [ ] Guest access to `/cart` redirects to `/login`; after login the locally stored cart is still available in that browser.
+- [ ] Guest can open `/cart`, enter valid contact/address details, apply a coupon, and place COD; missing/invalid email blocks submission and guest cart clears only after successful order creation.
+- [ ] Guest orders appear in admin order list and invoice contact section, but not `/api/orders/my`; unauthenticated `/api/orders/:id` retrieval must remain denied.
+- [ ] Verify guest order limiter and guest coupon-check limiter return throttling after their configured limits.
+- [ ] Forgot-password request sends for eligible accounts, gives the same response for unknown/admin emails and delivery failures, expires after 20 minutes, and reset links remain single-use.
 - [ ] Checkout back button preserves address and payment selection.
 - [ ] Blank street/city shows a useful message; server-side missing country and invalid/changed stock errors are handled visibly.
 - [ ] COD option is hidden when public settings disable it; fee and waiver are visible before submission.
@@ -94,6 +101,8 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 
 - [ ] Non-admin is redirected away from admin; admin can load dashboard/products/add/orders/settings.
 - [ ] Product create/edit/hide/delete, category, images, stock, discount, and local/global fields persist after reload.
+- [ ] Orders and Products CSV export include their expected complete data; values beginning with spreadsheet formula characters remain inert when opened in spreadsheet software.
+- [ ] Active dated promotion shows a countdown that updates and disappears at expiry; upcoming promotions retain their start label; stock 1–4 shows scarcity while zero stock shows sold out.
 - [ ] Product deletion asks for confirmation; mutations show disabled/loading state and success/error feedback where applicable.
 - [ ] Create/edit/deactivate/delete coupons; verify duplicate code, expiry, usage count, currency, and customer-facing validation errors.
 - [ ] Approve/reject reviews and verify only approved reviews appear publicly.
@@ -114,7 +123,7 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 | E2E-01 | Browse and filter | Open `/`, search, select category and market | Matching visible products appear; filters can be cleared |
 | E2E-02 | Variant-aware cart | Open a product, add two different variants | Both variant rows remain distinct; count and totals update |
 | E2E-03 | Cart persistence | Add item, reload same browser | Item remains from local storage |
-| E2E-04 | Protected cart | As guest open `/cart` | Redirect to `/login`; browsing remains public |
+| E2E-04 | Guest checkout | As guest open `/cart`, enter contact/address, submit COD | Order is created, cart clears, admin sees guest contact; guest cannot retrieve history/order by ID |
 | E2E-05 | Customer login | Sign in with valid user | Customer-only routes become accessible |
 | E2E-06 | Place COD order | Authenticated user checks out with valid address and COD | `201`; order appears in `/orders`; stock decreases |
 | E2E-07 | Tamper-resistant pricing | Change submitted item price in browser request | Created order uses database price/discount, not submitted price |
@@ -123,6 +132,7 @@ With COD enabled and a nonzero threshold, test product subtotal at `threshold - 
 | E2E-10 | Admin product visibility | Admin hides a product; revisit public catalog | Product absent from public list and detail is unavailable |
 | E2E-11 | Market and currency | Switch local/global market | Global mode excludes Pakistan-only products; displayed currency/prices update |
 | E2E-12 | Online method disclosure | Place/select a non-COD method in a test environment | Order metadata may be saved, but no payment capture is claimed |
+| E2E-13 | Public password recovery | Request for existing and unknown emails, then use an eligible link | Same generic confirmation; valid link resets once and expires after 20 minutes |
 | E2E-13 | Admin status handling | Select each of the five statuses, then submit an unknown status through the API | Any enumerated status saves; unknown status returns `400`; no transition-graph behavior is added |
 | E2E-14 | Cancel after shipment | Set an order to Shipped, cancel it, inspect inventory | Status becomes Cancelled; shipped quantity is not returned to sellable stock |
 

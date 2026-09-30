@@ -1,5 +1,6 @@
 // frontend/src/pages/HomePage.jsx
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import API, { API_BASE } from '../utils/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
@@ -19,6 +20,7 @@ const CATEGORY_TREE = {
 };
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
   const { addToCart, recentlyViewed = [], addToRecentlyViewed = () => {} } = useCart();
   const { user } = useAuth();
 
@@ -29,7 +31,7 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [activeSub, setActiveSub] = useState('all');
@@ -37,6 +39,8 @@ export default function HomePage() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [market, setMarket] = useState(() => localStorage.getItem(MARKET_KEY) || 'local');
+  const [internationalEnabled, setInternationalEnabled] = useState(true);
+  const [marketSettingsLoaded, setMarketSettingsLoaded] = useState(false);
   const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
   useEffect(() => {
@@ -52,6 +56,27 @@ export default function HomePage() {
   }, []);
 
   const isDarkTheme = themeMode === 'dark';
+
+  useEffect(() => {
+    setSearch(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    API.get('/api/settings/public')
+      .then(({ data }) => {
+        if (!active) return;
+        const enabled = data?.internationalEnabled !== false;
+        setInternationalEnabled(enabled);
+        if (!enabled) {
+          setMarket('local');
+          localStorage.setItem(MARKET_KEY, 'local');
+        }
+      })
+      .catch(() => { if (active) setInternationalEnabled(true); })
+      .finally(() => { if (active) setMarketSettingsLoaded(true); });
+    return () => { active = false; };
+  }, []);
 
   const categories = ['all', ...new Set(allCategories.filter(value => typeof value === 'string' && value).sort((a, b) => a.localeCompare(b)))];
 
@@ -80,6 +105,7 @@ export default function HomePage() {
   }, [validCat]);
 
   const fetchProducts = useCallback(async () => {
+    if (!marketSettingsLoaded) return;
     setLoading(true);
     setLoadError('');
     try {
@@ -104,16 +130,17 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  }, [validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy, page]);
+  }, [marketSettingsLoaded, validCat, validSub, market, debouncedSearch, minPrice, maxPrice, sortBy, page]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   const chooseMarket = useCallback((next) => {
+    if (next === 'global' && !internationalEnabled) return;
     localStorage.setItem(MARKET_KEY, next);
     setMarket(next);
-  }, []);
+  }, [internationalEnabled]);
 
   const isLocal = market === 'local';
 
@@ -659,12 +686,13 @@ export default function HomePage() {
               onClick={() => chooseMarket('local')}
               style={{
                 ...styles.marketBtn,
+                gridColumn: internationalEnabled ? undefined : '1 / -1',
                 ...(isLocal ? styles.marketBtnActive : styles.marketBtnInactive)
               }}
             >
               🇵🇰 Pakistan (PKR)
             </button>
-            <button
+            {marketSettingsLoaded && internationalEnabled && <button
               type="button"
               aria-pressed={!isLocal}
               onClick={() => chooseMarket('global')}
@@ -674,7 +702,7 @@ export default function HomePage() {
               }}
             >
               🌍 International (USD)
-            </button>
+            </button>}
           </div>
 
           {/* Search Bar */}
@@ -943,13 +971,12 @@ export default function HomePage() {
           background:linear-gradient(120deg,rgba(5,19,16,.78) 0%,rgba(16,56,48,.70) 42%,rgba(62,52,24,.44) 100%);
         }
 
-        @media (min-width: 761px) and (prefers-reduced-motion: no-preference) {
+        @media (prefers-reduced-motion: no-preference) {
           .hero-image-track { animation:hero-image-carousel 36s ease-in-out infinite; }
         }
 
         @media (max-width:760px) {
           .hero-image-slide img { object-position:68% center; }
-          .hero-image-track { animation:none !important; transform:translateX(0) !important; }
         }
 
         @media (prefers-reduced-motion: reduce) {

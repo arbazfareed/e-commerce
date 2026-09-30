@@ -66,7 +66,8 @@ Docker database records and uploaded images may be deleted.
 
 ## How the admin works
 
-An administrator signs in at `/login`, then opens `/admin`. The admin can:
+An administrator selects the shield icon on the storefront home page or opens
+`/admin/login` directly. The admin can:
 
 - See dashboard totals.
 - Add, edit, hide, and remove products.
@@ -75,6 +76,7 @@ An administrator signs in at `/login`, then opens `/admin`. The admin can:
 - Manage stock and market visibility.
 - Review and update orders.
 - Configure COD and courier settings.
+- Enable or disable the international market.
 - Review support information.
 
 Create the first admin from the backend terminal:
@@ -85,6 +87,10 @@ $env:ADMIN_EMAIL="admin@example.com"
 $env:ADMIN_PASSWORD="use-a-strong-password-here"
 npm run admin:bootstrap
 ```
+
+Shopper accounts use `/login`; that endpoint cannot issue an administrator
+session. The administrator login uses a separate API endpoint, verifies the
+account's admin role on the server, and applies a stricter failed-login limit.
 
 ## What happens when code is shared with another developer
 

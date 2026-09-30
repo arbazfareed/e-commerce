@@ -23,7 +23,12 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
+    },
+    guestContact: {
+      name: { type: String, trim: true, maxlength: 120 },
+      email: { type: String, trim: true, lowercase: true, maxlength: 254 },
+      phone: { type: String, trim: true, maxlength: 40, default: '' },
     },
     products: [orderItemSchema],
 
