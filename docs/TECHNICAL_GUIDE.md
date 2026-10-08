@@ -12,6 +12,9 @@ IndusCart is split into two applications:
 The frontend calls the backend through `VITE_API_URL`. The backend reads
 `MONGO_URI`, `JWT_SECRET`, `PORT`, and optional `CORS_ORIGINS`.
 
+For the detailed source map, module responsibilities, and patterns currently
+used in the code, see the [Code Organization Guide](./CODE_ORGANIZATION.md).
+
 ## 2. Main technology
 
 | Area | Technology |
@@ -119,16 +122,24 @@ The implementation-based, GitHub-renderable diagrams are maintained in
 [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md). They include the repository/package map,
 frontend route and guard structure, backend layers and authorization, actual
 Mongo relationships, checkout/order lifecycle, and customer password-reset
-email and role-separated admin-login lifecycles. Start with sections 17–26 for the detailed source map and
-flows; sections 1–16 preserve the original UML views.
+email and role-separated admin-login lifecycles. Start with sections 17–27 for
+the detailed source map and flows; sections 1–16 preserve the original UML
+views.
+
+For a practical "where should this change go?" map and examples of the
+feature-oriented, component-composition, layered-request, and pure-domain
+function patterns used by the implementation, see
+[`CODE_ORGANIZATION.md`](./CODE_ORGANIZATION.md).
 
 | Source area | Files matched | Main contents |
 |---|---:|---|
-| `backend/**/*.{js,json,md}` | 47 | Express entry point, config, routes, controllers, middleware, Mongoose models, services, utilities, scripts, tests and guide |
-| `frontend/src/**/*.{js,jsx,ts,tsx,css}` | 32 | Router, pages, shared components, contexts, API/pricing utilities, styles and tests |
+| `backend/**/*.{js,json,md}` | 68 | Express entry point, config, routes, controllers, middleware, Mongoose models, services, utilities, scripts, tests and manifests |
+| `frontend/src/**/*.{js,jsx,ts,tsx,css}` | 100 | Router, pages, shared components, contexts, API/domain utilities, styles and tests |
 
-These are workspace file counts, not LOC counts. Generated builds, Android
-intermediates, `node_modules`, uploads and binary assets are excluded. For
+These are scoped workspace file counts, not LOC counts, checked on
+2026-10-08. Backend counts exclude `node_modules`, backups, and uploads;
+frontend counts include only the listed source extensions under `frontend/src`.
+Generated builds, Android intermediates, and binary assets are excluded. For a
+module-by-module map, see [`CODE_ORGANIZATION.md`](./CODE_ORGANIZATION.md); for
 requirements-level models, see [`SRD.md`](./SRD.md); for deployment and system
 overview, see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
-

@@ -4,6 +4,11 @@ import { useCart }  from '../context/CartContext';
 import { useAuth }  from '../context/AuthContext';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR, formatUSD, calcZoneShipping, getActiveDiscountPercent, getDiscountedPrice, getUSDRate } from '../utils/priceUtils';
+import { S } from './cart/cartStyles';
+import CartMainColumn from './cart/CartMainColumn';
+import CartSummary from './cart/CartSummary';
+import OrderConfirmation from './cart/OrderConfirmation';
+import EmptyCart from './cart/EmptyCart';
 
 
 const PAYMENTS = [
@@ -152,43 +157,12 @@ export default function CartPage() {
 
   // ── Success ───────────────────────────────────────────────
   if (step === 'success') return (
-    <div className="responsive-page cart-page" style={S.page}>
-      <div style={S.successCard}>
-        <div style={{ fontSize:'72px', lineHeight:1, marginBottom:'4px' }}>🎉</div>
-        <h2 style={{ margin:'16px 0 10px', fontSize:'26px', fontWeight:'900', color:'#0f172a' }}>Order Confirmed!</h2>
-        <p style={{ margin:'0 0 6px', fontSize:'15px', color:'#475569' }}>
-          Order ID: <strong style={{ color:'#10b981', fontFamily:'monospace', fontSize:'16px' }}>
-            #{orderId?.slice(-8).toUpperCase()}
-          </strong>
-        </p>
-        <p style={{ margin:'0 0 30px', fontSize:'13px', color:'#64748b', lineHeight:'1.6' }}>
-          {payment === 'COD'
-            ? paymentStatus === 'paid'
-              ? '💵 Payment received.'
-              : '💵 Cash is due when your order arrives. No payment has been collected yet.'
-            : paymentStatus === 'paid'
-              ? `Payment via ${payment} is confirmed.`
-              : `Payment via ${payment} is pending. This order flow has not captured your payment.`}
-        </p>
-        {!user && <p style={{ margin:'0 0 20px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>Save your order number for reference. Guest orders are not shown in account order history.</p>}
-        <div style={{ display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap' }}>
-          {user && <button style={S.greenBtn} onClick={() => navigate('/orders')}>📦 View My Orders</button>}
-          <button style={S.ghostBtn} onClick={() => navigate('/')}>Continue Shopping</button>
-        </div>
-      </div>
-    </div>
+    <OrderConfirmation {...{ S, navigate, orderId, payment, paymentStatus, user }} />
   );
 
   // ── Empty cart ────────────────────────────────────────────
   if (!safeItems.length) return (
-    <div className="responsive-page cart-page" style={S.page}>
-      <div style={S.emptyCard}>
-        <p style={{ fontSize:'64px', margin:0 }}>🛒</p>
-        <h2 style={{ margin:'16px 0 8px', color:'#1e293b', fontSize:'22px' }}>Your cart is empty</h2>
-        <p style={{ color:'#94a3b8', margin:'0 0 24px', fontSize:'14px' }}>Browse our products and add items to your cart.</p>
-        <Link to="/" style={{ ...S.greenBtn, textDecoration:'none' }}>Browse Products →</Link>
-      </div>
-    </div>
+    <EmptyCart {...{ Link, S }} />
   );
 
   // ── Cart / Checkout ───────────────────────────────────────
@@ -217,283 +191,13 @@ export default function CartPage() {
       <div className="cart-layout" style={S.layout}>
 
         {/* ── LEFT COLUMN ──────────────────────────────────── */}
-        <div className="cart-main-column" style={{ flex:1, minWidth:'280px' }}>
-
-          {/* CART STEP */}
-          {step === 'cart' && (
-            <div className="cart-items-card" style={S.card}>
-              {safeItems.map(item => {
-                const price = getItemPrice(item);
-                const originalPrice = isPak ? (item.pricePKR || 0) : (item.priceUSD || 0);
-                const discount = getActiveDiscountPercent(item);
-                const img   = item.images?.[0];
-                return (
-                  <div key={item._id} className="item-row">
-                    {/* Product image */}
-                    <div className="cart-item-image" style={S.itemImgBox}>
-                      {img
-                        ? <img
-                            src={assetUrl(img)}
-                            alt={item.name}
-                            style={{ width:'100%', height:'100%', objectFit:'cover' }}
-                            onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                          />
-                        : null}
-                      <div style={{ ...S.itemImgPh, display: img ? 'none' : 'flex' }}>{item.name[0]}</div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="cart-item-details" style={{ flex:1, minWidth:0 }}>
-                      <p style={{ margin:'0 0 2px', fontWeight:'700', fontSize:'15px', color:'#1e293b' }}>{item.name}</p>
-                      <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:'600' }}>
-                        {item.category}
-                      </p>
-                      {(item.selectedColor || item.selectedSize) && (
-                        <p style={{ margin:'0 0 6px', fontSize:'12px', color:'#047857', fontWeight:'700' }}>
-                          {[item.selectedColor && `Colour: ${item.selectedColor}`, item.selectedSize && `Size: ${item.selectedSize}`].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
-                      <p style={{ margin:0, fontSize:'13px', color:'#64748b' }}>
-                        {fmt(price)} each {discount > 0 && <del className="cart-original-price">{fmt(originalPrice)}</del>}
-                      </p>
-                      {discount > 0 && <span className="cart-discount-note">You save {discount}%</span>}
-                    </div>
-
-                    <div className="cart-item-actions">
-                      {/* Quantity controls */}
-                      <div className="cart-quantity-control" style={S.qtyBox}>
-                        <button type="button" className="cart-quantity-button" style={S.qtyBtn} onClick={() => updateQty(item, item.quantity - 1)} aria-label={`Decrease ${item.name} quantity`}>−</button>
-                        <span className="cart-quantity-value" style={S.qtyNum}>{item.quantity}</span>
-                        <button type="button" className="cart-quantity-button" style={S.qtyBtn} onClick={() => updateQty(item, item.quantity + 1)} disabled={Number.isFinite(Number(item.stock)) && item.quantity >= Number(item.stock)} aria-label={`Increase ${item.name} quantity`}>+</button>
-                      </div>
-
-                      {/* Subtotal */}
-                      <div className="cart-item-subtotal">
-                        <p className="cart-item-price" style={{ margin:'0 0 6px', fontWeight:'800', fontSize:'16px', color:'#10b981' }}>
-                          {fmt(price * item.quantity)}
-                        </p>
-                        <button
-                          type="button"
-                          className="cart-remove-button"
-                          onClick={() => removeFromCart(item)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* CHECKOUT STEP */}
-          {step === 'checkout' && (
-            <div style={S.card}>
-              {!user && <>
-                <h3 style={S.secTitle}>Contact Details</h3>
-                <p style={{ margin:'-10px 0 14px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>No account needed. We’ll use these details for your COD order.</p>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px', marginBottom:22 }}>
-                  <div>
-                    <label htmlFor="guest-name" style={S.lbl}>Full name *</label>
-                    <input id="guest-name" style={S.inp} autoComplete="name" maxLength={120} value={guestContact.name} onChange={event => setGuestContact(contact => ({ ...contact, name:event.target.value }))} required />
-                  </div>
-                  <div>
-                    <label htmlFor="guest-email" style={S.lbl}>Email *</label>
-                    <input id="guest-email" style={S.inp} type="email" autoComplete="email" maxLength={254} value={guestContact.email} onChange={event => setGuestContact(contact => ({ ...contact, email:event.target.value }))} required />
-                  </div>
-                  <div>
-                    <label htmlFor="guest-phone" style={S.lbl}>Phone (optional)</label>
-                    <input id="guest-phone" style={S.inp} type="tel" autoComplete="tel" maxLength={40} value={guestContact.phone} onChange={event => setGuestContact(contact => ({ ...contact, phone:event.target.value }))} />
-                  </div>
-                </div>
-              </>}
-              <h3 style={S.secTitle}>📍 Delivery Address</h3>
-              {error && <div style={S.errBox}>⚠️ {error}</div>}
-
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
-                <div style={{ gridColumn:'1/-1' }}>
-                  <label htmlFor="delivery-street" style={S.lbl}>Street / Area *</label>
-                  <input id="delivery-street" style={S.inp}
-                    placeholder="e.g. House 12, Block B, DHA Phase 5"
-                    autoComplete="street-address"
-                    value={addr.street}
-                    onChange={e => setAddr(a => ({ ...a, street: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="delivery-city" style={S.lbl}>City *</label>
-                  <input id="delivery-city" style={S.inp}
-                    placeholder="Lahore"
-                    value={addr.city}
-                    autoComplete="off"
-                    onChange={e => setAddr(a => ({ ...a, city: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="delivery-country" style={S.lbl}>Country</label>
-                  <input id="delivery-country" style={{ ...S.inp, background:'#f1f5f9', color:'#64748b' }}
-                    value={addr.country} readOnly />
-                </div>
-              </div>
-
-              <h3 style={{ ...S.secTitle, marginTop:'24px' }}>💳 Payment Method</h3>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                {availablePaymentOptions.map(pm => (
-                  <label key={pm.id} style={{ ...S.payOpt, ...(payment === pm.id ? S.payOn : {}) }}>
-                    <input type="radio" name="pm" style={{ display:'none' }}
-                      checked={payment === pm.id} onChange={() => setPayment(pm.id)} />
-                    <span style={{ fontSize:'20px' }}>{pm.icon}</span>
-                    <div>
-                      <p style={{ margin:0, fontWeight:'700', fontSize:'13px', color:'#1e293b' }}>{pm.label}</p>
-                      <p style={{ margin:0, fontSize:'12px', color:'#64748b', lineHeight:1.45 }}>{pm.desc}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              {availablePaymentOptions.length === 0 && <p role="status" style={{ margin:'10px 0 0', color:'#b91c1c', fontSize:12, lineHeight:1.5 }}>No payment method is currently available. Online payment providers must be integrated and verified before they can be enabled.</p>}
-            </div>
-          )}
-        </div>
+        <CartMainColumn {...{ S, addr, assetUrl, availablePaymentOptions, error, fmt, getActiveDiscountPercent, getItemPrice, guestContact, isPak, payment, removeFromCart, safeItems, setAddr, setGuestContact, setPayment, step, updateQty, user }} />
 
         {/* ── ORDER SUMMARY SIDEBAR ────────────────────────── */}
-        <div className="cart-summary" style={S.summary}>
-          <h3 style={S.secTitle}>Order Summary</h3>
-
-          {/* Mini item list */}
-          <div style={{ marginBottom:'16px' }}>
-            {safeItems.map(item => (
-              <div key={item._id} style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px' }}>
-                <div style={{ width:'38px', height:'38px', borderRadius:'8px', overflow:'hidden', flexShrink:0, border:'1px solid #e2e8f0', background:'#f8fafc' }}>
-                  {item.images?.[0]
-                            ? <img src={assetUrl(item.images[0])} alt={item.name}
-                        style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                    : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', color:'#10b981' }}>
-                        {item.name[0]}
-                      </div>}
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <p style={{ margin:0, fontSize:'12px', fontWeight:'600', color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</p>
-                  <p style={{ margin:0, fontSize:'12px', color:'#94a3b8' }}>×{item.quantity}</p>
-                </div>
-                <span style={{ fontSize:'13px', fontWeight:'700', color:'#10b981', flexShrink:0 }}>
-                  {fmt(getItemPrice(item) * item.quantity)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="cart-coupon-box" style={{ padding:'12px', borderRadius:12, border:'1px solid #dbe7df', background:'#f8fcf9', marginBottom:14 }}>
-            <label htmlFor="coupon-code" style={{ ...S.lbl, marginBottom:7 }}>Promo code</label>
-            <div style={{ display:'flex', gap:7 }}>
-              <input className="cart-coupon-input" id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value.toUpperCase())} placeholder="e.g. WELCOME10" autoComplete="off" style={{ ...S.inp, minWidth:0, flex:1, textTransform:'uppercase' }} aria-describedby="coupon-feedback" />
-              {appliedCoupon ? <button type="button" onClick={() => { setAppliedCoupon(null); setCouponError(''); setCouponInput(''); }} style={{ ...S.ghostBtn, padding:'8px 10px', fontSize:12 }}>Remove</button> : <button type="button" onClick={applyCoupon} disabled={couponChecking} style={{ ...S.greenBtn, padding:'8px 11px', fontSize:12, whiteSpace:'nowrap' }}>{couponChecking ? 'Checking…' : 'Apply'}</button>}
-            </div>
-            <p id="coupon-feedback" className={`cart-coupon-feedback${couponError ? ' is-error' : appliedCoupon ? ' is-success' : ''}`} aria-live="polite" style={{ margin:'8px 0 0', fontSize:13, fontWeight:600, lineHeight:1.5, color: couponError ? '#b91c1c' : '#047857' }}>
-              {couponError || (appliedCoupon ? `${appliedCoupon.code} applied — you save ${fmt(couponDiscount)}.` : 'Enter a valid promo code to check eligibility.')}
-            </p>
-          </div>
-
-          <div style={S.divider} />
-
-          <div style={S.sumRow}>
-            <span style={S.sumLbl}>Subtotal ({totalQty} items)</span>
-            <span style={S.sumVal}>{fmt(subTotal)}</span>
-          </div>
-          {couponDiscount > 0 && <div style={S.sumRow}>
-            <span style={S.sumLbl}>Promo discount</span>
-            <span style={{ ...S.sumVal, color:'#047857' }}>−{fmt(couponDiscount)}</span>
-          </div>}
-          {payment === 'COD' && (
-            <div style={S.sumRow}>
-              <span style={S.sumLbl}>
-                COD fee
-                {codWaived && <small style={{ display:'block', color:'#059669' }}>Free on this order</small>}
-              </span>
-              <span style={S.sumVal}>{codFee ? fmt(codFee) : 'Free'}</span>
-            </div>
-          )}
-          <div style={S.sumRow}>
-            <span style={S.sumLbl}>
-              Shipping
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12 }}>
-                {shipCalc.zoneLabel}
-              </small>
-              <small style={{ display:'block', color:'#94a3b8', fontWeight:'500', fontSize:12, lineHeight:1.45, marginTop:2 }}>
-                {shipBreak}
-              </small>
-            </span>
-            <span style={S.sumVal}>{fmt(shipFee)}</span>
-          </div>
-
-          <div style={S.divider} />
-
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'22px' }}>
-            <span style={{ fontWeight:'800', fontSize:'16px', color:'#0f172a' }}>Total</span>
-            <span style={{ fontWeight:'900', fontSize:'24px', color:'#10b981' }}>{fmt(grandTotal)}</span>
-          </div>
-
-          {step === 'cart' && (
-            <button style={{ ...S.greenBtn, width:'100%' }}
-                onClick={() => setStep('checkout')}>
-              Proceed to Checkout →
-            </button>
-          )}
-
-          {step === 'checkout' && (
-            <>
-              <button
-                style={{ ...S.greenBtn, width:'100%', marginBottom:'10px', opacity: placing ? 0.7 : 1 }}
-                onClick={handlePlaceOrder}
-                disabled={placing}
-              >
-                {placing ? '⏳ Placing Order…' : '✅ Confirm & Place Order'}
-              </button>
-              <button style={{ ...S.ghostBtn, width:'100%' }} onClick={() => setStep('cart')}>
-                ← Back to Cart
-              </button>
-            </>
-          )}
-
-          <p style={{ textAlign:'center', fontSize:'12px', color:'#94a3b8', marginTop:'14px', lineHeight:'1.5' }}>
-            🔒 Secure checkout · IndusCart 🇵🇰
-          </p>
-        </div>
+        <CartSummary {...{ S, appliedCoupon, applyCoupon, assetUrl, codFee, codWaived, couponChecking, couponDiscount, couponError, couponInput, fmt, getItemPrice, grandTotal, handlePlaceOrder, payment, placing, safeItems, setAppliedCoupon, setCouponError, setCouponInput, setStep, shipBreak, shipCalc, shipFee, step, subTotal, totalQty }} />
       </div>
     </div>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────
-const S = {
-  page:    { minHeight:'100vh', background:'#f8fafc', padding:'28px 20px', fontFamily:"'DM Sans','Segoe UI',sans-serif" },
-  topBar:  { maxWidth:'1040px', margin:'0 auto 24px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:'14px' },
-  layout:  { maxWidth:'1040px', margin:'0 auto', display:'flex', gap:'24px', alignItems:'flex-start', flexWrap:'wrap' },
-
-  card:    { background:'#fff', borderRadius:'16px', padding:'24px', border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.05)', flex:1, minWidth:'280px' },
-  itemImgBox: { width:'72px', height:'72px', borderRadius:'12px', overflow:'hidden', flexShrink:0, border:'1px solid #e2e8f0', background:'#f8fafc', position:'relative' },
-  itemImgPh:  { width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', fontWeight:'900', color:'#10b981', background:'linear-gradient(135deg,#f0fdf4,#dcfce7)' },
-
-  qtyBox:  { display:'flex', alignItems:'center', border:'1px solid #e2e8f0', borderRadius:'10px', overflow:'hidden' },
-  qtyBtn:  { background:'#f8fafc', border:'none', width:'34px', height:'36px', cursor:'pointer', fontSize:'18px', color:'#334155', fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
-  qtyNum:  { padding:'0 14px', fontWeight:'800', fontSize:'15px', color:'#1e293b', minWidth:'32px', textAlign:'center', userSelect:'none' },
-
-  summary: { width:'290px', flexShrink:0, background:'#fff', borderRadius:'16px', padding:'24px', border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.05)', position:'sticky', top:'80px' },
-  secTitle:{ margin:'0 0 18px', fontSize:'16px', fontWeight:'800', color:'#1e293b' },
-  divider: { height:'1px', background:'#f1f5f9', margin:'12px 0 14px' },
-  sumRow:  { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'12px' },
-  sumLbl:  { fontSize:'13px', color:'#64748b', lineHeight:'1.5' },
-  sumVal:  { fontSize:'14px', fontWeight:'700', color:'#334155' },
-
-  lbl:     { display:'block', fontSize:'12px', fontWeight:'800', color:'#475569', marginBottom:'6px', textTransform:'uppercase', letterSpacing:'0.3px' },
-  inp:     { width:'100%', padding:'11px 13px', border:'1.5px solid #e2e8f0', borderRadius:'10px', fontSize:'13px', outline:'none', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b', fontFamily:'inherit', marginBottom:'0' },
-  errBox:  { background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', padding:'10px 14px', borderRadius:'10px', fontSize:'13px', fontWeight:'600', marginBottom:'16px' },
-  payOpt:  { display:'flex', alignItems:'center', gap:'10px', padding:'12px', border:'2px solid #e2e8f0', borderRadius:'12px', cursor:'pointer', transition:'all 0.15s', userSelect:'none' },
-  payOn:   { borderColor:'#10b981', background:'#f0fdf4' },
-
-  greenBtn: { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'13px 24px', background:'linear-gradient(135deg,#10b981,#059669)', color:'#fff', border:'none', borderRadius:'12px', fontSize:'14px', fontWeight:'700', cursor:'pointer', textDecoration:'none', boxSizing:'border-box', letterSpacing:'0.2px' },
-  ghostBtn: { display:'inline-flex', alignItems:'center', justifyContent:'center', padding:'13px 24px', background:'#f1f5f9', color:'#475569', border:'1px solid #e2e8f0', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer', textDecoration:'none', boxSizing:'border-box' },
-
-  successCard: { maxWidth:'500px', margin:'60px auto 0', background:'#fff', borderRadius:'22px', padding:'52px 40px', textAlign:'center', border:'1px solid #e2e8f0', boxShadow:'0 8px 48px rgba(0,0,0,0.08)' },
-  emptyCard:   { maxWidth:'400px', margin:'80px auto 0', background:'#fff', borderRadius:'22px', padding:'52px 36px', textAlign:'center', border:'1px solid #e2e8f0', boxShadow:'0 4px 24px rgba(0,0,0,0.07)' },
-};

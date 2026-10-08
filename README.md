@@ -28,6 +28,7 @@ admin-only portal at `http://localhost:3001`, and the shared API at
 - **[API Reference](./docs/API_REFERENCE.md)** — implemented routes, auth levels, fields, and limitations
 - **[Architecture diagrams](./docs/ARCHITECTURE.md)** — Mermaid system, deployment, request-flow, and data diagrams
 - **[Technical Guide](./docs/TECHNICAL_GUIDE.md)** — code structure and security model
+- **[Code Organization Guide](./docs/CODE_ORGANIZATION.md)** — current module map, request flow, design patterns, and change checklist
 - **[User Guide](./docs/USER_GUIDE.md)** — customer and admin workflows
 - **[Local Run Guide](./docs/LOCAL_RUN_GUIDE.md)** — desktop, phone, and Android instructions
 - **[Local DevOps Guide](./docs/LOCAL_DEVOPS_GUIDE.md)** — Kali Linux setup, Docker Compose, Grafana/Prometheus, CI, and what remains before production
@@ -410,19 +411,18 @@ the **Show this product in the shop** control.
 
 ### Frontend structure
 
-The admin area keeps page-level state and screen composition in
-`frontend/src/pages/AdminPage.jsx`. Shared admin configuration is kept in
-`frontend/src/pages/admin/adminConfig.js`, while reusable controls such as
-status badges, market selectors, image upload previews, category selection,
-and toast notifications are in
-`frontend/src/pages/admin/AdminPrimitives.jsx`. New admin controls should be
-added to the primitives module when they are reused; page-specific data
-loading and mutations should remain in the page or a dedicated hook.
+`frontend/src/App.jsx` composes routes and access guards. Route-level pages
+compose focused feature modules—for example `pages/home/`, `pages/cart/`,
+`pages/register/`, `pages/support/`, and `pages/admin/`. The admin page remains
+the workspace coordinator, while separate panels own section markup and
+dashboard widgets live in `pages/admin/dashboard/`.
 
-Admin HTTP operations are isolated in
-`frontend/src/pages/admin/adminApi.js`. This keeps endpoint paths, multipart
-form construction, and API error extraction out of the UI markup and makes
-future automated testing or endpoint changes safer.
+Shared application state is provided by `context/`; request configuration is
+centralized in `utils/axiosConfig.js`. Named operations for admin requests live
+in `pages/admin/adminApi.js`. Currency, shipping, and support helpers are
+separated from UI where the same domain logic needs to be reused or tested.
+For the full module map, actual design patterns, and guidance on where to
+place a change, see the [Code Organization Guide](./docs/CODE_ORGANIZATION.md).
 
 Admin sections use browser history routes:
 

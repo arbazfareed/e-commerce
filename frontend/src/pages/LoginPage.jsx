@@ -114,6 +114,34 @@ export default function LoginPage({ adminOnly = false }) {
           font-size:10px;
           font-weight:700;
         }
+        .admin-login-page .login-visual::after {
+          background:linear-gradient(180deg,rgba(3,28,21,.42),rgba(3,28,21,.78));
+        }
+        .admin-login-page .login-visual-overlay {
+          inset:auto 24px 24px;
+          padding:18px;
+          border:1px solid rgba(255,255,255,.18);
+          border-radius:16px;
+          background:rgba(3,24,18,.82);
+          box-shadow:0 12px 30px rgba(0,0,0,.2);
+          backdrop-filter:blur(8px);
+          -webkit-backdrop-filter:blur(8px);
+        }
+        .admin-login-page .login-visual-overlay .login-kicker {
+          color:#a7f3d0 !important;
+        }
+        .admin-login-page .login-visual-overlay h1 {
+          color:#fff !important;
+        }
+        .admin-login-page .login-visual-overlay h1 em {
+          color:#fde68a !important;
+        }
+        .admin-login-page .login-visual-overlay p {
+          color:rgba(255,255,255,.92) !important;
+        }
+        .admin-login-page .login-visual-overlay .login-perks span {
+          color:#f0fdf4 !important;
+        }
         @media (max-width: 760px) {
           .login-page { padding:14px !important; align-items:flex-start !important; }
           .login-shell {
@@ -130,7 +158,7 @@ export default function LoginPage({ adminOnly = false }) {
             min-height:190px;
             background-position:center 42%;
           }
-          .login-visual-overlay { inset:24px 22px auto; }
+          .login-visual-overlay { inset:18px 16px auto; padding:14px; }
           .login-visual h1 { font-size:24px; margin:8px 0; }
           .login-visual p { font-size:11px; max-width:290px; }
           .login-perks { display:none; }

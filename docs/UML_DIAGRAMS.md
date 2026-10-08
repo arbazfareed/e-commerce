@@ -4,15 +4,15 @@ These diagrams document the repository as implemented, not an idealized future s
 
 ## Repository inventory snapshot
 
-The source inventory was checked against this repository before updating these
-diagrams. The counts are files, not lines of code; generated build output,
-`node_modules`, Android build artifacts, and uploaded images are excluded.
+The source inventory was checked against this repository on 2026-10-08. The
+counts are files, not lines of code; generated build output, `node_modules`,
+Android build artifacts, backups, and uploaded images are excluded.
 
 | Area | Files found | Notes |
 |---|---:|---|
-| Backend JS/JSON/Markdown files | 64 | Runtime, API, schemas, scripts, tests, and manifests; excludes `node_modules`, backups, and uploads |
-| Frontend `src` JS/JSX/TS/TSX/CSS files | 44 | Routes, pages, components, contexts, utilities, styles, and tests |
-| UML sections in this guide | 25 | Sections 1–16 reviewed/corrected plus 17–25 for code structure and current workflows |
+| Backend JS/JSON/Markdown files | 68 | Runtime, API, schemas, scripts, tests, and manifests; excludes `node_modules`, backups, and uploads |
+| Frontend `src` JS/JSX/TS/TSX/CSS files | 100 | Routes, pages, components, contexts, utilities, styles, and tests |
+| UML sections in this guide | 27 | Sections 1–16 and 17–27 document current code structure and workflows |
 
 For GitHub review, start with sections 1–4 for actors, domain data, components
 and routes; then use the workflows in sections 5 onward.
@@ -566,7 +566,7 @@ flowchart TB
         Frontend --> UiTests[tests: routes, cart, error boundary]
 ```
 
-The current scoped source inventory is 64 backend JS/JSON/Markdown files and 44
+The scoped source inventory is 68 backend JS/JSON/Markdown files and 100
 frontend `src` JS/JSX/TS/TSX/CSS files. Backend counts exclude `node_modules`,
 backups, and uploads; frontend counts are limited to `frontend/src`. Generated
 `dist`, Android build outputs, and other binary/generated content are excluded.
@@ -850,20 +850,22 @@ checkout but is not directly persisted as an Order relationship.
 
 | Package | Files / responsibilities |
 |---|---|
-| `frontend/src` (44 matched source/style files) | App/router, customer and admin pages, shared components, contexts, utilities, styles, and tests |
-| `backend` (64 matched JS/JSON/Markdown files) | Express API, config, 9 route modules, controllers, 7 models, middleware, services, utilities, scripts, tests, and package manifests |
+| `frontend/src` (100 matched source/style files) | App/router, customer and admin pages, shared components, contexts, utilities, styles, and tests |
+| `backend` (68 matched JS/JSON/Markdown files) | Express API, config, 9 route modules, controllers, 7 models, middleware, services, utilities, scripts, tests, and package manifests |
 | `docs` | Requirements, API, architecture/UML, QA, user guides, deployment, release and policy documents |
 
 The counts use the extension/path scopes in the repository inventory above;
 they are not LOC counts or a list of every repository file. Generated Android
 build outputs, frontend `dist`, backend `node_modules`, backups, uploads, and
-binary assets are excluded. Together the current patterns match 108 files
-(64 backend and 44 frontend).
+binary assets are excluded. Together the current patterns match 168 files
+(68 backend and 100 frontend).
 
 ## 25. GitHub documentation map
 
 - Start at [`README.md`](../README.md), then use [`DOCUMENTATION_INDEX.md`](./DOCUMENTATION_INDEX.md).
 - [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) summarizes the source/package map.
+- [`CODE_ORGANIZATION.md`](./CODE_ORGANIZATION.md) explains module ownership,
+  implemented patterns, and where to place future changes.
 - This file contains implementation-based Mermaid/UML views.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) gives deployment and system overview.
 - [`API_REFERENCE.md`](./API_REFERENCE.md) is the endpoint/auth source of truth.

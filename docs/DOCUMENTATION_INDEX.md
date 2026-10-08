@@ -15,6 +15,7 @@ This index explains which document answers which project question.
 | Storage architecture | [`STORAGE_ARCHITECTURE.md`](./STORAGE_ARCHITECTURE.md) | Verified MongoDB, uploads, backups, browser storage, encryption, and Docker persistence behavior |
 | UML diagrams | [`UML_DIAGRAMS.md`](./UML_DIAGRAMS.md) | Source inventory/counts, route/guard and component maps, domain relationships, deployment, role-separated shopper/admin login, checkout/support/product flows, reset-email sequence/state, and classic UML views |
 | Technical guide | [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Code structure, security model, local development, and Docker |
+| Code organization | [`CODE_ORGANIZATION.md`](./CODE_ORGANIZATION.md) | Current source map, module boundaries, implemented design patterns, change checklist, and validation commands |
 | User guide | [`USER_GUIDE.md`](./USER_GUIDE.md) | Customer and administrator workflows |
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |
 | Local DevOps runbook | [`LOCAL_DEVOPS_GUIDE.md`](./LOCAL_DEVOPS_GUIDE.md) | Plain-English DevOps overview, Kali Docker Compose setup, monitoring, CI, security, and production limits |
