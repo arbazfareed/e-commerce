@@ -32,25 +32,37 @@ application through Capacitor.
 
 ```text
 backend/
-  server.js              Express app and health endpoints
-  config/                Environment and database configuration
-  controllers/           API business logic
-  middleware/             Authentication and authorization
-  models/                MongoDB models
-  routes/                API route definitions
-  scripts/               Admin, backup, and restore operations
-  test/                  Backend tests
-  uploads/               Product image storage
+  server.js                 Express setup, middleware, routes, health endpoints
+  config/                   Environment, database, and secret configuration
+  routes/                   HTTP route definitions
+  controllers/              Request handling and application workflows
+  models/                   MongoDB schemas and persistence rules
+  services/                 Email and courier integrations
+  utils/                    Domain calculations and reusable helpers
+  middleware/               Authentication, upload checks, and metrics
+  scripts/                  Admin bootstrap/reset and database backup/restore
+  test/                     Node.js unit and API integration tests
+  uploads/                  Local product-image storage
 frontend/
-  src/App.jsx            Client routes
-  src/components/        Shared UI components
-  src/context/           Cart and authentication state
-  src/pages/             Customer and admin screens
-  src/utils/             API and pricing helpers
-  android/               Capacitor Android project
-docs/                    Project, user, architecture, release, and policy docs
-docker-compose.yml       MongoDB, API, and frontend container stack
+  src/App.jsx               Route composition and access guards
+  src/components/           Shared UI, with focused submodules where useful
+  src/context/              Authentication and cart state
+  src/pages/                Route-level screens and feature modules
+    admin/dashboard/        Admin dashboard widgets
+    cart/                    Cart sections and styles
+    home/                    Storefront sections and styles
+    register/                Registration modules
+    support/                 Admin/customer support modules
+  src/utils/                Shared API configuration and domain helpers
+  src/tests/                Vitest and Testing Library regression tests
+  android/                  Capacitor Android project
+docs/                       Requirements, architecture, operations, QA, guides
+docker-compose.yml          MongoDB, API, and frontend container stack
 ```
+
+See the [Code Organization Guide](./CODE_ORGANIZATION.md) for the expanded
+frontend/backend module map, request flow, design patterns, and guidance for
+placing future changes.
 
 ## 4. Architecture
 
@@ -75,8 +87,12 @@ The primary runtime flow is:
 - Pakistan/PKR and international/USD market modes
 - Product images, descriptions, categories, brands, models, colours, and sizes
 - Variant-aware cart quantity and removal behavior
+- Guest COD checkout and signed-in customer checkout
+- Promo coupons, account wishlist, and verified-purchase reviews
 - Registration, login, session verification, and logout
-- Checkout, order history, support, and responsive mobile layout
+- Order history, order tracking details, printable invoices, support, and
+  responsive mobile layout
+- Self-service password recovery by expiring email link
 
 ### Admin features
 
@@ -89,6 +105,98 @@ The primary runtime flow is:
 - COD fee and threshold configuration
 - Courier provider configuration
 - Support ticket handling
+- Coupon management and review moderation
+- Manual shipment references, customer password-reset assistance, and
+  spreadsheet-safe product/order exports
+
+## 5.1 Requirements and acceptance examples
+
+The implementation-level requirement IDs, full acceptance summaries, and
+scope statuses are maintained in the [Software Requirements Document](./SRD.md).
+The following requirements describe the current product boundary:
+
+| Requirement area | Implemented behavior and acceptance boundary |
+|---|---|
+| Identity and access | Shopper and administrator sign-in are role-separated; protected API actions enforce JWT/admin authorization. Registration requires an eight-character password. |
+| Product discovery | Public catalog supports search, categories/subcategories, price filters, sort, market selection, and pagination. Hidden products do not appear in public results. |
+| Catalog administration | Admin can manage product content, visibility, stock, variants, price, discount dates, and image set. Image files must be JPG/JPEG/PNG/WEBP, signature-checked, at most five files and 5 MiB each. |
+| Cart and checkout | Guest cart is browser-persisted; customer cart is account-persisted. Guest COD and authenticated checkout use API-reloaded products and server-calculated price, stock, variants, market eligibility, shipping, and fees. |
+| Promotions | Coupon eligibility includes configured activity, currency, minimum, expiry, and usage limit. The order endpoint rechecks eligibility and usage. |
+| Customer retention | Signed-in customers can maintain a wishlist. A review requires a delivered purchase and administrator moderation before public display. |
+| Fulfillment | Order statuses are validated against the enum; cancellation restores stock only before shipment. Admin can record manual courier/tracking details, but no automated carrier dispatch is promised. |
+| Payments | COD/cash status is represented. Gateway choices do not make payment capture, webhooks, refunds, or reconciliation available. |
+| Support and recovery | Guest/customer tickets and admin reply/status workflows are persisted. Customer password reset uses a generic request response and a hashed, single-use 20-minute token when email is configured. |
+| Administration and operations | Admin can inspect analytics/low-stock data, record manual cash sales, configure checkout settings, print authorized invoices, and export currently loaded order/product data to CSV. |
+| Runtime and platforms | Browser storefront/admin, Docker Compose, health/metrics endpoints, backup/restore scripts, CI validation, and Capacitor Android packaging exist; production hosting/recovery objectives are not supplied by these features. |
+
+### Use-case examples
+
+The full use-case specifications (actors, preconditions, primary flow,
+alternate/error flow, and postconditions) are in [`SRD.md`](./SRD.md), section
+5.1. Examples of the intended acceptance behavior:
+
+1. **Guest checkout:** Given a guest has a valid in-stock cart and COD is
+   enabled, when the guest enters required contact/address data and places the
+   order, then the API rechecks catalog prices, variants, stock, destination,
+   coupons, shipping, and COD fees before persisting an order. Invalid data or
+   unavailable stock creates no successful order.
+2. **Admin inventory update:** Given an authenticated administrator, when the
+   administrator edits stock or product visibility, then the change is saved,
+   hidden items disappear from public results, and a later checkout uses the
+   current database stock/price.
+3. **Password recovery:** Given a customer requests a reset, when an eligible
+   customer follows the emailed reset link within 20 minutes, then a valid new
+   password is stored and the token cannot be reused. The public request
+   response does not reveal whether the email exists.
+4. **Verified product review:** Given a customer has a delivered order
+   containing a product, when they submit one review for it, then the review
+   awaits administrator moderation and is not public before approval.
+5. **Manual shipment tracking:** Given an administrator records a courier,
+   reference, and safe HTTPS tracking URL, then authorized customer order
+   details can show those values; the system does not claim to have booked a
+   shipment or received carrier updates.
+
+### Non-functional requirements and measurable boundaries
+
+These are repository-backed constraints, not guarantees of production uptime
+or service levels. Unmeasured deployment targets are explicitly marked
+**Not established** in [`SRD.md`](./SRD.md), section 7.
+
+| Attribute | Current code-backed requirement |
+|---|---|
+| Configuration safety | `MONGO_URI` and `JWT_SECRET` are required. Staging/production reject JWT secrets shorter than 32 characters and known placeholders. |
+| Request protection | Helmet headers; optional CORS origin allow-list; JSON body limit 1 MiB. |
+| Abuse limits | General auth 30/IP/15 min; failed admin login 5/IP/15 min; password-reset request 5/IP/15 min. Rate-limit state is process-local. |
+| Recovery token | Hashed at rest, single-use, expires after 20 minutes; public response is generic. |
+| Image inputs | Admin-only JPG/JPEG/PNG/WEBP; both file metadata and binary signature are checked; max five per request and 5 MiB per image. |
+| Catalog response size | Paginated filtered/search results default to 24 and are capped at 48 items per page. |
+| Checkout integrity | API recalculates price/discount/shipping/fees and checks product visibility, market, variants, and stock before order creation. High-concurrency transaction/compensation behavior remains future work. |
+| Health and metrics | Liveness route responds for the process; readiness returns 503 without MongoDB; Prometheus metrics endpoint is exposed. No uptime or latency SLA is configured. |
+| Persistence | MongoDB and Docker named volumes persist data; backup/restore scripts exist. Off-host encrypted schedule, RPO/RTO, and restore-drill targets are not established. |
+| Accessibility and compatibility | Responsive layouts and selected accessible-control tests exist. Full WCAG conformance and a complete browser/device matrix are not established. |
+| Maintainability | Node test runner, Vitest, syntax/build checks, and CI exist. There is no configured coverage percentage gate. |
+
+### Test coverage and execution
+
+The complete test-by-test inventory, 30-case manual regression matrix, command
+results template, and known coverage gaps are in the [Testing Guide](./TESTING_GUIDE.md).
+Run these repository commands from PowerShell before release:
+
+```powershell
+cd backend
+npm run check
+npm test
+
+cd ..\frontend
+npm test
+npm run build
+```
+
+These commands establish only the result of that run. Mongo-backed cases may
+skip if MongoDB is unavailable, and the Selenium browser smoke test is
+opt-in. A successful test suite does not certify payment capture, automated
+courier booking, production availability, backup recovery, or complete
+accessibility.
 
 ## 6. Configuration
 
@@ -300,6 +408,7 @@ reviews enabled if human approval is part of your release policy.
 - [API Reference](./API_REFERENCE.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Technical Guide](./TECHNICAL_GUIDE.md)
+- [Code Organization Guide](./CODE_ORGANIZATION.md)
 - [User Guide](./USER_GUIDE.md)
 - [Local Run Guide](./LOCAL_RUN_GUIDE.md)
 - [Testing Guide](./TESTING_GUIDE.md)
