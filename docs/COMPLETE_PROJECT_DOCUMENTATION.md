@@ -32,25 +32,37 @@ application through Capacitor.
 
 ```text
 backend/
-  server.js              Express app and health endpoints
-  config/                Environment and database configuration
-  controllers/           API business logic
-  middleware/             Authentication and authorization
-  models/                MongoDB models
-  routes/                API route definitions
-  scripts/               Admin, backup, and restore operations
-  test/                  Backend tests
-  uploads/               Product image storage
+  server.js                 Express setup, middleware, routes, health endpoints
+  config/                   Environment, database, and secret configuration
+  routes/                   HTTP route definitions
+  controllers/              Request handling and application workflows
+  models/                   MongoDB schemas and persistence rules
+  services/                 Email and courier integrations
+  utils/                    Domain calculations and reusable helpers
+  middleware/               Authentication, upload checks, and metrics
+  scripts/                  Admin bootstrap/reset and database backup/restore
+  test/                     Node.js unit and API integration tests
+  uploads/                  Local product-image storage
 frontend/
-  src/App.jsx            Client routes
-  src/components/        Shared UI components
-  src/context/           Cart and authentication state
-  src/pages/             Customer and admin screens
-  src/utils/             API and pricing helpers
-  android/               Capacitor Android project
-docs/                    Project, user, architecture, release, and policy docs
-docker-compose.yml       MongoDB, API, and frontend container stack
+  src/App.jsx               Route composition and access guards
+  src/components/           Shared UI, with focused submodules where useful
+  src/context/              Authentication and cart state
+  src/pages/                Route-level screens and feature modules
+    admin/dashboard/        Admin dashboard widgets
+    cart/                    Cart sections and styles
+    home/                    Storefront sections and styles
+    register/                Registration modules
+    support/                 Admin/customer support modules
+  src/utils/                Shared API configuration and domain helpers
+  src/tests/                Vitest and Testing Library regression tests
+  android/                  Capacitor Android project
+docs/                       Requirements, architecture, operations, QA, guides
+docker-compose.yml          MongoDB, API, and frontend container stack
 ```
+
+See the [Code Organization Guide](./CODE_ORGANIZATION.md) for the expanded
+frontend/backend module map, request flow, design patterns, and guidance for
+placing future changes.
 
 ## 4. Architecture
 
@@ -300,6 +312,7 @@ reviews enabled if human approval is part of your release policy.
 - [API Reference](./API_REFERENCE.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Technical Guide](./TECHNICAL_GUIDE.md)
+- [Code Organization Guide](./CODE_ORGANIZATION.md)
 - [User Guide](./USER_GUIDE.md)
 - [Local Run Guide](./LOCAL_RUN_GUIDE.md)
 - [Testing Guide](./TESTING_GUIDE.md)

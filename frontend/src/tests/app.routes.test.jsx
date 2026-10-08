@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from '../App';
 import API from '../utils/axiosConfig';
@@ -210,6 +210,18 @@ describe('IndusCart UI and navigation smoke tests', () => {
       if (path === '/api/cart' || path === '/api/wishlist' || path === '/api/orders' || path.includes('/categories')) {
         return Promise.resolve({ data:[] });
       }
+      if (path === '/api/products?includeHidden=true') {
+        return Promise.resolve({ data:[{
+          _id:'product-1',
+          name:'Dashboard regression product',
+          images:[],
+          pricePKR:1200,
+          priceUSD:4.3,
+          category:'Home',
+          isLocal:true,
+          stock:3,
+        }] });
+      }
       if (path === '/api/orders/analytics') return Promise.resolve({ data:{ summary:{}, topProducts:[], regionBreakdown:[], dailySeries:[], weeklySeries:[], monthlySeries:[] } });
       if (path === '/api/settings/') return Promise.resolve({ data:{} });
       return Promise.resolve({ data:[] });
@@ -226,9 +238,17 @@ describe('IndusCart UI and navigation smoke tests', () => {
       const renderError = uiError.mock.calls.find(([message]) => message === 'Unhandled UI error:')?.[1];
       if (screen.queryByText(/something went wrong/i)) throw new Error(`Admin dashboard render error: ${renderError?.stack || renderError || 'unknown error'}`);
       expect(screen.getByRole('heading', { name:/dashboard/i })).toBeInTheDocument();
+      expect(screen.getAllByText('Dashboard regression product').length).toBeGreaterThan(0);
       expect(window.location.pathname).toBe('/admin');
       expect(JSON.parse(window.localStorage.getItem('user'))).toMatchObject({ isAdmin:true, token:'admin-token' });
       expect(API.post).toHaveBeenCalledWith('/api/auth/admin/login', { email:'admin@example.test', password:'administrator-password' });
+
+      const adminSidebar = within(document.querySelector('.admin-sidebar'));
+      fireEvent.click(adminSidebar.getByRole('button', { name:/Products/ }));
+      await waitFor(() => expect(window.location.pathname).toBe('/admin/products'));
+      fireEvent.click(adminSidebar.getByRole('button', { name:/Dashboard/ }));
+      await waitFor(() => expect(window.location.pathname).toBe('/admin'));
+      expect(screen.getByRole('heading', { name:/dashboard/i })).toBeInTheDocument();
     } finally {
       uiError.mockRestore();
       vi.unstubAllEnvs();
