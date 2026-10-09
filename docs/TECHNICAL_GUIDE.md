@@ -60,6 +60,10 @@ transition graph is not enforced. Guest orders have no public lookup route.
 The complete requirement IDs, ten detailed use cases, acceptance summaries,
 and implementation status are in [`SRD.md`](./SRD.md) and
 [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md).
+The requirements also cover browser-local recently viewed products,
+low-stock alerts, dated promotion countdowns, stock badges, and admin product
+and regional recommendation panels. These display information; they do not
+reserve inventory or automatically launch campaigns.
 
 ## 4. Security and data protection
 

@@ -86,6 +86,7 @@ The primary runtime flow is:
 - Product discovery, search, filtering, and sorting
 - Pakistan/PKR and international/USD market modes
 - Product images, descriptions, categories, brands, models, colours, and sizes
+- Recently viewed products, stock/scarcity badges, and dated promotion countdowns
 - Variant-aware cart quantity and removal behavior
 - Guest COD checkout and signed-in customer checkout
 - Promo coupons, account wishlist, and verified-purchase reviews
@@ -108,6 +109,7 @@ The primary runtime flow is:
 - Coupon management and review moderation
 - Manual shipment references, customer password-reset assistance, and
   spreadsheet-safe product/order exports
+- Low-stock alerts, product recommendations, and regional campaign summaries
 
 ## 5.1 Requirements and acceptance examples
 
@@ -132,8 +134,9 @@ The following requirements describe the current product boundary:
 ### Use-case examples
 
 The full use-case specifications (actors, preconditions, primary flow,
-alternate/error flow, and postconditions) are in [`SRD.md`](./SRD.md), section
-5.1. Examples of the intended acceptance behavior:
+alternate/error flow, and 26 Given/When/Then user stories
+are in [`SRD.md`](./SRD.md), sections 5.1–5.2. Examples of the intended
+acceptance behavior:
 
 1. **Guest checkout:** Given a guest has a valid in-stock cart and COD is
    enabled, when the guest enters required contact/address data and places the
@@ -178,8 +181,9 @@ or service levels. Unmeasured deployment targets are explicitly marked
 
 ### Test coverage and execution
 
-The complete test-by-test inventory, 30-case manual regression matrix, command
-results template, and known coverage gaps are in the [Testing Guide](./TESTING_GUIDE.md).
+The complete automated test inventory, 33-case regression index with 49
+detailed manual specifications, execution/defect log template, and known
+coverage gaps are in the [Testing Guide](./TESTING_GUIDE.md).
 Run these repository commands from PowerShell before release:
 
 ```powershell

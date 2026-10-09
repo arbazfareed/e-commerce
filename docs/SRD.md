@@ -374,6 +374,8 @@ requirements-level behavioral models.
 | FR-39 | Upload product images safely | Implemented | Admin-only JPG/JPEG/PNG/WEBP uploads; maximum five images per request and 5 MiB per image; content signature is checked |
 | FR-40 | Page public catalog results | Implemented | Filtered/search results default to 24 and are capped at 48 items per page |
 | FR-41 | Export admin catalog and order data | Implemented | CSV export quotes cell values and neutralizes formula-like values before opening in spreadsheet software |
+| FR-42 | Show recently viewed products | Implemented (browser-local) | Home catalog can display recently viewed products from current public catalog data; it is not a server-side customer history |
+| FR-43 | Surface inventory and product recommendations to admins | Implemented | Dashboard displays visible low-stock products below five units and recommendation/regional campaign summaries derived by the dashboard model |
 
 ### 5.1 Detailed use-case specifications
 
@@ -537,6 +539,337 @@ for automated cases and the manual regression checklist.
 - **Postconditions:** Runtime/build status is observable; Docker data survives
   container replacement through named volumes. Backup scheduling, off-host
   retention, and recovery objectives remain deployment responsibilities.
+
+### 5.2 User stories and acceptance criteria
+
+Each story expresses a distinct user goal. The acceptance criteria state
+observable behavior and preserve known limitations; a story marked partly
+implemented is not an assertion that the incomplete integration is available.
+
+#### Customer and guest stories
+
+**US-01 — Discover a product (FR-05, FR-06, FR-28).**<br>
+As a shopper, I want to browse and search products so that I can find an item
+that fits my needs.
+
+- Given public products exist, when I open the storefront, then visible
+  products and their available details render.
+- Given a query or filter, when I search/filter/sort, then the catalog request
+  reflects that value and matching results are shown.
+- Given a hidden product, when a guest queries the public catalog or direct
+  product route, then its product details are not exposed.
+
+**US-02 — Review product details and variants (FR-05, FR-07).**<br>
+As a shopper, I want to inspect a product and its options so that I can decide
+which variant to buy.
+
+- Given a public product, when I open its detail page, then current images,
+  description, market price, availability, and configured variants are shown.
+- Given a product with no valid available quantity, when I attempt to buy it,
+  then checkout does not accept an unavailable quantity.
+
+**US-03 — Choose a selling market (FR-06, FR-19).**<br>
+As a shopper, I want to select Pakistan or International shopping so that
+prices and destination eligibility match my market.
+
+- Given international shopping is enabled, when I select International, then
+  the UI requests the global catalog/currency.
+- Given international shopping is disabled while a global mode is saved, when
+  settings load, then the UI returns to Pakistan/PKR.
+- Given international shopping is disabled, when a client bypasses the UI and
+  requests global data or foreign checkout, then the API rejects the action.
+
+**US-04 — Keep a guest cart (FR-09, FR-31).**<br>
+As a guest, I want to keep cart items while browsing so that I can review them
+before checkout.
+
+- Given I add an item, when I refresh or revisit the cart in the same browser
+  profile, then the guest cart remains available.
+- Given the same product is added with different color/size, when lines render,
+  then the variants remain separate cart lines.
+
+**US-05 — Maintain my account cart (FR-09, FR-31).**<br>
+As a signed-in customer, I want my cart synchronized to my account so that it
+is available across sessions.
+
+- Given I sign in with an existing account cart, when the cart loads, then it
+  hydrates from the server and later changes synchronize to the account.
+- Given a second user signs in on the same browser, when their cart loads, then
+  the first user's cached cart is not shown as the second user's cart.
+- Given a requested quantity exceeds known product stock, when I update the
+  cart, then the cart caps/rejects the over-stock quantity.
+
+**US-06 — Register as a shopper (FR-01).**<br>
+As a new shopper, I want to create an account so that I can use account
+features and retain my order history.
+
+- Given valid required account fields and a password at least eight
+  characters, when I submit registration, then the account can be created and
+  authenticated.
+- Given a password shorter than eight characters or invalid/duplicate account
+  data, when I submit, then validation rejects the request and does not create
+  a usable account.
+
+**US-07 — Sign in and maintain a shopper session (FR-02, FR-03).**<br>
+As a shopper, I want to sign in and have my session restored so that I can
+continue protected tasks.
+
+- Given valid shopper credentials, when I use shopper sign-in, then the
+  shopper session is established and verified.
+- Given invalid credentials or an administrator account at shopper sign-in,
+  when I submit, then shopper authentication is rejected.
+- Given an expired token, when an API request returns an expired-session
+  response, then local session state is cleared and protected navigation
+  returns to sign-in without a full-page reload.
+
+**US-08 — Recover my password (FR-27, FR-35).**<br>
+As a customer who cannot sign in, I want to reset my password securely so that
+I can regain account access.
+
+- Given an eligible account and configured email service, when I request
+  recovery, then the public confirmation does not identify whether the account
+  exists and an eligible account receives a reset link.
+- Given a valid reset link, when I set a valid new password before its
+  20-minute expiry, then the password changes and the reset token cannot be
+  reused.
+- Given an expired, malformed, or used token, when I submit it, then the
+  password is unchanged and an error is shown.
+- Given an unconfigured email provider, the system must not falsely claim that
+  a message was delivered.
+
+**US-09 — Check out as a guest using COD (FR-10, FR-11, FR-26).**<br>
+As a guest, I want to place a COD order without registering so that I can buy
+eligible products.
+
+- Given cart lines, valid guest name/email/address, in-stock products, and
+  COD enabled, when I submit checkout, then an order is stored with guest
+  contact and server-calculated item, shipping, fee, and total values.
+- Given missing contact/address, empty cart, invalid variant, hidden item,
+  insufficient stock, ineligible destination, or disabled COD, when I submit,
+  then the API rejects the order and returns a useful error.
+- Given a successfully created guest order, when I attempt to read it through
+  a public order ID or customer order-history route, then access is denied.
+
+**US-10 — Check out as a signed-in customer (FR-10, FR-11, FR-15).**<br>
+As a customer, I want to place an order and then view its status so that I can
+follow my purchase.
+
+- Given an authenticated cart and valid delivery address, when I submit an
+  eligible order, then the backend reloads products and calculates the order
+  from database state.
+- Given a product price/stock/visibility/variant changes between page load and
+  submit, when checkout reaches the API, then current server rules prevail and
+  the submitted browser total is not trusted.
+- Given another customer's order ID, when I request order details, then the
+  API does not disclose that order.
+- Given my own order, when I open order history/details, then only my
+  authorized order and its current persisted fulfillment status are shown.
+
+**US-11 — Apply a promo coupon (FR-32).**<br>
+As a shopper, I want a valid coupon applied to my cart so that I receive its
+configured discount.
+
+- Given a valid active coupon, matching currency, satisfied minimum, and
+  remaining usage, when I apply it, then the API reports the eligible
+  server-calculated discount.
+- Given wrong currency, unmet minimum, expired/inactive coupon, invalid
+  discount, or exhausted usage, when I validate/submit, then the coupon is
+  rejected.
+- Given usage becomes exhausted after validation but before order creation,
+  when I submit the order, then order-time checks prevent the stale coupon from
+  bypassing its limit.
+
+**US-12 — Maintain a wishlist (FR-34).**<br>
+As a signed-in customer, I want to save products for later so that I can find
+them again.
+
+- Given a public product, when I add/remove it from my wishlist, then the
+  action is saved to my account and reflected in the wishlist.
+- Given a saved item, when I choose move-to-cart, then that item is offered in
+  my cart with its product information.
+- Given I am signed out, when I request account wishlist data, then the
+  protected route requires sign-in.
+
+**US-13 — Write a product review (FR-33).**<br>
+As a customer who received a product, I want to review it so that I can share
+feedback with future shoppers.
+
+- Given I have a delivered order containing the product, when I submit one
+  review, then it is stored in a pending moderation state.
+- Given no delivered purchase or an existing review for that product, when I
+  submit another review, then the API rejects the ineligible/duplicate review.
+- Given a pending review, when it has not been approved, then it is not shown
+  as a public approved review.
+
+**US-14 — Ask for support (FR-16).**<br>
+As a guest or customer, I want to submit a support ticket so that I can ask
+for assistance.
+
+- Given valid ticket fields, when a guest/customer submits, then a ticket is
+  stored.
+- Given a signed-in customer, when I open my tickets, then I see only my own
+  tickets and available replies.
+- Given an invalid ticket or another user's ticket data, when I submit/read,
+  then validation/ownership checks prevent unauthorized access.
+
+**US-15 — Print my order document (FR-37).**<br>
+As an authorized customer, I want an invoice or packing slip so that I can
+keep a record or prepare a parcel.
+
+- Given an order I am authorized to view, when I open invoice/packing slip,
+  then order data and currency render and the browser print action is
+  available.
+- Given an order from before currency was saved, when I view the document, then
+  the documented legacy-country fallback is used.
+- Given an order belonging to a different customer, when I request its
+  document, then authorization prevents disclosure.
+
+#### Administrator stories
+
+**US-16 — Sign in as an administrator (FR-02, FR-04).**<br>
+As an administrator, I want a separate sign-in and protected workspace so that
+store-management actions are not available to shoppers.
+
+- Given valid administrator credentials, when I use the admin sign-in, then I
+  reach the admin workspace.
+- Given shopper credentials at the admin sign-in, when I submit, then access
+  is rejected and the shopper session is not retained as an admin session.
+- Given an unauthenticated/non-admin API request to an admin operation, when
+  the API receives it, then it denies the operation independent of hidden UI.
+- Given five failed admin logins from the same IP in 15 minutes, when another
+  failure is attempted, then the configured rate limit blocks it.
+
+**US-17 — Manage catalog and stock (FR-07, FR-39).**<br>
+As an administrator, I want to create/edit/hide/delete products and manage
+variants and inventory so that the customer catalog stays accurate.
+
+- Given an administrator session and valid product fields, when I create or
+  edit a product, then the changes persist.
+- Given a product is hidden, when public users browse/search/open the product,
+  then product information is not returned publicly.
+- Given invalid field lengths or malformed image files, when I save, then the
+  API rejects invalid data and does not expose an incomplete success state.
+- Given an image upload, when it is not an allowed image/signature or exceeds
+  five files/5 MiB each, then it is rejected and temporary files are cleaned.
+
+**US-18 — Manage coupons and review moderation (FR-32, FR-33).**<br>
+As an administrator, I want to create coupons and moderate reviews so that
+promotions and public feedback follow store rules.
+
+- Given an authorized administrator, when I create/edit/deactivate/delete a
+  coupon, then saved rules are reflected by public validation and checkout.
+- Given a pending review, when I approve or reject it, then public display
+  reflects moderation status.
+- Given a shopper or unauthenticated caller, when they call admin mutation
+  endpoints, then the API denies the request.
+
+**US-19 — Fulfill and track an order (FR-12, FR-38).**<br>
+As an administrator, I want to update order fulfillment and save a tracking
+reference so that the customer can see the current manual status.
+
+- Given a valid status value, when admin updates an order, then the status is
+  persisted and appears to an authorized customer.
+- Given cancellation before shipment, when cancellation succeeds, then stock
+  is restored; cancellation after shipment does not restore stock.
+- Given a safe HTTPS tracking link, when admin saves shipment metadata, then
+  it is displayed as a manual tracking link.
+- Given a non-HTTPS/unsafe link, when admin submits it, then validation rejects
+  the link.
+- The current system does not guarantee a transition graph or carrier booking.
+
+**US-20 — Manage tickets and password recovery (FR-16, FR-36).**<br>
+As an administrator, I want to respond to tickets and initiate customer
+password recovery so that I can support customers.
+
+- Given an admin session and ticket, when I reply or change status, then
+  persisted ticket state updates.
+- Given an eligible non-admin customer and configured email provider, when I
+  initiate a reset, then the customer receives a single-use expiring link.
+- Given an administrator account target or non-admin caller, when reset
+  endpoint is called, then role/authorization checks reject inappropriate
+  access.
+
+**US-21 — Review business performance and record cash sales (FR-17, FR-18).**<br>
+As an administrator, I want sales/inventory summaries and cash-sale records
+so that I can monitor store operations.
+
+- Given stored orders, when I open analytics, then aggregates include the
+  supported sales channels, periods, products, and regions.
+- Given a valid manual cash sale, when I save it, then it is recorded and
+  represented in the applicable summaries.
+- Given invalid name, negative amount, empty items, or invalid quantity, when
+  I save, then validation rejects it.
+
+**US-22 — Configure checkout and export reports (FR-19, FR-29, FR-41).**<br>
+As an administrator, I want to control supported market/COD settings and
+export reports so that the store operates with current policy.
+
+- Given saved public-safe settings, when a shopper loads the store, then only
+  safe availability settings are exposed; provider secrets are never returned.
+- Given a disabled market/payment option, when a shopper bypasses the UI, then
+  server-side order validation still enforces availability.
+- Given product/order data, when admin downloads CSV, then fields are quoted
+  and spreadsheet-formula-like values are neutralized.
+
+#### Operator stories
+
+**US-23 — Operate, validate, and package the system (FR-20–FR-23).**<br>
+As an operator/developer, I want health checks, validation, backup tools, and
+Android packaging so that I can run and release the application responsibly.
+
+- Given missing required API configuration, when startup validation runs,
+  then the API fails explicitly; staging/production weak or placeholder JWT
+  secrets are rejected.
+- Given MongoDB disconnected, when readiness is requested, then it returns
+  unavailable; liveness still reports process state.
+- Given CI triggers on configured branch/PR, when jobs finish, then syntax,
+  backend tests, frontend tests, and build results are visible.
+- Given a reachable API URL and Android build prerequisites, when a debug
+  build runs, then a debug APK is produced; production distribution still
+  requires signed release and HTTPS configuration.
+
+**US-24 — Protect customer and store data (NFR-SEC-01–05).**<br>
+As a store owner, I want private customer/order data and credentials protected
+so that public routes disclose only intended information.
+
+- Given a guest or different customer, when they request private order,
+  wishlist, cart, or ticket data, then authorization prevents cross-account
+  disclosure.
+- Given public settings are requested, when provider configuration contains a
+  secret, then only provider readiness/safe fields are returned.
+- Given a hidden product or private provider/admin value, when public catalog
+  routes and rendered output are inspected, then that private value is absent.
+- This product has no music tracklist, scheduled album launch, or generated
+  sitemap feature. No Oct-19 release-story, track-name, sitemap, pre-order, or
+  royalty/payment assumptions from the supplied example apply to IndusCart.
+
+**US-25 — Revisit products I viewed (FR-42).**<br>
+As a shopper, I want the storefront to remind me of products I recently viewed
+so that I can return to an item without searching for it again.
+
+- Given I open a currently public product detail page, when I return to the
+  storefront in the same browser, then the recently viewed section can show
+  that product using current public product data.
+- Given a product is hidden or deleted after I viewed it, when the section
+  refreshes its data, then it must not expose the removed/hidden product.
+- Recently viewed history is browser-local; it is not a synced account
+  history or a server-held customer profile.
+
+**US-26 — Monitor stock and product opportunities (FR-43).**<br>
+As an administrator, I want low-stock and product opportunity summaries so
+that I can decide what inventory or campaign needs attention.
+
+- Given a visible product has fewer than five units, when I open the admin
+  dashboard, then it appears in the low-stock alerts, including zero stock,
+  with a path to edit inventory.
+- Given sufficient sales/product data exists, when I view dashboard
+  recommendations and regional campaign panels, then summaries are derived
+  from available data and presented as decision support, not guaranteed
+  forecasts or automatically executed campaigns.
+- Given a product has an active dated promotion or very low stock, when a
+  shopper views its card/detail page, then any promotion countdown and
+  scarcity badge accurately reflect configured dates and current stock; no
+  inventory reservation timer is implied.
 
 ## 6. Core business rules
 

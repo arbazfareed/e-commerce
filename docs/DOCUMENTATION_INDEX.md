@@ -9,7 +9,7 @@ This index explains which document answers which project question.
 | Project showcase | [`PROJECT_SHOWCASE.md`](./PROJECT_SHOWCASE.md) | Product capabilities, user journeys, routes, and GitHub presentation |
 | Feature coverage | [`FEATURE_COVERAGE.md`](./FEATURE_COVERAGE.md) | Implemented, partial, and missing use cases and recommended next work |
 | Complete project reference | [`COMPLETE_PROJECT_DOCUMENTATION.md`](./COMPLETE_PROJECT_DOCUMENTATION.md) | Consolidated project behavior, acceptance examples, use cases, code-backed NFRs, validation commands, operations, and roadmap |
-| SRD / requirements | [`SRD.md`](./SRD.md) | Scope, 41 functional requirements, detailed use cases, acceptance criteria, code-backed NFRs, and release gates |
+| SRD / requirements | [`SRD.md`](./SRD.md) | Scope, 43 functional requirements, 10 use cases, 26 Given/When/Then user stories, code-backed NFRs, and release gates |
 | API reference | [`API_REFERENCE.md`](./API_REFERENCE.md) | Endpoints, authentication levels, fields, statuses, and API limitations |
 | Architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System, deployment, request-flow, and data-model diagrams |
 | Storage architecture | [`STORAGE_ARCHITECTURE.md`](./STORAGE_ARCHITECTURE.md) | Verified MongoDB, uploads, backups, browser storage, encryption, and Docker persistence behavior |
@@ -20,7 +20,7 @@ This index explains which document answers which project question.
 | Local runbook | [`LOCAL_RUN_GUIDE.md`](./LOCAL_RUN_GUIDE.md) | Local browser, Wi-Fi phone, and APK testing |
 | Local DevOps runbook | [`LOCAL_DEVOPS_GUIDE.md`](./LOCAL_DEVOPS_GUIDE.md) | Plain-English DevOps overview, Kali Docker Compose setup, monitoring, CI, security, and production limits |
 | Android runbook | [`ANDROID_GUIDE.md`](./ANDROID_GUIDE.md) | Capacitor builds, GitHub APK artifacts, signing limitations |
-| Test plan | [`TESTING_GUIDE.md`](./TESTING_GUIDE.md) | Backend/frontend automated test inventory, exact commands, 30 manual end-to-end cases, traceability, and coverage gaps |
+| Test plan | [`TESTING_GUIDE.md`](./TESTING_GUIDE.md) | Backend/frontend automated test inventory, exact commands, 33-case index plus 49 detailed manual specifications, execution/defect log, traceability, and coverage gaps |
 | QA checklist pack | [`qa/README.md`](./qa/README.md) | Implementation-aware boundary, UI/UX, API, security, accessibility, and regression checks |
 | Deployment runbook | [`PRODUCTION_DEPLOYMENT.md`](./PRODUCTION_DEPLOYMENT.md) | Public hosting, HTTPS, storage, backups, monitoring, payments, and legal gates |
 | Release checklist | [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) | Merge, APK, and production sign-off |
