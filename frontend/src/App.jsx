@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar          from './components/Navbar';
+import Footer          from './components/Footer';
 import HomePage        from './pages/HomePage';
 import LoginPage       from './pages/LoginPage';
 import PasswordResetPage from './pages/PasswordResetPage';
@@ -121,11 +122,17 @@ const SharedPortalRoutes = () => (
 const AppRoutes = () => {
   const appMode = import.meta.env.VITE_APP_MODE || 'shared';
   const adminPortal = appMode === 'admin';
+  const location = useLocation();
+  const isAdminDashboard = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar adminPortal={adminPortal} />
-      {adminPortal ? <AdminPortalRoutes /> : appMode === 'shopper' ? <ShopperPortalRoutes /> : <SharedPortalRoutes />}
-    </>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {adminPortal ? <AdminPortalRoutes /> : appMode === 'shopper' ? <ShopperPortalRoutes /> : <SharedPortalRoutes />}
+      </div>
+      {!adminPortal && !isAdminDashboard && <Footer />}
+    </div>
   );
 };
 

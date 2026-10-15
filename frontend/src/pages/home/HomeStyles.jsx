@@ -50,7 +50,7 @@ export default function HomeStyles({
         content:'';
         position:absolute;
         inset:0;
-        background:linear-gradient(120deg,rgba(5,19,16,.78) 0%,rgba(16,56,48,.70) 42%,rgba(62,52,24,.44) 100%);
+        background:linear-gradient(90deg, rgba(5,19,16,0.92) 0%, rgba(5,19,16,0.84) 46%, rgba(10,35,30,0.62) 72%, rgba(62,52,24,0.36) 100%);
       }
     
       @media (prefers-reduced-motion: no-preference) {
@@ -59,6 +59,9 @@ export default function HomeStyles({
     
       @media (max-width:760px) {
         .hero-image-slide img { object-position:68% center; }
+        .hero-image-slide::after {
+          background:linear-gradient(180deg, rgba(5,19,16,0.94) 0%, rgba(5,19,16,0.88) 60%, rgba(10,35,30,0.75) 100%) !important;
+        }
       }
     
       @media (prefers-reduced-motion: reduce) {

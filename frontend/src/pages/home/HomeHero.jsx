@@ -39,7 +39,9 @@ export default function HomeHero({
             >
               Shop the collection <span aria-hidden="true">↓</span>
             </button>
-            <span style={styles.deliveryNote}>Free shipping over PKR 10,000 • Trusted checkout</span>
+            <span style={styles.deliveryNote}>
+              <span aria-hidden="true" style={{ color: '#6ee7b7' }}>✓</span> Free shipping over PKR 10,000 • Trusted checkout
+            </span>
           </div>
           <div className="hero-stats" style={styles.heroStats}>
             <span className="hero-stat" style={styles.heroStat}><strong>4.9/5</strong> customer rating</span>
