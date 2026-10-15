@@ -126,9 +126,9 @@ export default function NavbarContent({
           <button
             type="button"
             className="navbar-admin-entry"
-            aria-label="Store tools"
+            aria-label="Store tools - Admin"
             title="Store tools"
-            style={S.adminEntryBtn}
+            style={{ ...S.adminEntryBtn, display: 'inline-flex', alignItems: 'center', gap: '7px', width: 'auto', minWidth: '46px', padding: '0 12px' }}
             onPointerDown={beginAdminHold}
             onPointerUp={() => clearAdminHold()}
             onPointerLeave={() => clearAdminHold()}
@@ -147,12 +147,13 @@ export default function NavbarContent({
             }}
             onBlur={() => clearAdminHold()}
           >
-            <span aria-hidden="true" style={{ ...S.holdProgressRing, width: 34, height: 34, borderRadius: '50%', background: `conic-gradient(#b8f5d3 ${adminHoldProgress}%, rgba(255,255,255,0.14) 0deg)` }}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true" style={{ color:'#fff' }}>
-                <path d="M12 3 19 6v5c0 4.6-2.9 8-7 10-4.1-2-7-5.4-7-10V6l7-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <span aria-hidden="true" style={{ ...S.holdProgressRing, width: 22, height: 22, borderRadius: '50%', background: `conic-gradient(#b8f5d3 ${adminHoldProgress}%, rgba(255,255,255,0.18) 0deg)`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true" style={{ color:'#fff' }}>
+                <path d="M12 3 19 6v5c0 4.6-2.9 8-7 10-4.1-2-7-5.4-7-10V6l7-3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.3px' }}>Admin</span>
           </button>
         )}
         {adminPortal && !user ? (
