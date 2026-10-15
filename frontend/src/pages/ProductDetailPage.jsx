@@ -183,7 +183,7 @@ const S = {
   link: { color: '#059669', fontWeight: 700 },
   detail: { display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(340px, .95fr)', gap: 54, alignItems: 'start' },
   gallery: { minWidth: 0 },
-  mainImage: { height: 520, borderRadius: 24, background: 'radial-gradient(ellipse at center, #fff 0%, #f4f8f4 58%, #e8f1eb 100%)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: '0 18px 44px rgba(15,23,42,.08)' },
+  mainImage: { height: 520, borderRadius: 24, background: '#ffffff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15,23,42,.06)' },
   image: { width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', padding: 16, boxSizing: 'border-box' },
   placeholder: { fontSize: 110, fontWeight: 800, color: '#86efac' },
   thumbs: { display: 'flex', gap: 10, marginTop: 14, overflowX: 'auto' },
