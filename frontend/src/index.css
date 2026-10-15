@@ -1020,6 +1020,9 @@ button:active:not(:disabled) { transform:scale(.985); }
 :root[data-theme='dark'] .product-card-image {
   background:radial-gradient(ellipse at center,#293b31 0%,#1b2a22 62%,#17251e 100%) !important;
 }
+:root[data-theme='dark'] .product-card-image img {
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.45)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25)) !important;
+}
 :root[data-theme='dark'] .product-main-image {
   background:radial-gradient(ellipse at center,#293b31 0%,#1b2a22 62%,#17251e 100%) !important;
   border-color:#3a5044 !important;

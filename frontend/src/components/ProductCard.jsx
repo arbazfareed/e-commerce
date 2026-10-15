@@ -144,17 +144,22 @@ export default function ProductCard({ product: p, onAddToCart }) {
           appearance: none !important;
         }
         .product-card {
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease !important;
         }
         @media (hover:hover) and (pointer:fine) {
           .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 18px 38px rgba(15,23,42,0.12);
-            border-color: rgba(16,185,129,0.3);
+            transform: translateY(-8px) scale(1.015) !important;
+            box-shadow: 0 24px 48px -8px rgba(15,23,42,0.14), 0 8px 18px -4px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.95) !important;
+            border-color: rgba(16,185,129,0.38) !important;
           }
-          .product-card:hover img { transform: scale(1.04); }
+          .product-card:hover .product-card-image img {
+            transform: scale(1.06) translateY(-4px) !important;
+            filter: drop-shadow(0 20px 24px rgba(15, 23, 42, 0.20)) drop-shadow(0 6px 10px rgba(15, 23, 42, 0.10)) !important;
+          }
           .product-card:hover .product-card-add-button {
             background: linear-gradient(135deg,#059669,#047857) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(5,150,105,0.36) !important;
           }
           .product-card:hover .product-image-nav {
             background: rgba(0,0,0,0.72) !important;
@@ -167,8 +172,8 @@ export default function ProductCard({ product: p, onAddToCart }) {
           }
         }
         @media (hover:none) {
-          .product-card:hover { transform:none; }
-          .product-card:hover img { transform:none; }
+          .product-card:hover { transform:none !important; }
+          .product-card:hover img { transform:none !important; }
         }
       `}</style>
     </article>

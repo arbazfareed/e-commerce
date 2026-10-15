@@ -13,7 +13,7 @@ export const S = {
   ava:       { width:34, height:34, borderRadius:'50%', background:'linear-gradient(135deg,#34d399,#0d5c42)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'#fff', flexShrink:0, boxShadow:'0 6px 14px rgba(16,185,129,.28)' },
   logoutBtn: { background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.16)', color:'#d1fae5', borderRadius:7, width:30, height:30, cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
 
-  main:      { flex:1, padding:'30px 36px', maxWidth:1180, minWidth:0, minHeight:'100vh', overflowX:'hidden', color:'#20392e', background:'#f5f7f5' },
+  main:      { flex:1, padding:'28px 32px', width:'100%', maxWidth:'100%', minWidth:0, minHeight:'100vh', overflowX:'hidden', color:'#20392e', background:'#f5f7f5', boxSizing:'border-box' },
   pgTop:     { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24, flexWrap:'wrap', gap:14 },
   pgTitle:   { margin:0, fontSize:26, fontWeight:900, color:'var(--ink, #14251d)', letterSpacing:'-0.8px', fontFamily:"'DM Sans','Segoe UI',sans-serif" },
   pgSub:     { margin:'5px 0 0', fontSize:13, color:'#64748b', fontWeight:500 },

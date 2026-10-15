@@ -69,6 +69,11 @@ export default function AdminGlobalStyles() {
       :root[data-theme='dark'] .admin-page .admin-main .pgTop .pgSub,
       :root[data-theme='dark'] .admin-page .admin-main section[aria-labelledby='coupons-heading'] > div:first-child p,
       :root[data-theme='dark'] .admin-page .admin-main section[aria-labelledby='reviews-heading'] > div:first-child p { color:#bac8bf !important; }
+      .admin-page .admin-main {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
       :root:not([data-theme='dark']) .admin-page .admin-main {
         background:#f5f7f5 !important;
         color:#20392e !important;
