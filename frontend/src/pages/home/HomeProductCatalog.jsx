@@ -39,7 +39,7 @@ export default function HomeProductCatalog({
               {pagination.total} {pagination.total === 1 ? 'product' : 'products'} found
             </span>
           </div>
-          <h2 className="collection-title">Find something <span className="collection-title-accent">meaningful</span></h2>
+          <h2 className="collection-title">Find Something Meaningful</h2>
           {!isLocal && (
             <p role="status" className="collection-market-status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
               International market: Pakistan-only products are hidden.

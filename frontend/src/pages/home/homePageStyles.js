@@ -364,11 +364,13 @@ export function getHomePageStyles(isDarkTheme) {
       },
       controls: {
         display: 'flex',
-        justifyContent: 'space-between',
+        flexDirection: 'column',
         alignItems: 'center',
-        marginBottom: '0',
-        flexWrap: 'wrap',
-        gap: '16px',
+        justifyContent: 'center',
+        textAlign: 'center',
+        marginBottom: '20px',
+        gap: '18px',
+        width: '100%',
       },
       stats: {
         fontSize: '14px',

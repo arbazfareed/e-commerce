@@ -32,7 +32,15 @@ export default function NavbarStyles({
       .navbar-portal-entry:hover { transform:translateY(-1px); border-color:#b8f0cc !important; background:linear-gradient(145deg,#0a6a4c,#0b826f) !important; box-shadow:0 8px 20px rgba(11,93,67,.26); }
       .navbar-portal-entry:focus-visible { outline:2px solid #16845d; outline-offset:3px; }
       .mobile-header-cart { display: none !important; }
-      @media (max-width: 760px) {
+      .site-nav-link.is-active {
+        background: rgba(11, 93, 67, 0.08) !important;
+        color: #0b5d43 !important;
+        box-shadow: none !important;
+      }
+      .navbar-brand-group {
+        margin-right: 20px;
+      }
+      @media (max-width: 900px) {
         .site-nav {
           position: relative !important;
           height: 64px !important;

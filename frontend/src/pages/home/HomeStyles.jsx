@@ -256,18 +256,18 @@ export default function HomeStyles({
           width: 100% !important;
         }
 
-        .grid,
-        .recent-grid {
-          grid-template-columns: 1fr !important;
-          gap: 16px !important;
-        }
-      }
-    
-      @media (min-width: 520px) and (max-width: 760px) {
         .home-page .product-row,
         .home-page .recent-product-row {
-          grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-          gap:14px !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 14px !important;
+        }
+      }
+
+      @media (max-width: 340px) {
+        .home-page .product-row,
+        .home-page .recent-product-row {
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
         }
       }
     
