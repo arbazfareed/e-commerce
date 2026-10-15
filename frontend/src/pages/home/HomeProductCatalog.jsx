@@ -32,14 +32,16 @@ export default function HomeProductCatalog({
     <main id="shop-collection" className="main" style={styles.main}>
       {/* Stats & Controls */}
       <div className="controls collection-heading" style={styles.controls}>
-        <div>
-          <p className="collection-kicker">SHOP THE COLLECTION</p>
-          <h2 className="collection-title">Find something meaningful</h2>
-          <p style={styles.stats}>
-            {pagination.total} {pagination.total === 1 ? 'product' : 'products'} found
-          </p>
+        <div className="collection-header-meta">
+          <div className="collection-kicker-row">
+            <span className="collection-kicker">SHOP THE COLLECTION</span>
+            <span className="collection-count-pill" style={styles.stats}>
+              {pagination.total} {pagination.total === 1 ? 'product' : 'products'} found
+            </span>
+          </div>
+          <h2 className="collection-title">Find something <span className="collection-title-accent">meaningful</span></h2>
           {!isLocal && (
-            <p role="status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
+            <p role="status" className="collection-market-status" style={{ ...styles.stats, marginTop: 4, fontSize: 12 }}>
               International market: Pakistan-only products are hidden.
             </p>
           )}

@@ -184,6 +184,19 @@ export default function NavbarContent({
         aria-expanded={open}
         onClick={() => setOpen(o => !o)}
       >{open ? '✕' : '☰'}</button>}
+
+      {/* Mobile Cart Quick Access */}
+      {!adminPortal && (
+        <Link
+          to="/cart"
+          className="mobile-header-cart"
+          aria-label={`Shopping cart with ${totalItems} ${totalItems === 1 ? 'item' : 'items'}`}
+          onClick={() => setOpen(false)}
+        >
+          <span aria-hidden="true" style={{ fontSize: '18px', lineHeight: 1 }}>🛒</span>
+          {totalItems > 0 && <span className="mobile-header-cart-badge">{totalItems}</span>}
+        </Link>
+      )}
     </nav>
   );
 }

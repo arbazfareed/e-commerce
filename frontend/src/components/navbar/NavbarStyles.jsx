@@ -31,36 +31,84 @@ export default function NavbarStyles({
       .navbar-portal-entry { transition:transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease; }
       .navbar-portal-entry:hover { transform:translateY(-1px); border-color:#b8f0cc !important; background:linear-gradient(145deg,#0a6a4c,#0b826f) !important; box-shadow:0 8px 20px rgba(11,93,67,.26); }
       .navbar-portal-entry:focus-visible { outline:2px solid #16845d; outline-offset:3px; }
+      .mobile-header-cart { display: none !important; }
       @media (max-width: 760px) {
         .site-nav {
+          position: relative !important;
           height: 64px !important;
-          padding: 0 16px !important;
-          background: rgba(255,255,255,.97) !important;
-          box-shadow: 0 5px 22px rgba(15,23,42,.08) !important;
+          padding: 0 14px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          background: rgba(255,255,255,.98) !important;
+          box-shadow: 0 4px 20px rgba(15,23,42,.08) !important;
         }
-        .site-nav .brandText { font-size:16px !important; max-width:none !important; }
-        .site-nav .brandSuffix { display:none !important; }
-        .site-nav .mark { width:34px !important; height:34px !important; }
+        :root[data-theme='dark'] .site-nav {
+          background: rgba(14, 26, 21, 0.98) !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+          border-bottom: 1px solid rgba(125, 173, 156, 0.18) !important;
+        }
+        .site-nav .brandText {
+          font-size: 18px !important;
+          font-weight: 800 !important;
+          max-width: none !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          white-space: nowrap !important;
+          letter-spacing: -0.02em !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 4px !important;
+        }
+        .site-nav .brandSuffix {
+          display: inline-flex !important;
+          font-size: 11px !important;
+          font-weight: 700 !important;
+          color: #0b5d43 !important;
+          background: #e8f7ee !important;
+          border: 1px solid #c2e8d3 !important;
+          padding: 1px 6px !important;
+          border-radius: 999px !important;
+          margin-left: 2px !important;
+        }
+        :root[data-theme='dark'] .site-nav .brandSuffix {
+          background: rgba(24, 48, 38, 0.8) !important;
+          border-color: rgba(125, 173, 156, 0.3) !important;
+          color: #a7f3d0 !important;
+        }
+        .site-nav .mark { width: 32px !important; height: 32px !important; flex-shrink: 0 !important; }
     
         .site-nav > .navbar-brand-group {
-          display:flex;
-          align-items:center;
-          gap:8px;
-          min-width: 0;
-          max-width: calc(100% - 68px);
-          margin-left: auto;
+          position: absolute !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 6px !important;
+          min-width: 0 !important;
+          max-width: calc(100% - 124px) !important;
+          margin: 0 !important;
+          pointer-events: auto !important;
         }
         .navbar-brand-group > a:first-child {
-          min-width:0;
-          max-width:calc(100% - 50px);
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 7px !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          text-decoration: none !important;
         }
         .navbar-brand-group > a:first-child .brandText {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          white-space: nowrap !important;
         }
         .navbar-brand-group > .navbar-portal-entry {
-          flex:0 0 42px;
+          flex: 0 0 38px !important;
+          width: 38px !important;
+          height: 38px !important;
         }
     
         .site-nav-links,
@@ -71,22 +119,80 @@ export default function NavbarStyles({
         }
     
         .site-nav-burger {
-          display: block !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
           position: absolute !important;
-          left: 16px !important;
+          left: 12px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
           right: auto !important;
-          transform: none !important;
           margin: 0 !important;
           width: 42px !important;
           height: 42px !important;
           border: 1.5px solid rgba(13,92,66,.2) !important;
-          border-radius: 14px !important;
+          border-radius: 13px !important;
           background: linear-gradient(145deg, #f7fff9, #e8f9ee) !important;
           color: #0b5d43 !important;
-          font-size: 22px !important;
+          font-size: 20px !important;
           line-height: 1 !important;
           font-weight: 800 !important;
-          box-shadow: 0 6px 16px rgba(13,92,66,.10) !important;
+          box-shadow: 0 4px 14px rgba(13,92,66,.10) !important;
+          cursor: pointer !important;
+          z-index: 10 !important;
+        }
+        :root[data-theme='dark'] .site-nav-burger {
+          border-color: rgba(125,173,156,0.25) !important;
+          background: linear-gradient(145deg, #182e23, #13271e) !important;
+          color: #a7f3d0 !important;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
+        }
+
+        .mobile-header-cart {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          position: absolute !important;
+          right: 12px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          width: 42px !important;
+          height: 42px !important;
+          border: 1.5px solid rgba(13,92,66,.2) !important;
+          border-radius: 13px !important;
+          background: linear-gradient(145deg, #f7fff9, #e8f9ee) !important;
+          color: #0b5d43 !important;
+          text-decoration: none !important;
+          box-shadow: 0 4px 14px rgba(13,92,66,.10) !important;
+          z-index: 10 !important;
+        }
+        :root[data-theme='dark'] .mobile-header-cart {
+          border-color: rgba(125,173,156,0.25) !important;
+          background: linear-gradient(145deg, #182e23, #13271e) !important;
+          color: #a7f3d0 !important;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
+        }
+        .mobile-header-cart-badge {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          background: #059669;
+          color: #ffffff;
+          font-size: 10px;
+          font-weight: 800;
+          min-width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(5, 150, 105, 0.4);
+        }
+        :root[data-theme='dark'] .mobile-header-cart-badge {
+          border-color: #0e1a15;
+          background: #10b981;
         }
     
         .mobile-menu-layer {

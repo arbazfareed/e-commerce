@@ -202,25 +202,60 @@ export default function HomeStyles({
           padding: 14px 14px !important;
         }
     
-        .cat-container,
+      .cat-container,
+      .subcat-container {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .cat-container::-webkit-scrollbar,
+      .subcat-container::-webkit-scrollbar {
+        display: none !important;
+      }
+      .cat-btn,
+      .subcat-btn {
+        touch-action: manipulation;
+      }
+      .cat-btn:active,
+      .subcat-btn:active {
+        transform: scale(0.96);
+      }
+
+      @media (max-width: 760px) {
+        .cat-container {
+          padding: 10px 14px !important;
+          gap: 8px !important;
+        }
+        .cat-btn {
+          font-size: 12px !important;
+          padding: 8px 14px !important;
+          border-radius: 999px !important;
+          flex-shrink: 0 !important;
+        }
         .subcat-container {
-          padding-left: 16px !important;
-          padding-right: 16px !important;
+          padding: 7px 14px !important;
+          gap: 6px !important;
         }
-    
+        .subcat-btn {
+          font-size: 11px !important;
+          padding: 5px 12px !important;
+          border-radius: 999px !important;
+          flex-shrink: 0 !important;
+        }
+
         .main {
-          padding: 22px 16px 32px !important;
+          padding: 16px 14px 32px !important;
         }
-    
+
         .controls {
-          margin-bottom: 20px !important;
+          margin-bottom: 16px !important;
           align-items: stretch !important;
         }
-    
+
         .sort-select {
           width: 100% !important;
         }
-    
+
         .grid,
         .recent-grid {
           grid-template-columns: 1fr !important;
@@ -284,11 +319,15 @@ export default function HomeStyles({
           font-size: 15px !important;
         }
     
-        .cat-btn,
-        .subcat-btn {
-          font-size: 11px !important;
+        .cat-btn {
+          font-size: 12px !important;
           padding-left: 12px !important;
           padding-right: 12px !important;
+        }
+        .subcat-btn {
+          font-size: 11px !important;
+          padding-left: 10px !important;
+          padding-right: 10px !important;
         }
       }
     `}</style>
