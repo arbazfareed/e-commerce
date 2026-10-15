@@ -10,7 +10,7 @@ export const API_BASE = configuredApiUrl.replace(/\/+$/, '');
 
 export const assetUrl = (assetPath) => {
   if (!assetPath) return '';
-  if (/^https?:\/\//i.test(assetPath)) return assetPath;
+  if (/^(?:https?:|data:|blob:)/i.test(assetPath)) return assetPath;
   const cleanPath = assetPath.replace(/^\/+/, '');
   return `${API_BASE}/${cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`}`;
 };

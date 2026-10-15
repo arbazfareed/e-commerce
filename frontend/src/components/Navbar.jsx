@@ -96,8 +96,7 @@ export default function Navbar({ adminPortal = false }) {
   // Admins get a different nav — only Admin panel + Support
   // Regular users get Shop, Cart, Orders, Support
   const isAdmin = user?.isAdmin;
-  const adminPortalUrl = import.meta.env.VITE_ADMIN_PORTAL_URL
-    || `${window.location.protocol}//${window.location.hostname}:3001/admin/login`;
+  const adminPortalUrl = import.meta.env.VITE_ADMIN_PORTAL_URL || '/admin/login';
   const shopperPortalUrl = import.meta.env.VITE_SHOPPER_PORTAL_URL
     || (import.meta.env.VITE_APP_MODE === 'admin' ? `${window.location.protocol}//${window.location.hostname}:3000/` : '/');
   const showAdminEntry = !adminPortal;
@@ -151,7 +150,11 @@ export default function Navbar({ adminPortal = false }) {
       setFailedAttempts(0);
       setAdminAccessError('');
       setAdminAccessCode('');
-      window.location.assign(adminPortalUrl);
+      if (adminPortalUrl.startsWith('http://') || adminPortalUrl.startsWith('https://')) {
+        window.location.assign(adminPortalUrl);
+      } else {
+        navigate(adminPortalUrl);
+      }
       return;
     }
 
@@ -189,7 +192,7 @@ export default function Navbar({ adminPortal = false }) {
               <span aria-hidden="true" style={{ fontSize:'20px' }}>🛡</span>
               <strong id="admin-access-title" style={{ fontSize:'15px', fontWeight:800 }}>Admin Access</strong>
             </div>
-            <p style={S.accessLabel}>Enter administrative security code</p>
+            <p style={S.accessLabel}>Enter admin access code</p>
             <form onSubmit={submitAdminAccess}>
               <label htmlFor="admin-access-code" style={S.accessInputLabel}>Admin access code</label>
               <input

@@ -17,16 +17,8 @@ const {
 const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
 const { removeUploadedFiles, validateImageUploads } = require('../middleware/validateImageUploads');
 
-// Always resolve storage from this file, not the process working directory.
-// This keeps uploads and the static directory aligned when started from any folder.
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-// ─── Multer: save to uploads/, accept multiple images ─────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename:    (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random()*1e6) + path.extname(file.originalname)),
-});
+// ─── Multer: keep images in memory to store directly in the database ─────────
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -47,7 +39,7 @@ const uploadProductImages = upload.array('images', 5);
 const handleProductImageUpload = (req, res, next) => {
   uploadProductImages(req, res, error => {
     if (error) {
-      return removeUploadedFiles(req.files).then(() => res.status(400).json({ message: error.message }));
+      return res.status(400).json({ message: error.message });
     }
     return next();
   });

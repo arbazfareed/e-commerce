@@ -161,8 +161,14 @@ const createProduct = async (req, res) => {
   try {
     const { name, pricePKR, priceUSD, discountPercent = 0, discountStartDate = '', discountEndDate = '', category, subcategory, brand, model, colors, sizes, isVisible, description, isLocal, stock, weightKg } = req.body;
 
+    const mapUploadedFileToImage = file => {
+      if (file.buffer) {
+        return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      }
+      return file.filename;
+    };
+
     if ((req.files || []).length > 5) {
-      await Promise.all(req.files.map(file => fs.promises.unlink(file.path).catch(() => {})));
       return res.status(400).json({ message: 'A product can have at most 5 images.' });
     }
 
@@ -181,8 +187,7 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: 'Enter valid discount dates and ensure the end date is not before the start date.' });
     }
 
-    // ✅ FIX: req.files gives array from multer .array('images')
-    const images = req.files ? req.files.map(f => f.filename) : [];
+    const images = req.files ? req.files.map(mapUploadedFileToImage) : [];
 
     const product = await Product.create({
       name:        name.trim(),
@@ -222,6 +227,13 @@ const updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
+    const mapUploadedFileToImage = file => {
+      if (file.buffer) {
+        return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      }
+      return file.filename;
+    };
+
     product.name        = req.body.name        ?? product.name;
     product.pricePKR    = req.body.pricePKR    !== undefined ? Number(req.body.pricePKR)   : product.pricePKR;
     product.priceUSD    = req.body.priceUSD    !== undefined ? Number(req.body.priceUSD)   : product.priceUSD;
@@ -256,14 +268,13 @@ const updateProduct = async (req, res) => {
     // Handle images: keep existing + add new uploads
     if (req.body.replaceImages === 'true') {
       const keptImages = filterRetainedImages(req.body.keptImages || [], product.images);
-      const newImages = req.files ? req.files.map(f => f.filename) : [];
+      const newImages = req.files ? req.files.map(mapUploadedFileToImage) : [];
       product.images = [...keptImages, ...newImages];
     } else if (req.files && req.files.length > 0) {
-      product.images = [...(product.images || []), ...req.files.map(f => f.filename)];
+      product.images = [...(product.images || []), ...req.files.map(mapUploadedFileToImage)];
     }
 
     if (product.images.length > 5) {
-      await Promise.all((req.files || []).map(file => fs.promises.unlink(file.path).catch(() => {})));
       return res.status(400).json({ message: 'A product can have at most 5 images.' });
     }
 
@@ -280,10 +291,13 @@ const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (product) {
-      // Also delete image files from disk
       (product.images || []).forEach(img => {
-        const filePath = resolveUploadedImagePath(path.join(__dirname, '..', 'uploads'), img);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        if (typeof img === 'string' && !img.startsWith('data:') && !img.startsWith('http')) {
+          try {
+            const filePath = resolveUploadedImagePath(path.join(__dirname, '..', 'uploads'), img);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          } catch {}
+        }
       });
       res.json({ message: 'Product deleted successfully' });
     } else {

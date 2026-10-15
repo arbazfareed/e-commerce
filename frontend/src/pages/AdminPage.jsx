@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BrandMark from '../components/BrandMark';
 import { assetUrl } from '../utils/axiosConfig';
+import { optimizeImageFile } from '../utils/imageCompressor';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
 
@@ -249,18 +250,19 @@ export default function AdminPage() {
   };
 
   /* ── image helpers ── */
-  const pickImgs = (files, isEdit) => {
+  const pickImgs = async (files, isEdit) => {
     const currentCount = isEdit ? ePrevs.length : previews.length;
     const available = Math.max(0, 5 - currentCount);
     const selected = Array.from(files);
     const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
-    const validFiles = selected.filter(file => allowedTypes.has(file.type) && file.size <= 5 * 1024 * 1024);
-    if (validFiles.length !== selected.length) flash('Choose JPG, PNG, or WEBP images no larger than 5 MiB each.', false);
+    const validFiles = selected.filter(file => allowedTypes.has(file.type) && file.size <= 10 * 1024 * 1024);
+    if (validFiles.length !== selected.length) flash('Choose JPG, PNG, or WEBP images.', false);
     const arr = validFiles.slice(0, available);
     if (validFiles.length > arr.length) flash('A product can have at most 5 images.', false);
-    const urls = arr.map(f => URL.createObjectURL(f));
-    if (isEdit) { setENewFiles(p => [...p,...arr]); setEPrevs(p => [...p,...urls]); }
-    else        { setImgFiles(p => [...p,...arr]);  setPreviews(p => [...p,...urls]); }
+    const optimized = await Promise.all(arr.map(f => optimizeImageFile(f)));
+    const urls = optimized.map(f => URL.createObjectURL(f));
+    if (isEdit) { setENewFiles(p => [...p,...optimized]); setEPrevs(p => [...p,...urls]); }
+    else        { setImgFiles(p => [...p,...optimized]);  setPreviews(p => [...p,...urls]); }
   };
   const revokePreview = (url) => {
     if (typeof url === 'string' && url.startsWith('blob:')) URL.revokeObjectURL(url);

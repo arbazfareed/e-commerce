@@ -4,6 +4,7 @@ const cors     = require('cors');
 const helmet   = require('helmet');
 const dotenv   = require('dotenv');
 const path     = require('path');
+const fs       = require('fs');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { assertEnvironment, getCorsOptions } = require('./config/env');
@@ -13,12 +14,37 @@ dotenv.config();
 assertEnvironment();
 
 const app = express();
-const uploadsDir = path.join(__dirname, 'uploads');
+const staticUploadsDirs = [
+  path.join(__dirname, 'uploads'),
+  path.join(process.cwd(), 'uploads'),
+  path.join(__dirname, '..', 'uploads'),
+];
+
+for (const dir of staticUploadsDirs) {
+  try {
+    if (fs.existsSync(dir)) {
+      app.use('/uploads', express.static(dir, { maxAge: '1d' }));
+    }
+  } catch {}
+}
+
+app.get('/uploads/:filename', (req, res, next) => {
+  const safeFilename = path.basename(req.params.filename);
+  for (const dir of staticUploadsDirs) {
+    try {
+      const fullPath = path.join(dir, safeFilename);
+      if (fs.existsSync(fullPath)) {
+        return res.sendFile(fullPath);
+      }
+    } catch {}
+  }
+  next();
+});
 
 // ─── Middleware ───────────────────────────────────────────────
 app.use(cors(getCorsOptions()));
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(metricsMiddleware);
 // Ensure database is connected for API requests (vital for serverless environments like Vercel)
 app.use(async (req, res, next) => {
