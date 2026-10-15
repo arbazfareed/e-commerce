@@ -23,10 +23,19 @@ app.use(metricsMiddleware);
 // Ensure database is connected for API requests (vital for serverless environments like Vercel)
 app.use(async (req, res, next) => {
   if (req.path.startsWith('/api') && mongoose.connection.readyState !== 1) {
+    if (!process.env.MONGO_URI) {
+      return res.status(503).json({
+        error: 'Database not configured',
+        message: 'MONGO_URI is missing. Please add it to your Vercel Project Settings -> Environment Variables.',
+      });
+    }
     try {
       await connectDB();
     } catch (err) {
-      return next(err);
+      return res.status(503).json({
+        error: 'Database connection failed',
+        message: err.message,
+      });
     }
   }
   next();
@@ -44,7 +53,10 @@ app.use('/api/support',  require('./routes/supportRoutes'));   // ← NEW
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
 // ─── Home Route ───────────────────────────────────────────────
-app.get('/', (req, res) => res.send('IndusCart API is running ✅'));
+app.get('/', (req, res) => {
+  const isDbReady = mongoose.connection.readyState === 1;
+  res.status(200).send(`IndusCart API is running ✅${isDbReady ? ' (Database connected)' : ''}`);
+});
 app.get('/health/live', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'induscart-api' });
 });
@@ -75,7 +87,6 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: status === 500 ? 'Internal server error.' : error.message });
 });
 
-
 // ─── Connect DB & Start Server ────────────────────────────────
 const startServer = async () => {
   await connectDB();
@@ -83,7 +94,7 @@ const startServer = async () => {
   return app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 };
 
-if (require.main === module) {
+if (require.main === module && !process.env.VERCEL) {
   startServer();
 }
 
