@@ -20,6 +20,9 @@ export default {
     overflow: 'hidden',
     flexShrink: 0,
     boxShadow: 'inset 0 -10px 20px rgba(15, 23, 42, 0.02)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imageOverlay: {
     position: 'absolute',
@@ -30,12 +33,15 @@ export default {
   image: {
     width: '100%',
     height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
     objectFit: 'contain',
     objectPosition: 'center',
     boxSizing: 'border-box',
     padding: '12px',
     transition: 'transform 0.45s cubic-bezier(.16, 1, .3, 1), filter 0.45s cubic-bezier(.16, 1, .3, 1)',
     display: 'block',
+    margin: 'auto',
     filter: 'drop-shadow(0 12px 18px rgba(15, 23, 42, 0.14)) drop-shadow(0 4px 6px rgba(15, 23, 42, 0.06))',
   },
   placeholder: {

@@ -37,8 +37,48 @@ export default function NavbarStyles({
         color: #0b5d43 !important;
         box-shadow: none !important;
       }
-      .navbar-brand-group {
-        margin-right: 20px;
+      .site-nav {
+        max-width: 100vw;
+        box-sizing: border-box;
+      }
+      @media (min-width: 901px) and (max-width: 1240px) {
+        .site-nav {
+          padding: 0 12px !important;
+          max-width: 100vw !important;
+          box-sizing: border-box !important;
+        }
+        .navbar-brand-group {
+          margin-right: 8px !important;
+        }
+        .site-nav .brandText {
+          font-size: 15px !important;
+        }
+        .site-nav-links {
+          gap: 2px !important;
+        }
+        .site-nav-link {
+          padding: 6px 8px !important;
+          font-size: 12px !important;
+        }
+        .navbar-live-search {
+          max-width: 140px !important;
+        }
+        .navbar-search-input {
+          font-size: 12px !important;
+          padding: 7px 10px 7px 28px !important;
+        }
+        .desktop-theme-toggle {
+          padding: 6px 8px !important;
+          font-size: 11px !important;
+        }
+        .navbar-admin-entry {
+          width: 38px !important;
+          height: 36px !important;
+          min-width: 38px !important;
+        }
+        .site-nav-auth {
+          gap: 6px !important;
+        }
       }
       @media (max-width: 900px) {
         .site-nav {

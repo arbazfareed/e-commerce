@@ -510,9 +510,10 @@ button:active:not(:disabled) { transform:scale(.985); }
   .subcat-container,
   .main {
     width: 100% !important;
-    max-width: 1440px !important;
+    max-width: 1320px !important;
     margin-left: auto !important;
     margin-right: auto !important;
+    box-sizing: border-box !important;
   }
 
   .hero-content,
@@ -521,8 +522,8 @@ button:active:not(:disabled) { transform:scale(.985); }
   .cat-container,
   .subcat-container,
   .main {
-    padding-left: clamp(24px, 4vw, 64px) !important;
-    padding-right: clamp(24px, 4vw, 64px) !important;
+    padding-left: clamp(16px, 3.5vw, 40px) !important;
+    padding-right: clamp(16px, 3.5vw, 40px) !important;
   }
 
   .main {
@@ -765,15 +766,15 @@ button:active:not(:disabled) { transform:scale(.985); }
 }
 
 @media (min-width: 761px) and (max-width: 1100px) {
-  .product-row { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important; gap: 18px !important; }
+  .product-row { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important; gap: 18px !important; justify-content: center !important; }
 }
 
 @media (min-width: 1101px) and (max-width: 1400px) {
-  .product-row { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; gap: 20px !important; }
+  .product-row { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important; gap: 20px !important; justify-content: center !important; }
 }
 
 @media (min-width: 1401px) {
-  .product-row { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)) !important; gap: 22px !important; }
+  .product-row { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important; gap: 22px !important; justify-content: center !important; }
 }
 
 @media (hover: hover) {
@@ -789,24 +790,115 @@ button:active:not(:disabled) { transform:scale(.985); }
   }
 }
 
-/* Mobile storefront is intentionally vertical; horizontal product rails are desktop/tablet only. */
+/* Mobile storefront: 2-column balanced catalog & compact horizontal rail for recently viewed */
 @media (max-width: 760px) {
-  .home-page .product-row,
-  .home-page .recent-product-row {
+  .home-page .product-row:not(.recent-product-row) {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-auto-flow: row !important;
-    gap: 16px !important;
+    gap: 10px !important;
     overflow: visible !important;
     padding: 0 !important;
+    width: 100% !important;
   }
 
-  .home-page .product-row > .product-card,
-  .home-page .recent-product-row > .product-card {
+  .home-page .product-row:not(.recent-product-row) > .product-card {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
     flex: none !important;
+  }
+
+  /* Recently viewed: sleek compact cards that never stretch to full width */
+  .home-page .recent-product-row {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory !important;
+    gap: 10px !important;
+    padding: 4px 2px 14px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .home-page .recent-product-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .home-page .recent-product-row > .product-card {
+    flex: 0 0 160px !important;
+    width: 160px !important;
+    min-width: 160px !important;
+    max-width: 160px !important;
+    scroll-snap-align: start !important;
+  }
+
+  /* Sleek, proportional mobile card dimensions */
+  .product-card {
+    min-height: 270px !important;
+    border-radius: 16px !important;
+  }
+
+  .product-card-image {
+    height: 140px !important;
+  }
+
+  .product-card-image img {
+    padding: 8px !important;
+  }
+
+  .product-card-content {
+    padding: 10px 10px 12px !important;
+  }
+
+  .product-card-content h3 {
+    font-size: 13px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.25 !important;
+  }
+
+  .product-card-content .product-meta {
+    font-size: 10px !important;
+    margin: 0 0 4px !important;
+  }
+
+  .product-card-content p.description,
+  .product-card-content [style*="description"] {
+    display: none !important;
+  }
+
+  .product-card-price {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+  }
+
+  .product-card-price-alt {
+    font-size: 10px !important;
+    margin: -2px 0 6px !important;
+  }
+
+  .product-card-add-button {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    min-height: 34px !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .product-card-wishlist {
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .product-category-badge {
+    font-size: 8.5px !important;
+    padding: 3px 7px !important;
+    top: 6px !important;
+    left: 6px !important;
   }
 }
 
@@ -1017,6 +1109,23 @@ button:active:not(:disabled) { transform:scale(.985); }
 :root[data-theme='dark'] .feature-card p,
 :root[data-theme='dark'] .product-card-content p,
 :root[data-theme='dark'] .product-card-content .priceAlt { color:#a9bdb0 !important; }
+:root:not([data-theme='dark']) .product-card-image img {
+  mix-blend-mode: multiply;
+}
+
+.product-card-image {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.product-card-image img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  margin: auto !important;
+}
+
 :root[data-theme='dark'] .product-card-image {
   background:radial-gradient(ellipse at center,#293b31 0%,#1b2a22 62%,#17251e 100%) !important;
 }

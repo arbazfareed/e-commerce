@@ -256,29 +256,30 @@ export default function HomeStyles({
           width: 100% !important;
         }
 
-        .home-page .product-row,
-        .home-page .recent-product-row {
+        .home-page .product-row:not(.recent-product-row) {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          gap: 14px !important;
+          gap: 10px !important;
         }
       }
 
       @media (max-width: 340px) {
-        .home-page .product-row,
-        .home-page .recent-product-row {
+        .home-page .product-row:not(.recent-product-row) {
           grid-template-columns: 1fr !important;
-          gap: 12px !important;
+          gap: 10px !important;
         }
       }
     
       @media (min-width: 761px) and (max-width: 980px) {
         .hero-copy h1 {
-          font-size: 48px !important;
+          font-size: 44px !important;
         }
     
         .hero-content,
         .hero-tools {
-          max-width: 920px !important;
+          width: 100% !important;
+          max-width: 1320px !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
         }
       }
     
