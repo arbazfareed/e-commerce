@@ -187,9 +187,9 @@ export default function Navbar({ adminPortal = false }) {
           <div className="admin-access-modal" style={S.accessModal} role="dialog" aria-modal="true" aria-labelledby="admin-access-title" onClick={event => event.stopPropagation()}>
             <div style={S.accessHeader}>
               <span aria-hidden="true" style={{ fontSize:'20px' }}>🛡</span>
-              <strong id="admin-access-title" style={{ fontSize:'15px', fontWeight:800 }}>IndusCart Valley admin</strong>
+              <strong id="admin-access-title" style={{ fontSize:'15px', fontWeight:800 }}>Admin Access</strong>
             </div>
-            <p style={S.accessLabel}>Enter admin access code</p>
+            <p style={S.accessLabel}>Enter administrative security code</p>
             <form onSubmit={submitAdminAccess}>
               <label htmlFor="admin-access-code" style={S.accessInputLabel}>Admin access code</label>
               <input

@@ -745,7 +745,7 @@ return (
               }}>{item.icon}</span>
               <span style={{ flex:1, textAlign:'left', color: tab===item.id ? (themeMode === 'dark' ? '#f9fffc' : '#075c43') : (themeMode === 'dark' ? '#edfdf5' : '#334155'), fontSize:13, fontWeight:800 }}>{item.label}</span>
               {item.badge > 0 && (
-                <span style={{ ...S.navBadge, background: item.warn ? '#ef4444' : 'rgba(16,185,129,.26)', color: item.warn ? '#fff' : '#ffffff', boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.12)', fontWeight:900 }}>
+                <span style={{ ...S.navBadge, background: item.warn ? '#ef4444' : (themeMode === 'dark' ? 'rgba(16,185,129,.26)' : '#dcfce7'), color: item.warn ? '#fff' : (themeMode === 'dark' ? '#d1fae5' : '#065f46'), boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.12)', fontWeight:900 }}>
                   {item.badge}
                 </span>
               )}

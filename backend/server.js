@@ -20,7 +20,17 @@ app.use(cors(getCorsOptions()));
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.json({ limit: '1mb' }));
 app.use(metricsMiddleware);
-app.use('/uploads', express.static(uploadsDir));
+// Ensure database is connected for API requests (vital for serverless environments like Vercel)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch (err) {
+      return next(err);
+    }
+  }
+  next();
+});
 
 // ─── Routes ───────────────────────────────────────────────────
 app.use('/api/auth',     require('./routes/authRoutes'));
@@ -65,6 +75,7 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: status === 500 ? 'Internal server error.' : error.message });
 });
 
+
 // ─── Connect DB & Start Server ────────────────────────────────
 const startServer = async () => {
   await connectDB();
@@ -85,4 +96,7 @@ const shutdown = async (signal) => {
 process.once('SIGINT', () => shutdown('SIGINT'));
 process.once('SIGTERM', () => shutdown('SIGTERM'));
 
-module.exports = { app, startServer };
+module.exports = app;
+module.exports.app = app;
+module.exports.startServer = startServer;
+
