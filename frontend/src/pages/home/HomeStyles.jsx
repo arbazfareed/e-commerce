@@ -9,9 +9,11 @@ export default function HomeStyles({
       }
     
       @keyframes hero-image-carousel {
-        0%, 42% { transform:translateX(0); }
-        50%, 92% { transform:translateX(-50%); }
-        100% { transform:translateX(0); }
+        0%, 20%   { transform:translateX(0); }
+        25%, 45%  { transform:translateX(-25%); }
+        50%, 70%  { transform:translateX(-50%); }
+        75%, 95%  { transform:translateX(-75%); }
+        100%      { transform:translateX(0); }
       }
 
       @keyframes hero-ken-burns {
@@ -29,14 +31,14 @@ export default function HomeStyles({
     
       .hero-image-track {
         display:flex;
-        width:200%;
+        width:400%;
         height:100%;
         will-change:transform;
       }
     
       .hero-image-slide {
         position:relative;
-        flex:0 0 50%;
+        flex:0 0 25%;
         height:100%;
         overflow:hidden;
       }
@@ -58,7 +60,7 @@ export default function HomeStyles({
       }
     
       @media (prefers-reduced-motion: no-preference) {
-        .hero-image-track { animation:hero-image-carousel 24s ease-in-out infinite; }
+        .hero-image-track { animation:hero-image-carousel 28s ease-in-out infinite; }
       }
     
       @media (max-width:760px) {

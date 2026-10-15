@@ -12,8 +12,10 @@ export default function HomeHero({
     <section className="hero" style={styles.hero}>
       <div className="hero-image-slider" aria-hidden="true">
         <div className="hero-image-track">
-          <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" loading="eager" /></div>
-          <div className="hero-image-slide"><img src="/honey-cover.jpg" alt="" /></div>
+          <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="Pure Mountain Honey" loading="eager" /></div>
+          <div className="hero-image-slide"><img src="/botanical-ritual-cover.jpg" alt="Botanical Facial Oils & Saffron" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/mountain-honey-cover.jpg" alt="Wild Mountain Raw Honeycomb" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/artisan-sanctuary-cover.jpg" alt="Artisan Botanical Soaps & Hydrosols" loading="lazy" /></div>
         </div>
       </div>
       <div style={styles.heroGlow} />
