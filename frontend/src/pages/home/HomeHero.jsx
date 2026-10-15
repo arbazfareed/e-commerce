@@ -13,9 +13,6 @@ export default function HomeHero({
       <div className="hero-image-slider" aria-hidden="true">
         <div className="hero-image-track">
           <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" loading="eager" /></div>
-          <div className="hero-image-slide"><img src="/home-ritual-still-life.svg" alt="" /></div>
-          <div className="hero-image-slide"><img src="/home-botanical-still-life.svg" alt="" /></div>
-          <div className="hero-image-slide"><img src="/home-local-craft-still-life.svg" alt="" /></div>
           <div className="hero-image-slide"><img src="/honey-cover.jpg" alt="" /></div>
         </div>
       </div>
@@ -40,39 +37,121 @@ export default function HomeHero({
               Shop the collection <span aria-hidden="true">↓</span>
             </button>
             <span style={styles.deliveryNote}>
-              <span aria-hidden="true" style={{ color: '#6ee7b7' }}>✓</span> Free shipping over PKR 10,000 • Trusted checkout
+              • Free shipping over PKR 10,000 • Trusted checkout
             </span>
           </div>
           <div className="hero-stats" style={styles.heroStats}>
-            <span className="hero-stat" style={styles.heroStat}><strong>4.9/5</strong> customer rating</span>
+            <span className="hero-stat" style={styles.heroStat}><strong>★ 4.9/5</strong> customer rating</span>
             <span className="hero-stat" style={styles.heroStat}><strong>24h</strong> dispatch support</span>
             <span className="hero-stat" style={styles.heroStat}><strong>2k+</strong> happy shoppers</span>
           </div>
         </div>
     
         <div className="hero-shell" style={styles.heroShell}>
-          <div style={styles.heroGlassCard}>
+          <div className="hero-glass-interactive" style={styles.heroGlassCard}>
             <div style={styles.heroGlassHeader}>
-              <span style={styles.heroGlyph}>✦</span>
-              <strong style={styles.heroGlassTitle}>Ritual curation</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={styles.heroGlyph}>✦</span>
+                <strong style={styles.heroGlassTitle}>Ritual curation</strong>
+              </div>
+              <span style={{
+                background: 'rgba(110, 231, 183, 0.12)',
+                border: '1px solid rgba(110, 231, 183, 0.28)',
+                color: '#6ee7b7',
+                borderRadius: '999px',
+                padding: '4px 10px',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.5px',
+                textTransform: 'uppercase',
+              }}>
+                Active Batch 04
+              </span>
             </div>
+
+            {/* Featured Visual Showcase with smooth 3D animated styling */}
+            <div style={{
+              position: 'relative',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              marginBottom: '14px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <img
+                src="/curation-neroli-saffron.png"
+                alt="Cold-Pressed Neroli & Saffron"
+                className="curation-media-img"
+                style={{
+                  width: '100%',
+                  height: '130px',
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            </div>
+
             <div style={styles.heroGlassGrid}>
               <div style={styles.heroGlassMetric}>
                 <span style={styles.heroMetricLabel}>Top ritual</span>
                 <strong style={styles.heroMetricValue}>Glow care</strong>
+                <span style={styles.heroMetricSub}>★ 4.97 • 1,280 reviews</span>
               </div>
               <div style={styles.heroGlassMetric}>
                 <span style={styles.heroMetricLabel}>Repeat buyers</span>
                 <strong style={styles.heroMetricValue}>63%</strong>
+                <span style={styles.heroMetricSub}>Exceptional loyalty</span>
               </div>
               <div style={styles.heroGlassMetric}>
                 <span style={styles.heroMetricLabel}>Avg. order</span>
                 <strong style={styles.heroMetricValue}>Rs 8,400</strong>
+                <span style={styles.heroMetricSub}>Complimentary sampler</span>
               </div>
               <div style={styles.heroGlassMetric}>
                 <span style={styles.heroMetricLabel}>Loyalty</span>
                 <strong style={styles.heroMetricValue}>A+</strong>
+                <span style={styles.heroMetricSub}>Organic Harvested</span>
               </div>
+            </div>
+
+            {/* Card Footer */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: '14px',
+              paddingTop: '12px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                color: 'rgba(255, 255, 255, 0.72)',
+                fontWeight: 500,
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block' }} />
+                Handcrafted in small batches
+              </span>
+              <button
+                type="button"
+                onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#fcd34d',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                Explore this ritual →
+              </button>
             </div>
           </div>
         </div>
@@ -120,6 +199,30 @@ export default function HomeHero({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button
+            type="button"
+            onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
+            style={{
+              position: 'absolute',
+              right: '8px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(255, 255, 255, 0.10)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              color: '#ffffff',
+              padding: '6px 16px',
+              borderRadius: '999px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              letterSpacing: '0.3px',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'}
+          >
+            Filter
+          </button>
         </div>
       </div>
     </section>

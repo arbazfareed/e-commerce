@@ -9,11 +9,14 @@ export default function HomeStyles({
       }
     
       @keyframes hero-image-carousel {
-        0%, 18% { transform:translateX(0); }
-        22%, 38% { transform:translateX(-20%); }
-        42%, 58% { transform:translateX(-40%); }
-        62%, 78% { transform:translateX(-60%); }
-        82%, 100% { transform:translateX(-80%); }
+        0%, 42% { transform:translateX(0); }
+        50%, 92% { transform:translateX(-50%); }
+        100% { transform:translateX(0); }
+      }
+
+      @keyframes hero-ken-burns {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.05); }
       }
     
       .hero-image-slider {
@@ -26,14 +29,14 @@ export default function HomeStyles({
     
       .hero-image-track {
         display:flex;
-        width:500%;
+        width:200%;
         height:100%;
         will-change:transform;
       }
     
       .hero-image-slide {
         position:relative;
-        flex:0 0 20%;
+        flex:0 0 50%;
         height:100%;
         overflow:hidden;
       }
@@ -44,6 +47,7 @@ export default function HomeStyles({
         height:100%;
         object-fit:cover;
         object-position:center 46%;
+        animation: hero-ken-burns 22s ease-in-out infinite alternate;
       }
     
       .hero-image-slide::after {
@@ -54,7 +58,7 @@ export default function HomeStyles({
       }
     
       @media (prefers-reduced-motion: no-preference) {
-        .hero-image-track { animation:hero-image-carousel 36s ease-in-out infinite; }
+        .hero-image-track { animation:hero-image-carousel 24s ease-in-out infinite; }
       }
     
       @media (max-width:760px) {
@@ -62,6 +66,20 @@ export default function HomeStyles({
         .hero-image-slide::after {
           background:linear-gradient(180deg, rgba(5,19,16,0.94) 0%, rgba(5,19,16,0.88) 60%, rgba(10,35,30,0.75) 100%) !important;
         }
+      }
+
+      .hero-glass-interactive {
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+      }
+      .hero-glass-interactive:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.60), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+      }
+      .curation-media-img {
+        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .hero-glass-interactive:hover .curation-media-img {
+        transform: scale(1.05);
       }
     
       @media (prefers-reduced-motion: reduce) {
