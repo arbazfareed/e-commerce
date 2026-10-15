@@ -2014,15 +2014,20 @@ body {
   grid-template-columns: minmax(165px, .82fr) minmax(0, 1.5fr);
   align-items: end;
   gap: 12px;
-  flex: 0 1 660px;
-  min-width: 0;
-  padding: 12px;
+  width: min(100%, 680px) !important;
+  max-width: 680px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  flex: none !important;
+  margin: 0 auto !important;
+  padding: 12px 14px;
   border: 1px solid var(--filter-panel-border);
   border-radius: 18px;
   background: var(--filter-panel-background);
   box-shadow: var(--filter-panel-shadow);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  box-sizing: border-box;
 }
 
 .collection-sort-field,
@@ -2077,7 +2082,7 @@ body {
 }
 
 @media (max-width: 1050px) {
-  .collection-control-group { flex-basis: 100%; max-width: 760px; margin-left: auto; }
+  .collection-control-group { width: 100% !important; max-width: 760px !important; margin: 0 auto !important; flex: none !important; height: auto !important; }
 }
 
 @media (max-width: 760px) {
