@@ -795,27 +795,73 @@ return (
 
       {/* ═══ MAIN ══════════════════════════════════════════════ */}
       <main className="admin-main" style={{ ...S.main, background: themeMode === 'dark' ? '#111815' : '#f5f7f5', color: themeMode === 'dark' ? '#edf6f3' : '#20392e' }}>
-        <div className="admin-mobile-heading" style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg,#0f172a,#0f766e 58%,#14b8a6)' : 'linear-gradient(135deg,#0a3d2f,#12684c 58%,#1a7f5d)' }}>
-          <p>INDUSCART ADMINISTRATION</p>
-          <h1>Admin workspace</h1>
-          <span>Run your catalog, orders, customers, and delivery operations from one place.</span>
+        <div
+          className="admin-mobile-heading"
+          style={{
+            background: themeMode === 'dark'
+              ? 'linear-gradient(135deg, rgba(16,42,34,0.98) 0%, rgba(13,31,25,0.98) 100%)'
+              : '#ffffff',
+            border: themeMode === 'dark'
+              ? '1px solid rgba(52,211,153,0.28)'
+              : '1px solid #dce8e0',
+            boxShadow: themeMode === 'dark'
+              ? '0 14px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)'
+              : '0 4px 20px rgba(15,23,42,0.06)',
+            borderRadius: 18,
+            padding: '18px 18px 16px',
+            marginBottom: 16,
+          }}
+        >
+          <p style={{
+            margin:'0 0 6px',
+            color: themeMode === 'dark' ? '#6ee7b7' : '#047857',
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+          }}>
+            INDUSCART ADMINISTRATION
+          </p>
+          <h1 style={{
+            margin:'0 0 6px',
+            fontSize: 22,
+            fontWeight: 800,
+            color: themeMode === 'dark' ? '#ffffff' : '#0f172a',
+            letterSpacing: '-0.4px',
+            lineHeight: 1.25,
+          }}>
+            Admin workspace
+          </h1>
+          <span style={{
+            display: 'block',
+            marginBottom: 12,
+            color: themeMode === 'dark' ? '#d1ded6' : '#475569',
+            fontSize: 12.5,
+            lineHeight: 1.5,
+            fontWeight: 500,
+          }}>
+            Run your catalog, orders, customers, and delivery operations from one place.
+          </span>
           <button
+            type="button"
             onClick={toggleThemeMode}
             style={{
-              marginTop:12,
-              border:'1px solid rgba(255,255,255,0.2)',
-              background:'rgba(255,255,255,0.08)',
-              color:'#ecfeff',
-              borderRadius:999,
-              padding:'8px 12px',
-              fontWeight:800,
-              fontSize:10,
-              cursor:'pointer',
-              letterSpacing:'1px',
-              textTransform:'uppercase',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              border: themeMode === 'dark' ? '1px solid rgba(255,255,255,0.28)' : '1px solid #cbd5e1',
+              background: themeMode === 'dark' ? 'rgba(255,255,255,0.10)' : '#f1f5f9',
+              color: themeMode === 'dark' ? '#ffffff' : '#1e293b',
+              borderRadius: 999,
+              padding: '7px 14px',
+              fontWeight: 800,
+              fontSize: 11,
+              cursor: 'pointer',
+              letterSpacing: '0.8px',
+              textTransform: 'uppercase',
             }}
           >
-            {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
+            {themeMode === 'dark' ? '☀ Light mode' : '◐ Dark mode'}
           </button>
         </div>
 

@@ -198,12 +198,12 @@ export default function AdminGlobalStyles() {
           width:100% !important;
           min-height:0 !important;
           height:auto !important;
-          position:sticky !important;
-          top:64px !important;
-          z-index:100 !important;
+          position:relative !important;
+          top:auto !important;
+          z-index:10 !important;
           overflow:visible !important;
           border-right:0 !important;
-          box-shadow:0 8px 24px rgba(15,23,42,.14);
+          box-shadow:none !important;
         }
         .admin-sidebar > div:first-child { padding:12px 16px !important; }
         .admin-sidebar > nav {
@@ -233,36 +233,113 @@ export default function AdminGlobalStyles() {
         .admin-main {
           width:100% !important;
           max-width:none !important;
-          padding:18px 12px 30px !important;
+          padding:14px 12px 30px !important;
         }
         .admin-mobile-heading {
-          display:block;
-          padding:16px 16px 15px;
-          margin-bottom:12px;
-          border-radius:16px;
-          color:#fff;
-          background:linear-gradient(135deg,#0a3d2f,#12684c 58%,#1a7f5d);
-          box-shadow:0 12px 28px rgba(10,61,47,.18);
+          display:block !important;
+          padding:18px 18px 16px !important;
+          margin-top:4px !important;
+          margin-bottom:16px !important;
+          border-radius:18px !important;
+          box-sizing:border-box !important;
+          clear:both !important;
         }
-        .admin-mobile-heading p {
-          margin:0 0 6px;
-          color:#6ee7b7;
-          font-size:9px;
-          font-weight:800;
-          letter-spacing:1.5px;
+        :root:not([data-theme='dark']) .admin-mobile-heading {
+          background:#ffffff !important;
+          border:1px solid #dce8e0 !important;
+          box-shadow:0 4px 20px rgba(15,23,42,.06) !important;
+          color:#0f172a !important;
         }
-        .admin-mobile-heading h1 {
-          margin:0;
-          font-family:var(--font-display);
-          font-size:20px;
-          letter-spacing:-.5px;
+        :root:not([data-theme='dark']) .admin-mobile-heading p {
+          margin:0 0 6px !important;
+          color:#047857 !important;
+          font-size:10px !important;
+          font-weight:800 !important;
+          letter-spacing:1.5px !important;
+          text-transform:uppercase !important;
         }
-        .admin-mobile-heading span {
-          display:block;
-          margin-top:6px;
-          color:#cbd5e1;
-          font-size:11px;
-          line-height:1.45;
+        :root:not([data-theme='dark']) .admin-mobile-heading h1 {
+          margin:0 0 6px !important;
+          font-family:var(--font-display) !important;
+          font-size:22px !important;
+          font-weight:800 !important;
+          color:#0f172a !important;
+          letter-spacing:-.4px !important;
+          line-height:1.25 !important;
+        }
+        :root:not([data-theme='dark']) .admin-mobile-heading span {
+          display:block !important;
+          margin-top:0 !important;
+          margin-bottom:12px !important;
+          color:#475569 !important;
+          font-size:12.5px !important;
+          line-height:1.5 !important;
+          font-weight:500 !important;
+        }
+        :root:not([data-theme='dark']) .admin-mobile-heading button {
+          display:inline-flex !important;
+          align-items:center !important;
+          gap:6px !important;
+          padding:7px 14px !important;
+          font-size:11px !important;
+          font-weight:800 !important;
+          letter-spacing:0.8px !important;
+          text-transform:uppercase !important;
+          border-radius:999px !important;
+          border:1px solid #cbd5e1 !important;
+          background:#f1f5f9 !important;
+          color:#1e293b !important;
+          cursor:pointer !important;
+        }
+        :root[data-theme='dark'] .admin-mobile-heading {
+          background:linear-gradient(135deg, rgba(16,42,34,0.98) 0%, rgba(13,31,25,0.98) 100%) !important;
+          border:1px solid rgba(52,211,153,0.28) !important;
+          box-shadow:0 14px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+          color:#ffffff !important;
+        }
+        :root[data-theme='dark'] .admin-mobile-heading p {
+          margin:0 0 6px !important;
+          color:#6ee7b7 !important;
+          font-size:10px !important;
+          font-weight:800 !important;
+          letter-spacing:1.5px !important;
+          text-transform:uppercase !important;
+        }
+        :root[data-theme='dark'] .admin-mobile-heading h1 {
+          margin:0 0 6px !important;
+          font-family:var(--font-display) !important;
+          font-size:22px !important;
+          font-weight:800 !important;
+          color:#ffffff !important;
+          letter-spacing:-.4px !important;
+          line-height:1.25 !important;
+        }
+        :root[data-theme='dark'] .admin-mobile-heading span {
+          display:block !important;
+          margin-top:0 !important;
+          margin-bottom:12px !important;
+          color:#d1ded6 !important;
+          font-size:12.5px !important;
+          line-height:1.5 !important;
+          font-weight:500 !important;
+          opacity:0.95 !important;
+        }
+        :root[data-theme='dark'] .admin-mobile-heading button {
+          display:inline-flex !important;
+          align-items:center !important;
+          gap:6px !important;
+          padding:7px 14px !important;
+          font-size:11px !important;
+          font-weight:800 !important;
+          letter-spacing:0.8px !important;
+          text-transform:uppercase !important;
+          border-radius:999px !important;
+          border:1px solid rgba(255,255,255,0.32) !important;
+          background:rgba(255,255,255,0.12) !important;
+          color:#ffffff !important;
+          cursor:pointer !important;
+          backdrop-filter:blur(8px) !important;
+          -webkit-backdrop-filter:blur(8px) !important;
         }
         .admin-main [style*="repeat(4,1fr)"] { grid-template-columns:1fr 1fr !important; gap:10px !important; }
         .admin-main [style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr !important; }
