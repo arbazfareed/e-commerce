@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const isBrowser = typeof window !== 'undefined';
 const isLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-const productionBackendUrl = 'https://e-commerce-backend-hazel-gamma.vercel.app';
+const productionBackendUrl = 'https://e-commerce-backend-afjdevops.vercel.app';
 
 const configuredApiUrl = import.meta.env.VITE_API_URL
   || (isBrowser && !isLocalhost ? productionBackendUrl : 'http://localhost:5000');
