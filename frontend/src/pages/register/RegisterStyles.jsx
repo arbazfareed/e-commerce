@@ -37,7 +37,7 @@ export default function RegisterStyles() {
         content:'';
         position:absolute;
         inset:0;
-        background:linear-gradient(145deg,rgba(69,26,3,.08),rgba(69,26,3,.72));
+        background:linear-gradient(180deg,rgba(69,26,3,.35) 0%,rgba(69,26,3,.85) 100%);
         pointer-events:none;
       }
       .register-visual .auth-visual-image {
@@ -45,40 +45,53 @@ export default function RegisterStyles() {
       }
       .register-visual-content {
         position:absolute;
-        inset:auto 32px 34px;
-        color:#fff;
+        inset:auto 24px 26px;
+        padding:24px 26px;
+        border-radius:20px;
+        background:linear-gradient(145deg,rgba(56,21,3,.88),rgba(38,14,2,.94)) !important;
+        border:1px solid rgba(254,243,199,.24) !important;
+        box-shadow:0 16px 36px rgba(0,0,0,.35) !important;
+        backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px);
+        color:#fff !important;
         z-index:1;
       }
       .register-visual-kicker {
-        color:#fef3c7;
-        font-size:10px;
-        font-weight:800;
-        letter-spacing:1.7px;
+        display:inline-block;
+        color:#fde68a !important;
+        font-size:11px !important;
+        font-weight:800 !important;
+        letter-spacing:1.8px !important;
+        text-transform:uppercase;
+        margin-bottom:4px;
       }
       .register-visual h1 {
-        margin:12px 0;
-        font-family:'Sora',sans-serif;
-        font-size:32px;
-        line-height:1.12;
-        letter-spacing:-1px;
+        margin:8px 0 10px !important;
+        font-family:'Sora',sans-serif !important;
+        font-size:32px !important;
+        line-height:1.15 !important;
+        letter-spacing:-1px !important;
+        color:#ffffff !important;
       }
-      .register-visual h1 em { color:#fcd34d; font-style:normal; }
+      .register-visual h1 em { color:#fde047 !important; font-style:normal; }
       .register-visual p {
-        max-width:315px;
-        margin:0;
-        color:rgba(255,255,255,.8);
-        font-size:13px;
-        line-height:1.6;
+        max-width:330px !important;
+        margin:0 !important;
+        color:#fef3c7 !important;
+        font-size:13px !important;
+        line-height:1.6 !important;
       }
       .register-note {
         display:inline-flex;
-        margin-top:20px;
-        padding:8px 12px;
-        border:1px solid rgba(255,255,255,.24);
-        border-radius:99px;
-        background:rgba(255,255,255,.1);
-        font-size:10px;
-        font-weight:700;
+        align-items:center;
+        margin-top:18px;
+        padding:6px 12px !important;
+        border:1px solid rgba(254,243,199,.3) !important;
+        border-radius:99px !important;
+        background:rgba(120,53,15,.55) !important;
+        color:#fffbeb !important;
+        font-size:11px !important;
+        font-weight:700 !important;
       }
       @media (max-width:760px) {
         .register-page { padding:14px !important; align-items:flex-start !important; }

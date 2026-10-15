@@ -110,10 +110,41 @@ body::after {
 #root li,
 #root label,
 #root small,
-#root span,
 #root figcaption,
 #root summary {
   color: var(--ink-soft);
+}
+
+/* Ensure auth and visual banners stay ultra-sharp, readable, and bright in all themes */
+.login-visual h1,
+.login-visual p,
+.login-visual span,
+.register-visual h1,
+.register-visual p,
+.register-visual span {
+  color: #ffffff !important;
+}
+.login-visual .login-kicker {
+  color: #a7f3d0 !important;
+}
+.login-visual h1 em,
+.register-visual h1 em {
+  color: #fde047 !important;
+}
+.login-visual p {
+  color: #e2e8f0 !important;
+}
+.login-perks span {
+  color: #f0fdf4 !important;
+}
+.register-visual-kicker {
+  color: #fde68a !important;
+}
+.register-visual p {
+  color: #fef3c7 !important;
+}
+.register-note {
+  color: #fffbeb !important;
 }
 
 #root [style*="JetBrains Mono"] {
