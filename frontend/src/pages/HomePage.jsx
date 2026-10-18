@@ -132,7 +132,12 @@ export default function HomePage() {
       setPagination(res.data.pagination || { page:1, pageSize:items.length, total:items.length, pages:1 });
     } catch (err) {
       console.error('Failed to fetch products:', err);
-      setLoadError(`Cannot connect to the store server at ${API_BASE}. Check that the phone and computer use the same Wi-Fi, then try again.`);
+      const isNetworkErr = !err.response || err.message === 'Network Error';
+      setLoadError(
+        isNetworkErr
+          ? `Cannot connect to the store server at ${API_BASE}. Check your connection, then try again.`
+          : (err.response?.data?.message || 'Failed to load products. Please try again.')
+      );
     } finally {
       setLoading(false);
     }

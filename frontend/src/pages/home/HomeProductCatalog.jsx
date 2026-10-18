@@ -126,7 +126,7 @@ export default function HomeProductCatalog({
       )}
     
       {/* Product Grid */}
-      {!loading && sortedProducts.length > 0 && (
+      {!loading && !loadError && sortedProducts.length > 0 && (
         <>
           <div className="product-row" style={styles.grid}>
             {sortedProducts.map(product => (

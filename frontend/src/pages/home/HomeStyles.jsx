@@ -126,14 +126,25 @@ export default function HomeStyles({
     
         .hero-content {
           grid-template-columns: 1fr !important;
-          gap: 0 !important;
+          gap: 18px !important;
         }
     
         .hero-copy {
           max-width: 100% !important;
         }
     
-        .hero-shell { display:none !important; }
+        .hero-shell {
+          display: flex !important;
+          justify-content: center !important;
+          width: 100% !important;
+          margin: 14px auto 0 !important;
+        }
+
+        .hero-glass-interactive {
+          width: 100% !important;
+          max-width: 440px !important;
+          box-sizing: border-box !important;
+        }
     
         .hero-copy > div:first-child {
           margin-bottom: 14px !important;
@@ -224,6 +235,7 @@ export default function HomeStyles({
         .feature-card {
           padding: 14px 14px !important;
         }
+      }
     
       .cat-container,
       .subcat-container {
@@ -292,15 +304,35 @@ export default function HomeStyles({
         }
       }
     
-      @media (min-width: 761px) and (max-width: 980px) {
+      @media (min-width: 761px) and (max-width: 1024px) {
         .hero-copy h1 {
           font-size: 44px !important;
         }
     
-        .hero-content,
+        .hero-content {
+          grid-template-columns: 1fr !important;
+          gap: 24px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        .hero-shell {
+          display: flex !important;
+          justify-content: center !important;
+          width: 100% !important;
+          margin: 16px auto 0 !important;
+        }
+
+        .hero-glass-interactive {
+          width: 100% !important;
+          max-width: 480px !important;
+          box-sizing: border-box !important;
+        }
+    
         .hero-tools {
           width: 100% !important;
-          max-width: 1320px !important;
+          max-width: 760px !important;
+          margin-top: 26px !important;
           margin-left: auto !important;
           margin-right: auto !important;
         }

@@ -37,10 +37,14 @@ const getProducts = async (req, res) => {
     const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = { $regex: escaped, $options: 'i' };
       filter.$or = [
-        { $text: { $search: search } },
-        { brand: { $regex: escaped, $options: 'i' } },
-        { model: { $regex: escaped, $options: 'i' } },
+        { name: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { subcategory: searchRegex },
+        { brand: searchRegex },
+        { model: searchRegex },
       ];
     }
 
