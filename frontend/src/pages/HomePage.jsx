@@ -173,7 +173,7 @@ export default function HomePage() {
   return (
     <div className="home-page" style={styles.page}>
       {/* Hero Section */}
-      <HomeHero {...{ BRAND_NAME, chooseMarket, internationalEnabled, isLocal, marketSettingsLoaded, search, setSearch, styles }} />
+      <HomeHero {...{ BRAND_NAME, chooseMarket, internationalEnabled, isDarkTheme, isLocal, marketSettingsLoaded, search, setSearch, styles }} />
 
       <HomeFeatureSection {...{ styles }} />
 

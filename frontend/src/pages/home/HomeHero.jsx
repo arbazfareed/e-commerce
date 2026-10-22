@@ -2,6 +2,7 @@ export default function HomeHero({
   BRAND_NAME,
   chooseMarket,
   internationalEnabled,
+  isDarkTheme,
   isLocal,
   marketSettingsLoaded,
   search,
@@ -56,30 +57,13 @@ export default function HomeHero({
                 <span style={styles.heroGlyph}>✦</span>
                 <strong style={styles.heroGlassTitle}>Ritual curation</strong>
               </div>
-              <span style={{
-                background: 'rgba(110, 231, 183, 0.12)',
-                border: '1px solid rgba(110, 231, 183, 0.28)',
-                color: '#6ee7b7',
-                borderRadius: '999px',
-                padding: '4px 10px',
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-              }}>
+              <span style={styles.heroGlassBadge}>
                 Active Batch 04
               </span>
             </div>
 
             {/* Featured Visual Showcase with smooth 3D animated styling */}
-            <div style={{
-              position: 'relative',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              marginBottom: '14px',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}>
+            <div style={styles.heroGlassMediaWrap}>
               <img
                 src="/curation-neroli-saffron.png"
                 alt="Cold-Pressed Neroli & Saffron"
@@ -117,40 +101,18 @@ export default function HomeHero({
             </div>
 
             {/* Card Footer */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginTop: '14px',
-              paddingTop: '12px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            }}>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '11px',
-                color: 'rgba(255, 255, 255, 0.72)',
-                fontWeight: 500,
-              }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'inline-block' }} />
+            <div style={styles.heroGlassFooter}>
+              <span style={styles.heroGlassFooterText}>
+                <span style={styles.heroGlassFooterDot} />
                 Handcrafted in small batches
               </span>
               <button
                 type="button"
+                className="hero-glass-explore-btn"
                 onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#fcd34d',
-                  fontSize: '11.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
+                style={styles.heroGlassExploreBtn}
+                onMouseEnter={(e) => e.currentTarget.style.color = isDarkTheme ? '#fef08a' : '#78350f'}
+                onMouseLeave={(e) => e.currentTarget.style.color = isDarkTheme ? '#fcd34d' : '#92400e'}
               >
                 Explore this ritual →
               </button>

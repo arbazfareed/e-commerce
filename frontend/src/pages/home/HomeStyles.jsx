@@ -77,6 +77,10 @@ export default function HomeStyles({
         transform: translateY(-4px);
         box-shadow: 0 30px 70px rgba(0, 0, 0, 0.60), inset 0 1px 0 rgba(255,255,255,0.12) !important;
       }
+      [data-theme="light"] .hero-glass-interactive:hover,
+      :root:not([data-theme="dark"]) .hero-glass-interactive:hover {
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+      }
       .curation-media-img {
         transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       }
