@@ -508,12 +508,12 @@ export function getHomePageStyles(isDarkTheme) {
       recentSection: {
         marginTop: '32px',
         paddingTop: '32px',
-        borderTop: '1px solid #eef2f6',
+        borderTop: isDarkTheme ? '1px solid rgba(143, 170, 159, 0.18)' : '1px solid #eef2f6',
       },
       recentTitle: {
         fontSize: '18px',
         fontWeight: '700',
-        color: '#1e293b',
+        color: isDarkTheme ? '#ffffff' : '#1e293b',
         marginBottom: '20px',
         display: 'flex',
         alignItems: 'center',
@@ -522,8 +522,8 @@ export function getHomePageStyles(isDarkTheme) {
       recentCount: {
         fontSize: '13px',
         fontWeight: '500',
-        color: '#64748b',
-        background: '#f1f5f9',
+        color: isDarkTheme ? '#8fa99c' : '#64748b',
+        background: isDarkTheme ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
         padding: '2px 10px',
         borderRadius: '20px',
       },

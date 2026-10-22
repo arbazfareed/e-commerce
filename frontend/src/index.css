@@ -792,7 +792,7 @@ button:active:not(:disabled) { transform:scale(.985); }
 
 /* Mobile storefront: 2-column balanced catalog & compact horizontal rail for recently viewed */
 @media (max-width: 760px) {
-  .home-page .product-row:not(.recent-product-row) {
+  .home-page .product-row {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     grid-auto-flow: row !important;
@@ -802,37 +802,28 @@ button:active:not(:disabled) { transform:scale(.985); }
     width: 100% !important;
   }
 
-  .home-page .product-row:not(.recent-product-row) > .product-card {
+  .home-page .product-row > .product-card {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
     flex: none !important;
   }
 
-  /* Recently viewed: sleek compact cards that never stretch to full width */
   .home-page .recent-product-row {
-    display: flex !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
-    padding: 4px 2px 14px !important;
+    padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
-    scrollbar-width: none !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .home-page .recent-product-row::-webkit-scrollbar {
-    display: none !important;
+    overflow: visible !important;
   }
 
   .home-page .recent-product-row > .product-card {
-    flex: 0 0 160px !important;
-    width: 160px !important;
-    min-width: 160px !important;
-    max-width: 160px !important;
-    scroll-snap-align: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: none !important;
   }
 
   /* Sleek, proportional mobile card dimensions */
@@ -864,6 +855,7 @@ button:active:not(:disabled) { transform:scale(.985); }
     margin: 0 0 4px !important;
   }
 
+  .product-card-description,
   .product-card-content p.description,
   .product-card-content [style*="description"] {
     display: none !important;

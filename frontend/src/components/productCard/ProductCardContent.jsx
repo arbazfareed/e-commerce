@@ -27,12 +27,12 @@ export default function ProductCardContent({
         {'★'.repeat(Math.round(Number(p.averageRating) || 0))}{'☆'.repeat(5 - Math.round(Number(p.averageRating) || 0))} <span style={{ color:'#64748b', fontWeight:600 }}>({p.reviewCount})</span>
       </p>}
       {(p.subcategory || p.brand || p.model) && (
-        <p style={styles.productMeta}>
+        <p className="product-meta" style={styles.productMeta}>
           {[p.subcategory, p.brand, p.model].filter(Boolean).join(' · ')}
         </p>
       )}
       {p.description && (
-        <p style={styles.description}>
+        <p className="product-card-description" style={styles.description}>
           {p.description.length > 60 ? p.description.slice(0, 60) + '...' : p.description}
         </p>
       )}
