@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import API from './utils/axiosConfig';
 import { applyStoreRates } from './utils/priceUtils';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -8,16 +8,16 @@ import Navbar          from './components/Navbar';
 import Footer          from './components/Footer';
 import HomePage        from './pages/HomePage';
 import LoginPage       from './pages/LoginPage';
-import PasswordResetPage from './pages/PasswordResetPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 import RegisterPage    from './pages/RegisterPage';
 import CartPage        from './pages/CartPage';
-import OrdersPage      from './pages/OrdersPage';
-import OrderTrackPage  from './pages/OrderTrackPage';
-import InvoicePage from './pages/InvoicePage';
-import WishlistPage from './pages/WishlistPage';
-import AdminPage       from './pages/AdminPage';
-import SupportPage     from './pages/SupportPage';
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const OrderTrackPage = lazy(() => import('./pages/OrderTrackPage'));
+const InvoicePage = lazy(() => import('./pages/InvoicePage'));
+const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const SupportPage = lazy(() => import('./pages/SupportPage'));
 import ProductDetailPage from './pages/ProductDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -143,7 +143,10 @@ const AppRoutes = () => {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar adminPortal={adminPortal} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {adminPortal ? <AdminPortalRoutes /> : appMode === 'shopper' ? <ShopperPortalRoutes /> : <SharedPortalRoutes />}
+        {/* Less-visited pages (admin, orders, support…) load on demand to keep the first download small. */}
+        <Suspense fallback={<div role="status" aria-live="polite" style={{ padding:'48px 20px', textAlign:'center', color:'#64748b' }}>Loading…</div>}>
+          {adminPortal ? <AdminPortalRoutes /> : appMode === 'shopper' ? <ShopperPortalRoutes /> : <SharedPortalRoutes />}
+        </Suspense>
       </div>
       {!adminPortal && !isAdminDashboard && <Footer />}
     </div>
