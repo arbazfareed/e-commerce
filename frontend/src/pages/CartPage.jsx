@@ -77,7 +77,6 @@ export default function CartPage() {
   const shipBreak   = shipCalc.breakdown;
   // For display & grand total: convert ship fee to the user's currency
   const USD_RATE    = getUSDRate();  // reads from localStorage (admin-configurable)
-  const shipFee     = isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2));
   const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
   const countryOptions = getDeliveryCountries({ internationalEnabled: checkoutSettings?.internationalEnabled !== false, current: addr.country });
   const supportedPaymentMethods = checkoutSettings?.supportedPaymentMethods || ['COD'];
@@ -85,6 +84,11 @@ export default function CartPage() {
   const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codAllowedHere));
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const discountedSubtotal = Math.max(0, subTotal - couponDiscount);
+  // Free delivery in Pakistan above the admin's threshold (same rule as backend/utils/orderCharges.js).
+  const freeShipThreshold = isPak ? Number(checkoutSettings?.freeShippingThreshold) || 0 : 0;
+  const freeShipping = freeShipThreshold > 0 && discountedSubtotal >= freeShipThreshold;
+  const freeShipInfo = freeShipThreshold > 0 ? { threshold: freeShipThreshold, remaining: Math.max(0, freeShipThreshold - discountedSubtotal), reached: freeShipping } : null;
+  const shipFee     = freeShipping ? 0 : (isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2)));
   // Same rules as backend/utils/orderCharges.js: the COD threshold and flat fee are in PKR.
   const subtotalPKR = isPak ? discountedSubtotal : discountedSubtotal * USD_RATE;
   const codWaived = codSettings.codThreshold > 0 && subtotalPKR >= codSettings.codThreshold;
@@ -210,7 +214,7 @@ export default function CartPage() {
         <CartMainColumn {...{ S, addr, countryOptions, assetUrl, availablePaymentOptions, error, fmt, getActiveDiscountPercent, getItemPrice, guestContact, isPak, payment, removeFromCart, safeItems, setAddr, setGuestContact, setPayment, step, updateQty, user }} />
 
         {/* ── ORDER SUMMARY SIDEBAR ────────────────────────── */}
-        <CartSummary {...{ S, appliedCoupon, applyCoupon, assetUrl, codFee, codWaived, couponChecking, couponDiscount, couponError, couponInput, fmt, getItemPrice, grandTotal, handlePlaceOrder, payment, placing, safeItems, setAppliedCoupon, setCouponError, setCouponInput, setStep, shipBreak, shipCalc, shipFee, step, subTotal, totalQty }} />
+        <CartSummary {...{ S, freeShipInfo, appliedCoupon, applyCoupon, assetUrl, codFee, codWaived, couponChecking, couponDiscount, couponError, couponInput, fmt, getItemPrice, grandTotal, handlePlaceOrder, payment, placing, safeItems, setAppliedCoupon, setCouponError, setCouponInput, setStep, shipBreak, shipCalc, shipFee, step, subTotal, totalQty }} />
       </div>
     </div>
   );

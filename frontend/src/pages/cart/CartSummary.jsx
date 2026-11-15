@@ -23,6 +23,7 @@ export default function CartSummary({
   shipBreak,
   shipCalc,
   shipFee,
+  freeShipInfo = null,
   step,
   subTotal,
   totalQty
@@ -94,8 +95,18 @@ export default function CartSummary({
             {shipBreak}
           </small>
         </span>
-        <span style={S.sumVal}>{fmt(shipFee)}</span>
+        <span style={S.sumVal}>{freeShipInfo?.reached ? <strong style={{ color:'#047857' }}>Free</strong> : fmt(shipFee)}</span>
       </div>
+      {freeShipInfo && (
+        <div className="free-shipping-progress" role="status" style={{ margin:'4px 0 10px', padding:'10px 12px', borderRadius:12, background:'#effcf4', border:'1px solid #bbf7d0' }}>
+          <p style={{ margin:'0 0 6px', fontSize:12, fontWeight:700, color:'#166534' }}>
+            {freeShipInfo.reached ? '🎉 You get free delivery!' : `Add ${fmt(freeShipInfo.remaining)} more for free delivery`}
+          </p>
+          <div aria-hidden="true" style={{ height:6, borderRadius:999, background:'#d1fae5', overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${Math.min(100, ((freeShipInfo.threshold - freeShipInfo.remaining) / freeShipInfo.threshold) * 100)}%`, background:'linear-gradient(90deg,#10b981,#047857)', borderRadius:999 }} />
+          </div>
+        </div>
+      )}
     
       <div style={S.divider} />
     
