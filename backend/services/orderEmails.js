@@ -96,15 +96,21 @@ const sendOrderStatusEmail = async (order) => {
   if (!message || !to) return false;
   const { escapeHtml, layout, getFrontendUrl } = emailService;
   const link = order.user && getFrontendUrl() ? `${getFrontendUrl()}/orders/${order._id}` : '';
+  // After delivery, ask for a review of each product (links open the product page).
+  const reviewLinks = order.status === 'Delivered' && getFrontendUrl()
+    ? (order.products || []).filter(item => item.product).slice(0, 5)
+      .map(item => ({ name: item.name, url: `${getFrontendUrl()}/products/${item.product}#customer-reviews-heading` }))
+    : [];
   const tracking = order.status === 'Shipped' && order.trackingNumber
     ? `Courier: ${order.shippingProvider || 'courier'} · Tracking number: ${order.trackingNumber}` : '';
   return safeSend({
     to: to.email,
     subject: `Order ${shortId(order)}: ${order.status}`,
-    text: `Hello ${to.name},\n\n${message}\n${tracking ? `${tracking}\n` : ''}${order.trackingUrl ? `Track the parcel: ${order.trackingUrl}\n` : ''}${link ? `View your order: ${link}\n` : ''}`,
+    text: `Hello ${to.name},\n\n${message}\n${tracking ? `${tracking}\n` : ''}${order.trackingUrl ? `Track the parcel: ${order.trackingUrl}\n` : ''}${link ? `View your order: ${link}\n` : ''}${reviewLinks.length ? `\nHow did you like it? Leave a review:\n${reviewLinks.map(r => `${r.name}: ${r.url}`).join('\n')}\n` : ''}`,
     html: layout(`<p>Hello ${escapeHtml(to.name)},</p><p><strong>Order ${shortId(order)}</strong>: ${escapeHtml(message)}</p>
 ${tracking ? `<p>${escapeHtml(tracking)}</p>` : ''}${order.trackingUrl ? `<p><a href="${escapeHtml(order.trackingUrl)}">Track the parcel</a></p>` : ''}
-${link ? `<p><a href="${escapeHtml(link)}">View your order</a></p>` : ''}`),
+${link ? `<p><a href="${escapeHtml(link)}">View your order</a></p>` : ''}
+${reviewLinks.length ? `<p style="margin-top:18px"><strong>How did you like it?</strong> A short review helps other shoppers:</p><ul>${reviewLinks.map(r => `<li><a href="${escapeHtml(r.url)}">Review ${escapeHtml(r.name)}</a></li>`).join('')}</ul>` : ''}`),
   }, 'Order status');
 };
 

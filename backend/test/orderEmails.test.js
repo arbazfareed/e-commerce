@@ -56,3 +56,10 @@ test('low stock alert lists each product and how many are left', async () => {
   assert.equal(sent[0].to, 'store');
   assert.match(sent[0].text, /Rose soap: 2 left/);
 });
+
+test('delivered email asks for a review of each product', async () => {
+  sent.length = 0;
+  await sendOrderStatusEmail({ ...order, status: 'Delivered', products: [{ product: 'p1', name: 'Rose soap', price: 500, quantity: 1 }] });
+  assert.match(sent[0].html, /Review Rose soap/);
+  assert.match(sent[0].text, /shop\.test\/products\/p1/);
+});
