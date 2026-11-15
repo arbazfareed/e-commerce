@@ -203,10 +203,15 @@ const placeOrder = async (req, res) => {
       });
     const trackPath = `/track/${order._id}?token=${trackingToken}`;
     const frontendUrl = getFrontendUrl();
-    await sendOrderConfirmationEmail(
-      { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null },
-      { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' },
-    );
+    // The order is saved: an email problem must never reach the stock-restoring catch below.
+    try {
+      await sendOrderConfirmationEmail(
+        { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null },
+        { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' },
+      );
+    } catch (emailError) {
+      console.error('Order confirmation email error:', emailError.message);
+    }
     const body = order.toObject();
     delete body.trackingTokenHash;
     res.status(201).json({ ...body, trackingToken, trackPath });
@@ -345,8 +350,12 @@ const updateOrderStatus = async (req, res) => {
     }
     const saved = await o.save();
     if (previousStatus !== nextStatus) {
-      const recipient = await Order.findById(saved._id).populate('user', 'name email').lean();
-      await sendOrderStatusEmail(recipient || saved.toObject());
+      try {
+        const recipient = await Order.findById(saved._id).populate('user', 'name email').lean();
+        await sendOrderStatusEmail(recipient || saved.toObject());
+      } catch (emailError) {
+        console.error('Order status email error:', emailError.message);
+      }
     }
     res.json(saved);
   } catch (e) { sendServerError(res, e); }
