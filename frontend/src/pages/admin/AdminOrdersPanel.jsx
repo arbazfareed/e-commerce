@@ -35,7 +35,7 @@ export default function AdminOrdersPanel({
           <h1 style={S.pgTitle}>Orders</h1>
           <p style={S.pgSub}>{orders.length} total · {pending} pending · {delivered} delivered</p>
         </div>
-        <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportOrdersCsv}>⬇ Export orders CSV</button>
+        <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportOrdersCsv}>Export orders CSV</button>
       </div>
 
       <div style={{ display:'flex', gap:8, marginBottom:18, flexWrap:'wrap' }}>
@@ -104,7 +104,7 @@ export default function AdminOrdersPanel({
                         style={{ border: themeMode === 'dark' ? '1.5px solid rgba(148,163,184,.28)' : '1.5px solid #e2e8f0', borderRadius:9, padding:'7px 10px', fontSize:12, cursor:'pointer', background: themeMode === 'dark' ? '#0f172a' : '#fff', color: themeMode === 'dark' ? '#e2e8f0' : '#334155', outline:'none', fontFamily:"'Sora',sans-serif", fontWeight:600 }}>
                         {STATUS_LIST.map(s => <option key={s} disabled={s !== o.status && !(ORDER_STATUS_TRANSITIONS[o.status] || []).includes(s)}>{s}</option>)}
                       </select>
-                      <button type="button" aria-label={`Print invoice for order ${o._id.slice(-8).toUpperCase()}`} onClick={() => navigate(`/orders/${o._id}/invoice`)} style={{ display:'block', marginTop:6, border:'1px solid #cbd5e1', borderRadius:8, padding:'6px 9px', background:themeMode === 'dark' ? '#1f2b25' : '#f8fafc', color:themeMode === 'dark' ? '#e2e8f0' : '#334155', cursor:'pointer', fontSize:11, fontWeight:700 }}>🖨 Print</button>
+                      <button type="button" aria-label={`Print invoice for order ${o._id.slice(-8).toUpperCase()}`} onClick={() => navigate(`/orders/${o._id}/invoice`)} style={{ display:'block', marginTop:6, border:'1px solid #cbd5e1', borderRadius:8, padding:'6px 9px', background:themeMode === 'dark' ? '#1f2b25' : '#f8fafc', color:themeMode === 'dark' ? '#e2e8f0' : '#334155', cursor:'pointer', fontSize:11, fontWeight:700 }}>Print</button>
                       <ShipmentTrackingEditor order={o} darkMode={themeMode === 'dark'} flash={flash} onSaved={updated => setOrders(current => current.map(order => order._id === updated._id ? updated : order))} />
                     </td>
                   </tr>

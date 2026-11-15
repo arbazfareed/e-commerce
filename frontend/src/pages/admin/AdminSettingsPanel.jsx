@@ -50,7 +50,7 @@ export default function AdminSettingsPanel({
       </div>
 
       <div className="admin-password-card admin-settings-card" style={{ ...S.card, background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(9,17,21,0.96))' : 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(240,250,244,0.9))', borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : '#dfece4', boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)', marginBottom:20 }}>
-        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>🔐 Password & account security</h3>
+        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Password & account security</h3>
         <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
           Set a new password without entering the old one. Customer resets email a one-time link (expires in 20 minutes). New passwords must have at least 12 characters.
         </p>
@@ -96,7 +96,7 @@ export default function AdminSettingsPanel({
         boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)',
         marginBottom:20,
       }}>
-        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>💵 Cash on Delivery & Auto Sales Log</h3>
+        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Cash on Delivery & Auto Sales Log</h3>
         <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
           Control COD availability, record manual cash collections at delivery, and keep admin earnings history organized by date, day, week, month, and time.
         </p>
@@ -115,7 +115,7 @@ export default function AdminSettingsPanel({
             <textarea style={themeMode === 'dark' ? { ...S.inp, background:'#0f172a', border:'1.5px solid rgba(148,163,184,0.28)', color:'#e2e8f0', boxShadow:'inset 0 1px 0 rgba(148,163,184,0.08)', minHeight:80, resize:'vertical' } : { ...S.inp, minHeight:80, resize:'vertical' }} value={cashForm.notes} onChange={e => setCashForm(f => ({ ...f, notes: e.target.value }))} placeholder="Customer name, delivery note, cash collected at doorstep..." />
           </div>
         </div>
-        <button className="admin-green-button" style={S.greenBtn} onClick={handleManualCashSale}>💰 Record cash sale</button>
+        <button className="admin-green-button" style={S.greenBtn} onClick={handleManualCashSale}>Record cash sale</button>
       </div>
 
       <div className="admin-settings-card" style={{
@@ -125,7 +125,7 @@ export default function AdminSettingsPanel({
         boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)',
         marginBottom:20,
       }}>
-        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>💵 Checkout & provider setup</h3>
+        <h3 style={{ ...S.cardH, marginBottom:6, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Checkout & provider setup</h3>
         <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
           Configure COD and save courier/EasyPaisa sandbox details for a future adapter. Provider toggles do not activate payment capture or courier booking until the server integration is implemented.
         </p>
@@ -266,7 +266,7 @@ export default function AdminSettingsPanel({
         borderColor: themeMode === 'dark' ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.18)',
         boxShadow: themeMode === 'dark' ? '0 18px 40px rgba(2,6,23,0.32)' : '0 16px 38px rgba(15,23,42,.08)',
       }}>
-        <h3 style={{ ...S.cardH, marginBottom:4, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>🌍 Zone-Based Shipping Rates</h3>
+        <h3 style={{ ...S.cardH, marginBottom:4, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Zone-Based Shipping Rates</h3>
         <p style={{ margin:'0 0 4px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
           Formula: <strong style={{ color: themeMode === 'dark' ? '#f8fafc' : '#0f172a' }}>Shipping = Base Rate + (Total Weight × Per-KG Rate)</strong>
         </p>

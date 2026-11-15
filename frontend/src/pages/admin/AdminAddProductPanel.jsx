@@ -52,7 +52,7 @@ export default function AdminAddProductPanel({
               </label>
               <CategoryPicker value={form.category} onChange={v => setForm(f=>({...f,category:v,subcategory:''}))} isNew={newCat} setIsNew={setNewCat} categories={[...new Set([...cats, ...Object.keys(CATEGORY_TREE)])].sort()} inputStyle={S.inp} buttonStyle={S.ghostBtn} />
               {cats.length === 0 && !newCat && (
-                <p style={{ margin:'6px 0 0', fontSize:11, color:'#f59e0b', fontWeight:600 }}>⚠️ No categories yet — click "+ New" to create your first one.</p>
+                <p style={{ margin:'6px 0 0', fontSize:11, color:'#f59e0b', fontWeight:600 }}>No categories yet — click "+ New" to create your first one.</p>
               )}
             </div>
 
@@ -90,7 +90,7 @@ export default function AdminAddProductPanel({
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
               <div>
-                <label style={S.lbl}>🇵🇰 Price PKR *</label>
+                <label style={S.lbl}>Price PKR *</label>
                 <div style={{ position:'relative' }}>
                   <span style={S.pre}>Rs</span>
                   <input style={{ ...S.inp, paddingLeft:36 }} type="number" min="0" placeholder="0" value={form.pricePKR}
@@ -102,7 +102,7 @@ export default function AdminAddProductPanel({
                 </div>
               </div>
               <div>
-                <label style={S.lbl}>🌍 Price USD <span style={{ color:'#10b981', fontWeight:500, fontSize:10, textTransform:'none', letterSpacing:0 }}>(auto)</span></label>
+                <label style={S.lbl}>Price USD <span style={{ color:'#10b981', fontWeight:500, fontSize:10, textTransform:'none', letterSpacing:0 }}>(auto)</span></label>
                 <div style={{ position:'relative' }}>
                   <span style={S.pre}>$</span>
                   <input style={{ ...S.inp, paddingLeft:28 }} type="number" min="0" step="0.01" placeholder="0.00" value={form.priceUSD} onChange={e => setForm(f=>({...f,priceUSD:e.target.value}))} required />
@@ -112,7 +112,7 @@ export default function AdminAddProductPanel({
 
             <div className="admin-discount-editor" style={{ display:'grid', gap:12, marginTop:4 }}>
               <div>
-                <label style={S.lbl}>🏷️ Discount (%)</label>
+                <label style={S.lbl}>Discount (%)</label>
                 <input style={S.inp} type="number" min="0" max="100" step="1" value={form.discountPercent ?? 0}
                   onChange={e => setForm(f => ({ ...f, discountPercent:Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))} />
                 <small style={{ display:'block', marginTop:6, color:'#94a3b8' }}>Optional · set 0 for no discount.</small>
@@ -158,7 +158,7 @@ export default function AdminAddProductPanel({
             </div>
 
             <button className="admin-add-product-submit admin-green-button" type="submit" style={{ ...S.greenBtn, width:'100%', padding:15, fontSize:14 }} disabled={saving}>
-              {saving ? '⏳ Publishing…' : '+ Publish Product'}
+              {saving ? 'Publishing…' : '+ Publish Product'}
             </button>
           </form>
         </div>
@@ -181,7 +181,7 @@ export default function AdminAddProductPanel({
             marginTop:16,
             padding: 22,
           }}>
-            <p style={{ margin:'0 0 12px', fontSize:10, fontWeight:800, color: themeMode === 'dark' ? '#a7f3d0' : '#065f46', letterSpacing:'1px', textTransform:'uppercase' }}>💡 Tips</p>
+            <p style={{ margin:'0 0 12px', fontSize:10, fontWeight:800, color: themeMode === 'dark' ? '#a7f3d0' : '#065f46', letterSpacing:'1px', textTransform:'uppercase' }}>Tips</p>
             <ul style={{ margin:0, paddingLeft:18, fontSize:12, color: themeMode === 'dark' ? '#d1fae5' : '#166534', lineHeight:2.1, fontWeight:500 }}>
               <li>First photo = main display image</li>
               <li>Upload up to <strong>5 photos</strong></li>

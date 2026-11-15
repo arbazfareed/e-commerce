@@ -20,12 +20,12 @@ export default function AdminPerformancePanel({
     <div style={{ ...S.card, marginBottom:20, background: themeMode === 'dark' ? '#0f172a' : 'linear-gradient(180deg,#ffffff,#f7fbf8)', borderColor: themeMode === 'dark' ? '#1e293b' : '#dfece4', boxShadow: themeMode === 'dark' ? '0 12px 32px rgba(2,6,23,.38)' : '0 12px 30px rgba(11,58,42,.07)' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18, gap:12, flexWrap:'wrap' }}>
         <div>
-          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>📊 Sales History & Payment Mix</h3>
+          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Sales History & Payment Mix</h3>
           <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#aebbb4' : '#64748b' }}>Date, day, week, month, and 3/6/9/12 month revenue trends with cash vs online totals</p>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           <button style={{ ...S.linkBtn, color: themeMode === 'dark' ? '#93c5fd' : 'var(--brand-dark, #0d5c42)' }} onClick={() => openSection('orders')}>View orders →</button>
-          <button className="admin-green-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12 }} onClick={exportCsvReport}>📊 CSV export</button>
+          <button className="admin-green-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12 }} onClick={exportCsvReport}>CSV export</button>
           <button className="admin-pdf-report-button" style={{ ...S.greenBtn, padding:'9px 14px', fontSize:12, background:'linear-gradient(135deg,#7c3aed,#4f46e5)' }} onClick={generatePdfReport}>📄 PDF report</button>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function AdminPerformancePanel({
         <div style={{ display:'grid', gridTemplateColumns:'1.2fr 0.8fr', gap:16 }}>
           <div style={{ background: themeMode === 'dark' ? '#111827' : '#f8fafc', border:'1px solid #e2e8f0', borderRadius:14, padding:'18px 16px', transition:'all .25s ease' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, gap:12, flexWrap:'wrap' }}>
-              <h4 style={{ ...S.cardH, margin:0, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>🌍 Regional sales</h4>
+              <h4 style={{ ...S.cardH, margin:0, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Regional sales</h4>
               <span style={{ fontSize:10, fontWeight:800, color:'#0f766e', background:'#ccfbf1', padding:'4px 8px', borderRadius:999, letterSpacing:'0.7px', textTransform:'uppercase' }}>{strongestRegion}</span>
             </div>
             {(analytics?.regionBreakdown || []).length === 0 ? (

@@ -73,7 +73,7 @@ export default function AdminSupportPanel({
         </div>
         <input
           style={{ ...S.searchBox, flex:1, minWidth:220, background: themeMode === 'dark' ? '#111915' : '#fff', borderColor: themeMode === 'dark' ? '#33473f' : '#e2e8f0', color: themeMode === 'dark' ? '#edf7f2' : '#1e293b' }}
-          placeholder="🔍  Search by name, email, subject, order ID…"
+          placeholder="Search by name, email, subject, order ID…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />

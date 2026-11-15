@@ -32,7 +32,7 @@ export default function AdminProductsPanel({
           <p style={S.pgSub}>{products.length} total · {localCnt} local · {globalCnt} global · {oos} out of stock</p>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
-          <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportProductsCsv}>⬇ Export products CSV</button>
+          <button type="button" className="admin-filter-pill" style={{ ...S.ghostBtn, padding:'10px 14px', fontSize:12 }} onClick={exportProductsCsv}>Export products CSV</button>
           <button className="admin-green-button" style={S.greenBtn} onClick={() => openSection('add')}>+ Add Product</button>
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function AdminProductsPanel({
           color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b',
           boxShadow: themeMode === 'dark' ? 'inset 0 1px 0 rgba(148,163,184,.08)' : 'inset 0 1px 1px rgba(15,23,42,0.03)',
           width: '100%',
-        }} placeholder="🔍  Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+        }} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
         <select style={{
           ...S.sel,
           background: themeMode === 'dark' ? '#0f172a' : '#fff',
@@ -67,8 +67,8 @@ export default function AdminProductsPanel({
         <div style={{ display:'flex', gap:6, flexShrink:0, flexWrap:'wrap', justifyContent:isCompact ? 'stretch' : 'flex-start' }}>
           {[
             { v:'all',    label:'All',       cnt: products.length,  activeColor:'#475569', activeBg:'#f1f5f9', activeBorder:'#cbd5e1' },
-            { v:'local',  label:'🇵🇰 Local',  cnt: localCnt,         activeColor:'#059669', activeBg:'#ecfdf5', activeBorder:'#6ee7b7' },
-            { v:'global', label:'🌍 Global', cnt: globalCnt,         activeColor:'#2563eb', activeBg:'#eff6ff', activeBorder:'#93c5fd' },
+            { v:'local',  label:'Local',  cnt: localCnt,         activeColor:'#059669', activeBg:'#ecfdf5', activeBorder:'#6ee7b7' },
+            { v:'global', label:'Global', cnt: globalCnt,         activeColor:'#2563eb', activeBg:'#eff6ff', activeBorder:'#93c5fd' },
           ].map(o => {
             const on = fMarket === o.v;
             return (
@@ -132,7 +132,7 @@ export default function AdminProductsPanel({
                             color: themeMode === 'dark' ? '#dbeafe' : '#1d4ed8',
                             padding:'6px 10px',
                             marginRight:0,
-                          }} onClick={() => openEdit(p)}>✏️ Edit</button>
+                          }} onClick={() => openEdit(p)}>Edit</button>
                         </div>
                       </div>
 
@@ -184,13 +184,13 @@ export default function AdminProductsPanel({
                         borderColor: themeMode === 'dark' ? 'rgba(96,165,250,0.35)' : '#bfdbfe',
                         color: themeMode === 'dark' ? '#dbeafe' : '#1d4ed8',
                         boxShadow: themeMode === 'dark' ? 'inset 0 0 0 1px rgba(147,197,253,0.18)' : 'none',
-                      }} onClick={() => openEdit(p)}>✏️ Edit</button>
+                      }} onClick={() => openEdit(p)}>Edit</button>
                       <button className="del-btn" style={{
                         ...S.deleteBtn,
                         background: themeMode === 'dark' ? 'rgba(127,29,29,0.16)' : '#fff5f5',
                         borderColor: themeMode === 'dark' ? 'rgba(252,165,165,0.32)' : '#fecaca',
                         color: themeMode === 'dark' ? '#fecaca' : '#ef4444',
-                      }} onClick={() => handleDelete(p._id, p.name)}>🗑️</button>
+                      }} onClick={() => handleDelete(p._id, p.name)} aria-label={`Delete ${p.name}`}>Delete</button>
                     </td>
                   </tr>
                 )

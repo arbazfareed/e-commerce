@@ -16,7 +16,7 @@ export default function AdminMarketSplit({
     }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
         <div>
-          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>📊 Market Split Overview</h3>
+          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Market Split Overview</h3>
           <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#aebbb4' : '#64748b' }}>How your catalog is distributed across customer markets</p>
         </div>
         <button style={S.linkBtn} onClick={() => openSection('products')}>Manage products →</button>
@@ -26,10 +26,10 @@ export default function AdminMarketSplit({
         <div style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg,#062f2a,#0f172a)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: themeMode === 'dark' ? '1.5px solid rgba(34,197,94,.28)' : '1.5px solid #bbf7d0', borderRadius:14, padding:'20px 22px' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
             <div>
-              <p className="admin-market-summary-local-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#166534', textTransform:'uppercase', letterSpacing:'1px' }}>🇵🇰 Pakistan / Local</p>
+              <p className="admin-market-summary-local-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#166534', textTransform:'uppercase', letterSpacing:'1px' }}>Pakistan / Local</p>
               <p className="admin-market-summary-local-count" style={{ margin:0, fontSize:34, fontWeight:900, color:'#15803d', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
             </div>
-            <span style={{ fontSize:36, lineHeight:1 }}>🇵🇰</span>
+            <span style={{ fontSize:36, lineHeight:1 }}></span>
           </div>
           <p className="admin-market-summary-local-description" style={{ margin:'0 0 12px', fontSize:12, color:'#4ade80', fontWeight:500 }}>
             Only visible to customers shopping in <strong>Pakistan mode (PKR)</strong>
@@ -45,10 +45,10 @@ export default function AdminMarketSplit({
         <div style={{ background: themeMode === 'dark' ? 'linear-gradient(135deg,#0f172a,#111827)' : 'linear-gradient(135deg,#eff6ff,#dbeafe)', border: themeMode === 'dark' ? '1.5px solid rgba(96,165,250,.28)' : '1.5px solid #bfdbfe', borderRadius:14, padding:'20px 22px' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
             <div>
-              <p className="admin-market-summary-global-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'1px' }}>🌍 International / Global</p>
+              <p className="admin-market-summary-global-label" style={{ margin:'0 0 4px', fontSize:10, fontWeight:700, color:'#1d4ed8', textTransform:'uppercase', letterSpacing:'1px' }}>International / Global</p>
               <p className="admin-market-summary-global-count" style={{ margin:0, fontSize:34, fontWeight:900, color:'#2563eb', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
             </div>
-            <span style={{ fontSize:36, lineHeight:1 }}>🌍</span>
+            <span style={{ fontSize:36, lineHeight:1 }}></span>
           </div>
           <p className="admin-market-summary-global-description" style={{ margin:'0 0 12px', fontSize:12, color:'#60a5fa', fontWeight:500 }}>
             Visible to <strong>ALL customers</strong> — Pakistan + international buyers

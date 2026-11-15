@@ -8,7 +8,7 @@ export default function AdminLowStockPanel({
   return (
     <section aria-labelledby="low-stock-heading" style={{ ...S.card, marginBottom:20, background:themeMode === 'dark' ? 'linear-gradient(180deg,#231e13,#111827)' : 'linear-gradient(135deg,#fffbeb,#fff)', borderColor:themeMode === 'dark' ? '#66512b' : '#f3d08a', boxShadow:themeMode === 'dark' ? '0 12px 28px rgba(0,0,0,.22)' : '0 12px 28px rgba(120,83,12,.06)' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:lowStockProducts.length ? 12 : 0 }}>
-        <div><h3 id="low-stock-heading" style={{ ...S.cardH, color:themeMode === 'dark' ? '#fde68a' : '#854d0e' }}>⚠️ Low-stock alerts</h3><p style={{ margin:'4px 0 0', color:themeMode === 'dark' ? '#d8c9a3' : '#92400e', fontSize:12 }}>Visible products with fewer than 5 units remaining.</p></div>
+        <div><h3 id="low-stock-heading" style={{ ...S.cardH, color:themeMode === 'dark' ? '#fde68a' : '#854d0e' }}>Low-stock alerts</h3><p style={{ margin:'4px 0 0', color:themeMode === 'dark' ? '#d8c9a3' : '#92400e', fontSize:12 }}>Visible products with fewer than 5 units remaining.</p></div>
         <span style={{ borderRadius:999, padding:'6px 10px', background:themeMode === 'dark' ? '#48391e' : '#fef3c7', color:themeMode === 'dark' ? '#fde68a' : '#92400e', fontSize:12, fontWeight:900 }}>{lowStockProducts.length} need attention</span>
       </div>
       {lowStockProducts.length === 0 ? <p style={{ margin:0, color:themeMode === 'dark' ? '#b9c7bf' : '#64748b', fontSize:13 }}>All visible products have at least 5 units in stock.</p> : <div style={{ display:'grid', gap:8 }}>

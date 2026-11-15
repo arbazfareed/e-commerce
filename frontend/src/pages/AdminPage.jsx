@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import BrandMark from '../components/BrandMark';
 import { assetUrl } from '../utils/axiosConfig';
 import { optimizeImageFile } from '../utils/imageCompressor';
 import { applyStoreRates, formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
@@ -18,6 +17,8 @@ import AdminProductEditModal from './admin/AdminProductEditModal';
 import { S } from './admin/adminStyles';
 import { StockCell, ThumbCell } from './admin/ProductTableCells';
 import AdminGlobalStyles from './admin/AdminGlobalStyles';
+import AdminSidebar from './admin/AdminSidebar';
+import './admin/premiumAdmin.css';
 import TicketCard from './admin/TicketCard';
 import AdminProductsPanel from './admin/AdminProductsPanel';
 import AdminAddProductPanel from './admin/AdminAddProductPanel';
@@ -727,107 +728,16 @@ return (
       {/* ═══ EDIT MODAL ══════════════════════════════════════ */}
       {editP && <AdminProductEditModal {...editModalProps} />}
 
-      {/* ═══ SIDEBAR ══════════════════════════════════════════ */}
-      <aside className="admin-sidebar" style={{ ...S.side, background: themeMode === 'dark' ? 'linear-gradient(180deg, rgba(13,22,19,0.98), rgba(17,28,25,0.98))' : 'linear-gradient(180deg, #ffffff, #f3f8f5)', borderRight: themeMode === 'dark' ? '1px solid rgba(255,255,255,.08)' : '1px solid #dce8e0', boxShadow: themeMode === 'dark' ? S.side.boxShadow : '4px 0 18px rgba(15,23,42,.05)', backdropFilter:'blur(18px)', WebkitBackdropFilter:'blur(18px)' }}>
-        <div style={{ ...S.sideLogo, background: themeMode === 'dark' ? 'rgba(15,23,42,0.18)' : 'rgba(15,92,66,0.035)', borderBottom: themeMode === 'dark' ? '1px solid rgba(255,255,255,0.10)' : '1px solid #e2ece6' }}>
-          <div style={{ width:38, height:38, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background: themeMode === 'dark' ? 'rgba(255,255,255,0.08)' : '#e8f5ed', boxShadow:'0 12px 22px rgba(14,116,144,0.18)' }}>
-            <BrandMark size={26} style={{ filter:'drop-shadow(0 5px 9px rgba(0,0,0,.22))' }} />
-          </div>
-          <div>
-            <p style={{ margin:0, fontSize:15, fontWeight:900, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', fontFamily:"'Sora',sans-serif", letterSpacing:'-0.4px' }}>IndusCart</p>
-            <p style={{ margin:0, fontSize:9, color: themeMode === 'dark' ? '#dfece7' : '#60766a', fontWeight:800, letterSpacing:'1.5px', textTransform:'uppercase' }}>Admin Console</p>
-          </div>
-        </div>
-
-        <nav style={{ padding:'12px 10px 8px', flex:1 }}>
-          {[
-            { id:'dashboard', icon:'⬡', label:'Dashboard' },
-            { id:'products',  icon:'⬢', label:'Products',   badge: products.length },
-            { id:'add',       icon:'⊕', label:'Add Product' },
-            { id:'orders',    icon:'◎', label:'Orders',      badge: pending, warn: true },
-            { id:'stores',    icon:'▦', label:'Stores' },
-            { id:'coupons',   icon:'🏷', label:'Promo Codes' },
-            { id:'reviews',   icon:'★', label:'Reviews' },
-            { id:'settings',  icon:'⚙', label:'Settings' },
-          ].map(item => (
-            <button key={item.id} className="nav-btn"
-              style={{
-                ...S.navBtn,
-                ...(tab === item.id ? S.navOn : {}),
-                color: themeMode === 'dark' ? '#f8fffb' : '#334155',
-                background: tab === item.id ? (themeMode === 'dark' ? 'linear-gradient(90deg, rgba(22,163,74,.20), rgba(16,185,129,.10))' : 'linear-gradient(90deg, #e5f5eb, #f0faf4)') : (themeMode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(15,23,42,0.025)'),
-                borderRadius: 12,
-                marginBottom: 6,
-                padding: '12px 12px 12px 14px',
-                boxShadow: tab === item.id ? (themeMode === 'dark' ? 'inset 0 0 0 1px rgba(167,243,208,.18), 0 10px 24px rgba(16,185,129,.08)' : 'inset 0 0 0 1px rgba(5,150,105,.14), 0 6px 14px rgba(15,23,42,.04)') : 'none',
-              }}
-              onClick={() => openSection(item.id)}>
-              <span style={{
-                fontSize:15,
-                width:20,
-                textAlign:'center',
-                flexShrink:0,
-                opacity: tab===item.id ? 1 : .96,
-                color: tab===item.id ? (themeMode === 'dark' ? '#d1fae5' : '#08734e') : (themeMode === 'dark' ? '#f3fff8' : '#64766c'),
-                display:'inline-flex',
-                alignItems:'center',
-                justifyContent:'center',
-                background: tab===item.id ? (themeMode === 'dark' ? 'rgba(110,231,183,0.14)' : 'rgba(16,185,129,0.10)') : (themeMode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.045)'),
-                borderRadius:8,
-                height:26,
-                border: tab===item.id ? (themeMode === 'dark' ? '1px solid rgba(167,243,208,0.32)' : '1px solid rgba(5,150,105,0.20)') : (themeMode === 'dark' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(15,23,42,0.07)'),
-                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.02)',
-              }}>{item.icon}</span>
-              <span style={{ flex:1, textAlign:'left', color: tab===item.id ? (themeMode === 'dark' ? '#f9fffc' : '#075c43') : (themeMode === 'dark' ? '#edfdf5' : '#334155'), fontSize:13, fontWeight:800 }}>{item.label}</span>
-              {item.badge > 0 && (
-                <span style={{ ...S.navBadge, background: item.warn ? '#ef4444' : (themeMode === 'dark' ? 'rgba(16,185,129,.26)' : '#dcfce7'), color: item.warn ? '#fff' : (themeMode === 'dark' ? '#d1fae5' : '#065f46'), boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.12)', fontWeight:900 }}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        {/* ── market split in sidebar ── */}
-        <div style={{ padding:'14px 18px', borderTop: themeMode === 'dark' ? '1px solid rgba(255,255,255,.06)' : '1px solid #e2ece6', borderBottom: themeMode === 'dark' ? '1px solid rgba(255,255,255,.06)' : '1px solid #e2ece6', background: themeMode === 'dark' ? 'rgba(15,23,42,0.10)' : 'rgba(15,23,42,0.015)' }}>
-          <p style={{ margin:'0 0 10px', fontSize:9, color: themeMode === 'dark' ? '#d5e8e0' : '#64766c', fontWeight:800, textTransform:'uppercase', letterSpacing:'1.2px' }}>Market Split</p>
-          <div style={{ display:'flex', gap:8 }}>
-            <div style={{ flex:1, background: themeMode === 'dark' ? 'rgba(16,185,129,.12)' : '#ecfdf5', border: themeMode === 'dark' ? '1px solid rgba(16,185,129,.30)' : '1px solid #bbf7d0', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(16,185,129,.04)' }}>
-              <p style={{ margin:0, fontSize:20, fontWeight:900, color: themeMode === 'dark' ? '#a7f3d0' : '#047857', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{localCnt}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#d9fbe9' : '#166534', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🇵🇰 Local</p>
-            </div>
-            <div style={{ flex:1, background: themeMode === 'dark' ? 'rgba(99,102,241,.12)' : '#eef2ff', border: themeMode === 'dark' ? '1px solid rgba(99,102,241,.30)' : '1px solid #c7d2fe', borderRadius:12, padding:'10px 10px', textAlign:'center', boxShadow:'inset 0 0 0 1px rgba(99,102,241,.04)' }}>
-              <p style={{ margin:0, fontSize:20, fontWeight:900, color: themeMode === 'dark' ? '#c7d2fe' : '#4338ca', lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{globalCnt}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#ebebff' : '#4338ca', fontWeight:800, textTransform:'uppercase', letterSpacing:'.6px' }}>🌍 Global</p>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ ...S.miniStats, background: themeMode === 'dark' ? 'rgba(15,23,42,0.10)' : 'rgba(15,23,42,0.015)', borderTopColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6', borderBottomColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6' }}>
-          {[
-            { label:'Products', value: products.length, color: themeMode === 'dark' ? '#34d399' : '#047857' },
-            { label:'Orders',   value: orders.length,   color: themeMode === 'dark' ? '#fbbf24' : '#b45309' },
-            { label:'OOS',      value: oos,             color: themeMode === 'dark' ? '#fda4af' : '#be123c' },
-          ].map(s => (
-            <div key={s.label} style={{ textAlign:'center', padding:'4px 0' }}>
-              <p style={{ margin:0, fontSize:20, fontWeight:900, color:s.color, lineHeight:1, fontFamily:"'Sora',sans-serif" }}>{s.value}</p>
-              <p style={{ margin:'4px 0 0', fontSize:9, color: themeMode === 'dark' ? '#e6f7ef' : '#64766c', fontWeight:800, textTransform:'uppercase', letterSpacing:'.8px' }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ ...S.sideUser, background: themeMode === 'dark' ? 'rgba(15,23,42,.12)' : 'rgba(15,23,42,.025)', borderTopColor: themeMode === 'dark' ? 'rgba(255,255,255,.06)' : '#e2ece6' }}>
-          <div style={S.ava}>{user?.name?.[0]?.toUpperCase()||'A'}</div>
-          <div style={{ flex:1, minWidth:0 }}>
-            <p style={{ margin:0, fontSize:12, fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#173a2d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:"'Sora',sans-serif" }}>{user?.name}</p>
-            <p style={{ margin:0, fontSize:10, color: themeMode === 'dark' ? '#a7f3d0' : '#08734e', fontWeight:600 }}>Administrator</p>
-          </div>
-          <button title="Logout" style={{ ...S.logoutBtn, color: themeMode === 'dark' ? '#e2f9ef' : '#475569', borderColor: themeMode === 'dark' ? 'rgba(255,255,255,.15)' : '#d6e2da', background: themeMode === 'dark' ? 'rgba(255,255,255,.04)' : '#fff' }} onClick={() => { logout(); navigate('/admin/login'); }}>⏻</button>
-        </div>
-      </aside>
+      <AdminSidebar
+        tab={tab}
+        openSection={openSection}
+        counts={{ products: products.length, orders: orders.length, pending, oos, local: localCnt, global: globalCnt }}
+        user={user}
+        onLogout={() => { logout(); navigate('/admin/login'); }}
+      />
 
       {/* ═══ MAIN ══════════════════════════════════════════════ */}
-      <main className="admin-main" style={{ ...S.main, background: themeMode === 'dark' ? '#111815' : '#f5f7f5', color: themeMode === 'dark' ? '#edf6f3' : '#20392e' }}>
+      <main className="admin-main" style={{ ...S.main, background: themeMode === 'dark' ? '#0d1612' : '#f6f4ee', color: themeMode === 'dark' ? '#edf6f3' : '#20392e' }}>
         <div
           className="admin-mobile-heading"
           style={{
@@ -894,7 +804,7 @@ return (
               textTransform: 'uppercase',
             }}
           >
-            {themeMode === 'dark' ? '☀ Light mode' : '◐ Dark mode'}
+            {themeMode === 'dark' ? 'Light mode' : 'Dark mode'}
           </button>
         </div>
 

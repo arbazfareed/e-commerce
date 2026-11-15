@@ -84,7 +84,7 @@ export default function AdminProductEditModal({
               <span><strong>Show this product in the shop</strong><small>Hidden products remain available in Admin.</small></span>
             </label>
             <div style={{ position:'relative' }}>
-              <label style={S.lbl}>🇵🇰 Price PKR *</label>
+              <label style={S.lbl}>Price PKR *</label>
               <div style={{ position:'relative' }}>
                 <span style={S.pre}>Rs</span>
                 <input style={{ ...S.inp, paddingLeft:36 }} type="number" min="0" value={eForm.pricePKR}
@@ -96,7 +96,7 @@ export default function AdminProductEditModal({
               </div>
             </div>
             <div style={{ position:'relative' }}>
-              <label style={S.lbl}>🌍 Price USD <span style={{ color:'#10b981', fontWeight:500, fontSize:10, textTransform:'none', letterSpacing:0 }}>(auto)</span></label>
+              <label style={S.lbl}>Price USD <span style={{ color:'#10b981', fontWeight:500, fontSize:10, textTransform:'none', letterSpacing:0 }}>(auto)</span></label>
               <div style={{ position:'relative' }}>
                 <span style={S.pre}>$</span>
                 <input style={{ ...S.inp, paddingLeft:28 }} type="number" min="0" step="0.01" value={eForm.priceUSD} onChange={e => setEForm(f => ({...f, priceUSD:e.target.value}))} />
@@ -104,7 +104,7 @@ export default function AdminProductEditModal({
             </div>
             <div className="admin-discount-editor" style={{ gridColumn:'1/-1' }}>
               <div>
-                <label style={S.lbl}>🏷️ Discount (%)</label>
+                <label style={S.lbl}>Discount (%)</label>
                 <input style={S.inp} type="number" min="0" max="100" step="1" value={eForm.discountPercent ?? 0}
                   onChange={e => setEForm(f => ({ ...f, discountPercent:Math.min(100, Math.max(0, Number(e.target.value) || 0)) }))} />
                 <small>Set 0 to show the regular price.</small>
@@ -150,7 +150,7 @@ export default function AdminProductEditModal({
         <div className="admin-modal-footer" style={S.mFoot}>
           <button style={S.ghostBtn} onClick={() => setEditP(null)}>Cancel</button>
           <button className="admin-green-button" style={S.greenBtn} onClick={handleEditSave} disabled={eSaving}>
-            {eSaving ? '⏳ Saving…' : '💾 Save Changes'}
+            {eSaving ? 'Saving…' : '💾 Save Changes'}
           </button>
         </div>
       </div>

@@ -28,7 +28,7 @@ export default function ShipmentTrackingEditor({ order, darkMode = false, onSave
   };
 
   return <details open={open} onToggle={event => setOpen(event.currentTarget.open)} style={{ marginTop:7, minWidth:220 }}>
-    <summary style={{ cursor:'pointer', color:darkMode ? '#a7f3d0' : '#047857', fontSize:11, fontWeight:800 }}>🚚 Shipment / tracking</summary>
+    <summary style={{ cursor:'pointer', color:darkMode ? '#a7f3d0' : '#047857', fontSize:11, fontWeight:800 }}>Shipment / tracking</summary>
     <form onSubmit={submit} onClick={event => event.stopPropagation()} style={{ display:'grid', gap:8, width:270, maxWidth:'min(82vw, 320px)', padding:11, marginTop:8, border:`1px solid ${darkMode ? '#3f5247' : '#dbe7df'}`, borderRadius:10, background:darkMode ? '#18211c' : '#f8fcf9', boxShadow:'0 8px 20px rgba(15,23,42,.1)' }}>
       <p style={{ margin:0, color:muted, fontSize:10, lineHeight:1.45 }}>Enter tracking manually. This does not book a parcel or verify carrier events.</p>
       <label htmlFor={`ship-provider-${order._id}`} style={{ display:'grid', gap:4, color:ink, fontSize:11, fontWeight:700 }}>Courier name<input id={`ship-provider-${order._id}`} style={input} maxLength={80} value={form.provider} onChange={event => setForm(current => ({ ...current, provider:event.target.value }))} placeholder="e.g. TCS" /></label>

@@ -90,7 +90,7 @@ export default function BusinessInsightsPanel({ themeMode = 'light', endpoint = 
       {loading && !data && <p role="status" style={{ ...c.card, ...c.muted }}>Loading insights…</p>}
 
       {data && <div style={{ opacity: loading ? 0.6 : 1, transition:'opacity .2s' }}>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:10, marginBottom:12 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:10, marginBottom:12 }}>
           {kpiCards.map(([label, value, change, hint]) => (
             <div key={label} style={c.card}>
               <p style={{ ...c.muted, margin:0, fontWeight:800, textTransform:'uppercase', fontSize:10, letterSpacing:.6 }}>{label}</p>
@@ -120,7 +120,7 @@ export default function BusinessInsightsPanel({ themeMode = 'light', endpoint = 
           <h3 style={c.h}>Daily net sales</h3>
           <div role="img" aria-label={`Daily net sales for the last ${days} days`} style={{ display:'flex', alignItems:'flex-end', gap: days > 90 ? 0 : 2, height:90 }}>
             {data.trend.map(day => (
-              <div key={day.date} title={`${day.date}: ${formatPKR(day.netSales)} · ${day.orders} orders`} style={{ flex:1, minWidth:1, height:`${Math.max(2, (day.netSales / maxTrend) * 100)}%`, background: day.netSales ? (dark ? '#34d399' : '#10b981') : (dark ? 'rgba(148,163,184,.2)' : '#e2e8f0'), borderRadius:'3px 3px 0 0' }} />
+              <div key={day.date} title={`${day.date}: ${formatPKR(day.netSales)} · ${day.orders} orders`} style={{ flex:1, minWidth:1, height:`${Math.max(2, (day.netSales / maxTrend) * 100)}%`, background: day.netSales ? (dark ? 'linear-gradient(180deg,#f2c98a,#c4893d)' : 'linear-gradient(180deg,#1f7a5c,#0b3d2e)') : (dark ? 'rgba(148,163,184,.2)' : '#e2e8f0'), borderRadius:'5px 5px 0 0' }} />
             ))}
           </div>
           <div style={{ display:'flex', justifyContent:'space-between', ...c.muted, fontSize:10, marginTop:4 }}><span>{data.trend[0]?.date}</span><span>{data.trend[data.trend.length - 1]?.date}</span></div>
