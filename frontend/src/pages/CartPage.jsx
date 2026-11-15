@@ -194,7 +194,7 @@ export default function CartPage() {
       <div className="cart-topbar" style={S.topBar}>
         <div>
           <h1 style={{ margin:0, fontSize:'26px', fontWeight:'900', color:'#0f172a' }}>
-            {step === 'cart' ? '🛒 Your Cart' : '📋 Checkout'}
+            {step === 'cart' ? 'Your bag' : 'Checkout'}
           </h1>
           <p style={{ margin:'4px 0 0', fontSize:'13px', color:'#64748b' }}>
             {totalQty} item{totalQty !== 1 ? 's' : ''} in your cart

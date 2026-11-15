@@ -11,7 +11,7 @@ import HomeStyles from './home/HomeStyles';
 import { getHomePageStyles } from './home/homePageStyles';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { formatPKR, formatUSD } from '../utils/priceUtils';
+import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
 
 const MARKET_KEY = 'ic_market_mode';
 const BRAND_NAME = 'IndusCart Valley';
@@ -48,6 +48,7 @@ export default function HomePage() {
   const [market, setMarket] = useState(() => localStorage.getItem(MARKET_KEY) || 'local');
   const [internationalEnabled, setInternationalEnabled] = useState(true);
   const [marketSettingsLoaded, setMarketSettingsLoaded] = useState(false);
+  const [storePromises, setStorePromises] = useState({ freeShippingThreshold: 0, codEnabled: true });
   const [themeMode, setThemeMode] = useState(() => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function HomePage() {
         if (!active) return;
         const enabled = data?.internationalEnabled !== false;
         setInternationalEnabled(enabled);
+        setStorePromises({ freeShippingThreshold: Number(data?.freeShippingThreshold) || 0, codEnabled: data?.codEnabled !== false });
         if (!enabled) {
           setMarket('local');
           localStorage.setItem(MARKET_KEY, 'local');
@@ -167,7 +169,10 @@ export default function HomePage() {
     .filter(Boolean);
 
   const getDisplayPrice = (product) => {
-    return isLocal ? formatPKR(product.pricePKR) : formatUSD(product.priceUSD);
+    const discount = getActiveDiscountPercent(product, new Date());
+    return isLocal
+      ? formatPKR(getDiscountedPrice(Number(product.pricePKR) || 0, discount, 'PKR'))
+      : formatUSD(getDiscountedPrice(Number(product.priceUSD) || 0, discount, 'USD'));
   };
 
     const styles = getHomePageStyles(isDarkTheme);
@@ -175,7 +180,7 @@ export default function HomePage() {
   return (
     <div className="home-page" style={styles.page}>
       {/* Hero Section */}
-      <HomeHero {...{ BRAND_NAME, chooseMarket, internationalEnabled, isDarkTheme, isLocal, marketSettingsLoaded, search, setSearch, styles }} />
+      <HomeHero {...{ BRAND_NAME, chooseMarket, featured: sortedProducts.filter(p => p?.images?.length).slice(0, 3), getDisplayPrice, internationalEnabled, isDarkTheme, isLocal, marketSettingsLoaded, storePromises, styles }} />
 
       <HomeFeatureSection {...{ styles }} />
 

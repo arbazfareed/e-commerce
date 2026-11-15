@@ -43,10 +43,10 @@ export default function ProductCardContent({
         </span>
         {discountPercent > 0 && <del className="product-card-original" style={styles.originalPrice}>{isPak ? formatPKR(originalPrice) : formatUSD(originalPrice)}</del>}
       </div>
-      <span className="product-card-price-alt" style={styles.priceAlt}>
-        Approx. {isPak ? formatUSD(alternatePrice) : formatPKR(alternatePrice)}
-      </span>
-    
+      {alternatePrice > 0 && <span className="product-card-price-alt" style={styles.priceAlt}>
+        ≈ {isPak ? formatUSD(alternatePrice) : formatPKR(alternatePrice)}
+      </span>}
+
       <div style={{ display:'flex', gap:8, alignItems:'stretch' }}>
         <button
           className="product-card-add-button"
@@ -54,13 +54,13 @@ export default function ProductCardContent({
           onClick={(e) => { e.stopPropagation(); if (!isOut && !isRestricted) onAddToCart(p); }}
           disabled={isOut || isRestricted}
         >
-          {isRestricted ? '🇵🇰 Pakistan Only' : isOut ? 'Out of Stock' : 'Add to Cart'}
+          {isRestricted ? 'Pakistan only' : isOut ? 'Out of Stock' : 'Add to Cart'}
         </button>
         <button type="button" aria-label={isWishlisted(p._id) ? `Remove ${p.name} from wishlist` : `Save ${p.name} to wishlist`} aria-pressed={isWishlisted(p._id)} onClick={event => {
           event.stopPropagation();
           if (!user) { navigate('/login'); return; }
           if (isWishlisted(p._id)) removeFromWishlist(p._id); else addToWishlist(p);
-        }} className="product-card-wishlist" style={{ minWidth:42, minHeight:42, display:'inline-flex', alignItems:'center', justifyContent:'center', border:'1px solid #fda4af', borderRadius:10, background:isWishlisted(p._id) ? '#fff1f2' : '#fff', color:isWishlisted(p._id) ? '#be123c' : '#64748b', fontSize:22, lineHeight:1, cursor:'pointer', flexShrink:0 }}>
+        }} className={`product-card-wishlist${isWishlisted(p._id) ? ' is-on' : ''}`}>
           {isWishlisted(p._id) ? '♥' : '♡'}
         </button>
       </div>
