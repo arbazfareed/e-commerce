@@ -105,7 +105,11 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
     const unauthenticatedEmail = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:customerEmail });
     assert.equal(unauthenticatedEmail.status, 401);
 
-    const ownPasswordChange = await send(server, 'PATCH', '/api/auth/password', { newPassword:updatedAdminPassword }, token);
+    const missingCurrent = await send(server, 'PATCH', '/api/auth/password', { newPassword:updatedAdminPassword }, token);
+    assert.equal(missingCurrent.status, 400);
+    const wrongCurrent = await send(server, 'PATCH', '/api/auth/password', { currentPassword:'not the right password', newPassword:updatedAdminPassword }, token);
+    assert.equal(wrongCurrent.status, 400);
+    const ownPasswordChange = await send(server, 'PATCH', '/api/auth/password', { currentPassword:'Initial admin passphrase 123!', newPassword:updatedAdminPassword }, token);
     assert.equal(ownPasswordChange.status, 200);
     admin = await User.findById(admin._id);
     assert.equal(await admin.matchPassword(updatedAdminPassword), true);

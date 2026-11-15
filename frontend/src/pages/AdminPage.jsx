@@ -92,7 +92,7 @@ export default function AdminPage() {
     clearCourierApiKey: false, clearEasypaisaApiKey: false,
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [ownPasswordForm, setOwnPasswordForm] = useState({ newPassword:'', confirmPassword:'' });
+  const [ownPasswordForm, setOwnPasswordForm] = useState({ currentPassword:'', newPassword:'', confirmPassword:'' });
   const [customerPasswordForm, setCustomerPasswordForm] = useState({ email:'' });
   const [ownPasswordSaving, setOwnPasswordSaving] = useState(false);
   const [customerPasswordSaving, setCustomerPasswordSaving] = useState(false);
@@ -231,9 +231,10 @@ export default function AdminPage() {
     setOwnPasswordSaving(true);
     try {
       const { data } = await changeOwnPassword({
+        currentPassword: ownPasswordForm.currentPassword,
         newPassword: ownPasswordForm.newPassword,
       });
-      setOwnPasswordForm({ newPassword:'', confirmPassword:'' });
+      setOwnPasswordForm({ currentPassword:'', newPassword:'', confirmPassword:'' });
       // Older tokens are revoked on the server; keep this browser signed in with the new one.
       if (data.token) {
         try {
