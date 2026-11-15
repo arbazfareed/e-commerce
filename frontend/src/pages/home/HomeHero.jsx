@@ -28,10 +28,10 @@ export default function HomeHero({
     <section className="hero lux-hero" style={styles.hero}>
       <div className="hero-image-slider" aria-hidden="true">
         <div className="hero-image-track">
-          <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" loading="eager" /></div>
-          <div className="hero-image-slide"><img src="/botanical-ritual-cover.jpg" alt="" loading="lazy" /></div>
-          <div className="hero-image-slide"><img src="/mountain-honey-cover.jpg" alt="" loading="lazy" /></div>
-          <div className="hero-image-slide"><img src="/artisan-sanctuary-cover.jpg" alt="" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/hero-cover.webp" alt="" loading="eager" fetchpriority="high" /></div>
+          <div className="hero-image-slide"><img src="/botanical-ritual-cover.webp" alt="" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/mountain-honey-cover.webp" alt="" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/artisan-sanctuary-cover.webp" alt="" loading="lazy" /></div>
         </div>
       </div>
       <div className="lux-hero-veil" aria-hidden="true" />
