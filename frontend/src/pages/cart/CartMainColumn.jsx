@@ -1,6 +1,7 @@
 export default function CartMainColumn({
   S,
   addr,
+  countryOptions = ['Pakistan'],
   assetUrl,
   availablePaymentOptions,
   error,
@@ -134,9 +135,15 @@ export default function CartMainColumn({
               />
             </div>
             <div>
-              <label htmlFor="delivery-country" style={S.lbl}>Country</label>
-              <input id="delivery-country" style={{ ...S.inp, background:'#f1f5f9', color:'#64748b' }}
-                value={addr.country} readOnly />
+              <label htmlFor="delivery-country" style={S.lbl}>Country *</label>
+              <select id="delivery-country" style={S.inp}
+                value={addr.country}
+                onChange={e => setAddr(a => ({ ...a, country: e.target.value }))}>
+                {countryOptions.map(name => <option key={name} value={name}>{name}</option>)}
+              </select>
+              {addr.country !== 'Pakistan' && (
+                <p style={{ margin:'6px 0 0', fontSize:12, color:'#64748b' }}>Prices are shown in USD for delivery outside Pakistan.</p>
+              )}
             </div>
           </div>
     
