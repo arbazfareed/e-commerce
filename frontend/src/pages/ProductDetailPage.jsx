@@ -39,7 +39,9 @@ export default function ProductDetailPage() {
         setSelectedColor(data.colors?.[0] || '');
         setSelectedSize(data.sizes?.[0] || '');
         addToRecentlyViewed(data);
-        API.get('/api/products').then(({ data: products }) => {
+        // Ask only for a few products in the same category instead of the whole catalog.
+        API.get('/api/products', { params: { category: data.category, page: 1, limit: 5 } }).then(({ data: result }) => {
+          const products = Array.isArray(result) ? result : result?.items || [];
           if (active) setRelated(products.filter(p => p._id !== data._id && p.category === data.category).slice(0, 4));
         }).catch(() => {});
       })
