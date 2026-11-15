@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import Navbar from '../components/Navbar';
@@ -45,9 +45,13 @@ test('category quick links and the "/" shortcut to search', async () => {
   API.get.mockImplementation(url => Promise.resolve({ data: url === '/api/products/categories' ? ['Skincare', 'Home decor'] : url === '/api/settings/public' ? { codEnabled:true } : { items:[] } }));
   render(<MemoryRouter><Navbar /></MemoryRouter>);
 
-  const categories = await screen.findByRole('navigation', { name:/shop by category/i });
+  await waitFor(() => expect(API.get).toHaveBeenCalledWith('/api/products/categories'));
+  // The row is desktop-only (CSS media query), so query it directly.
+  await waitFor(() => expect(document.querySelector('nav.ph-categories')).not.toBeNull());
+  const categories = document.querySelector('nav.ph-categories');
+  expect(categories).toHaveAttribute('aria-label', 'Shop by category');
   expect(categories).toHaveTextContent('All products');
-  expect(screen.getByRole('link', { name:'Home decor' })).toHaveAttribute('href', '/?category=Home%20decor');
+  expect(categories.querySelector('a[href="/?category=Home%20decor"]')).toHaveTextContent('Home decor');
 
   fireEvent.keyDown(document.body, { key:'/' });
   expect(screen.getByRole('searchbox', { name:/search products/i })).toHaveFocus();
