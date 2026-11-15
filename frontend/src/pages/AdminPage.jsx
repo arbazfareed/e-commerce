@@ -199,6 +199,7 @@ export default function AdminPage() {
       const payload = { ...storeSettings };
       // Exchange and zone rates have their own Save buttons; never resend stale copies here.
       delete payload.usdRate;
+      delete payload.email;
       delete payload.zoneRates;
       delete payload.courierApiKeyConfigured;
       delete payload.easypaisaApiKeyConfigured;
