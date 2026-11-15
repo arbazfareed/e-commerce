@@ -54,6 +54,22 @@ ${trackUrl ? `<p><a href="${escapeHtml(trackUrl)}" style="display:inline-block;p
   }, 'Order confirmation');
 };
 
+// Copy of every new order for the store inbox.
+const sendNewOrderAlert = async (order) => {
+  const { escapeHtml, layout, getFrontendUrl, notifyStore } = emailService;
+  const customer = recipientFor(order);
+  const address = [order.address?.street, order.address?.city, order.address?.province, order.address?.postalCode, order.address?.country].filter(Boolean).join(', ');
+  const adminLink = getFrontendUrl() ? `${getFrontendUrl()}/admin/orders` : '';
+  return notifyStore({
+    subject: `New order ${shortId(order)} · ${money(order.totalPrice, order.currency)} · ${order.paymentMethod}`,
+    replyTo: customer?.email,
+    text: `New order ${shortId(order)}\nCustomer: ${customer?.name || '-'} <${customer?.email || '-'}>\nPhone: ${order.address?.phone || '-'}\nAddress: ${address}\nTotal: ${money(order.totalPrice, order.currency)} (${order.paymentMethod})\n${(order.products || []).map(i => `- ${i.name} x ${i.quantity}`).join('\n')}\n${adminLink ? `\nOpen admin: ${adminLink}` : ''}`,
+    html: layout(`<p><strong>New order ${shortId(order)}</strong> (${escapeHtml(order.paymentMethod)})</p>
+<p>${escapeHtml(customer?.name || '-')} · ${escapeHtml(customer?.email || '-')} · ${escapeHtml(order.address?.phone || '-')}<br>${escapeHtml(address)}</p>
+${itemsTable(order)}${adminLink ? `<p><a href="${escapeHtml(adminLink)}">Open orders in admin</a></p>` : ''}`),
+  });
+};
+
 const STATUS_TEXT = {
   Processing: 'We are preparing your order.',
   Shipped: 'Your order is on its way.',
@@ -79,4 +95,4 @@ ${link ? `<p><a href="${escapeHtml(link)}">View your order</a></p>` : ''}`),
   }, 'Order status');
 };
 
-module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, money };
+module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert, money };

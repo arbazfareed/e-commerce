@@ -1,12 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const emailService = require('../services/emailService');
-const { sendOrderConfirmationEmail, sendOrderStatusEmail, money } = require('../services/orderEmails');
+const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert, money } = require('../services/orderEmails');
 
 const sent = [];
 emailService.isConfigured = () => true;
 emailService.getFrontendUrl = () => 'https://shop.test';
 emailService.sendEmail = async message => { sent.push(message); };
+emailService.notifyStore = async message => { sent.push({ ...message, to: 'store' }); return true; };
 
 const order = {
   _id: '0123456789abcdef01234567', currency: 'PKR', totalPrice: 1580, shippingFee: 80, codFee: 0,
@@ -37,4 +38,13 @@ test('status emails are sent for shipped orders and include tracking details', a
 test('money formats PKR and USD', () => {
   assert.equal(money(23.6, 'USD'), '$23.60');
   assert.equal(money(1500, 'PKR'), 'Rs 1,500');
+});
+
+test('the store inbox gets a copy of every new order with phone and address', async () => {
+  sent.length = 0;
+  await sendNewOrderAlert({ ...order, address: { ...order.address, phone: '03001234567' } });
+  assert.equal(sent[0].to, 'store');
+  assert.equal(sent[0].replyTo, 'ali@example.test');
+  assert.match(sent[0].subject, /New order #01234567/);
+  assert.match(sent[0].text, /03001234567/);
 });

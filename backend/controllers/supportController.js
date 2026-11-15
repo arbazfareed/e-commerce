@@ -34,6 +34,19 @@ ${link ? `<p><a href="${escapeHtml(link)}">View your support tickets</a></p>` : 
   }
 };
 
+// Copy of each new support message for the store inbox; reply goes straight to the customer.
+const sendNewTicketAlert = async (ticket) => {
+  const { escapeHtml, layout, notifyStore } = emailService;
+  return notifyStore({
+    subject: `Support: ${ticket.subject || 'General'} — ${ticket.name}`,
+    replyTo: ticket.email,
+    text: `From: ${ticket.name} <${ticket.email}>\n${ticket.orderId ? `Order: ${ticket.orderId}\n` : ''}\n${ticket.message}`,
+    html: layout(`<p><strong>New support message</strong> from ${escapeHtml(ticket.name)} (${escapeHtml(ticket.email)})</p>
+${ticket.orderId ? `<p>Order: ${escapeHtml(ticket.orderId)}</p>` : ''}<p style="white-space:pre-wrap">${escapeHtml(ticket.message)}</p>
+<p style="color:#64748b">Reply in admin → Support so the customer also sees it on the website.</p>`),
+  });
+};
+
 /* ── Create ticket (logged-in user) ─────────────────────────── */
 exports.createTicket = async (req, res) => {
   try {
@@ -41,6 +54,7 @@ exports.createTicket = async (req, res) => {
     if (ticketInput.error) return res.status(400).json({ message: ticketInput.error });
 
     const ticket = await SupportTicket.create({ user: req.user._id, ...ticketInput.value });
+    await sendNewTicketAlert(ticket);
     res.status(201).json(ticket);
   } catch (err) {
     console.error('createTicket:', err);
@@ -55,6 +69,7 @@ exports.createGuestTicket = async (req, res) => {
     if (ticketInput.error) return res.status(400).json({ message: ticketInput.error });
 
     const ticket = await SupportTicket.create({ user: null, ...ticketInput.value });
+    await sendNewTicketAlert(ticket);
     res.status(201).json(ticket);
   } catch (err) {
     console.error('createGuestTicket:', err);
@@ -135,3 +150,4 @@ exports.replyTicket = async (req, res) => {
 
 exports.readTicket = readTicket;
 exports.sendReplyEmail = sendReplyEmail;
+exports.sendNewTicketAlert = sendNewTicketAlert;

@@ -1,6 +1,7 @@
 const SystemSettings = require('../models/SystemSettings');
 const { resolveZoneRates, validateZoneRates } = require('../utils/zoneShipping');
-const { getEmailStatus } = require('../services/emailService');
+const emailService = require('../services/emailService');
+const { getEmailStatus } = emailService;
 const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../config/credentialVault');
 
 const publicSettings = (settings) => ({
@@ -122,4 +123,26 @@ const updateSettings = async (req, res) => {
   res.json(publicSettings(settings));
 };
 
-module.exports = { getPublicSettings, getSettings, updateSettings, publicSettings, checkoutSettings };
+// Admin: send a test email to the store inbox and report the exact problem if it fails.
+const sendTestEmail = async (req, res) => {
+  const status = getEmailStatus();
+  if (!status.configured)
+    return res.status(503).json({ message: 'Email is not set up. Add SMTP_PASS (the Gmail App Password) in the backend Vercel project and redeploy.', email: status });
+  const to = typeof req.body?.to === 'string' && /^\S+@\S+\.\S+$/.test(req.body.to.trim()) ? req.body.to.trim() : status.notifyEmail;
+  try {
+    await emailService.sendEmail({
+      to,
+      subject: 'IndusCart test email',
+      text: `This is a test email from your IndusCart store. Email delivery works.\nSender: ${status.sender}\nStore link: ${emailService.getFrontendUrl()}`,
+      html: emailService.layout(`<p>This is a test email from your IndusCart store. <strong>Email delivery works.</strong></p><p style="color:#64748b">Sender: ${emailService.escapeHtml(status.sender)}</p>`),
+    });
+    return res.json({ message: `Test email sent to ${to}. Check the inbox (and Spam).`, email: status });
+  } catch (error) {
+    const hint = status.provider === 'smtp'
+      ? 'Gmail refused the sign-in. Check that SMTP_PASS is a Google App Password (2-Step Verification must be on), not the normal Gmail password.'
+      : 'The email provider refused the message. Check RESEND_API_KEY and that EMAIL_FROM uses a verified domain.';
+    return res.status(502).json({ message: `${error.message} ${hint}`, email: status });
+  }
+};
+
+module.exports = { sendTestEmail, getPublicSettings, getSettings, updateSettings, publicSettings, checkoutSettings };
