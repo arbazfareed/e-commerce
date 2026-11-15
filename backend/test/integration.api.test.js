@@ -155,7 +155,7 @@ test('guest COD checkout persists contact details and keeps order retrieval priv
     });
 
     const created = await request(server, '/api/orders', 'POST', {
-      guestContact:{ name:'Integration Guest', email:`guest-${suffix}@example.test`, phone:'555-0100' },
+      guestContact:{ name:'Integration Guest', email:`guest-${suffix}@example.test`, phone:'0300-1234567' },
       products:[{ product:product._id, quantity:1 }],
       address:{ street:'12 Test Street', city:'Multan', country:'Pakistan' },
       paymentMethod:'COD',
@@ -210,7 +210,7 @@ test('disabled international shopping blocks the global catalog and foreign chec
     const checkout = await request(server, '/api/orders', 'POST', {
       guestContact:{ name:'International Guest', email:'international@example.test' },
       products:[{ product:'000000000000000000000000', quantity:1 }],
-      address:{ street:'1 Test Street', city:'London', country:'United Kingdom' },
+      address:{ street:'1 Test Street', city:'London', country:'United Kingdom', phone:'+44 20 7946 0000' },
       paymentMethod:'COD',
     });
     assert.equal(checkout.status, 400);

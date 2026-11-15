@@ -227,7 +227,7 @@ export default function OrdersPage() {
                     <div style={{ marginTop:'12px', background: isDark ? 'rgba(19,33,29,0.9)' : '#f8fafc', borderRadius:'12px', padding:'14px 16px', border: isDark ? '1px solid rgba(130,175,157,0.2)' : 'none' }}>
                       <p style={{ margin:'0 0 6px', fontSize:'12px', fontWeight:'800', color: isDark ? '#cfe8db' : '#475569', textTransform:'uppercase', letterSpacing:'0.5px' }}>📍 Delivery Address</p>
                       <p style={{ margin:0, fontSize:'13px', color: isDark ? '#edf9f3' : '#334155', lineHeight:'1.6' }}>
-                        {[order.address?.street, order.address?.city, order.address?.country].filter(Boolean).join(', ')}
+                        {[order.address?.street, order.address?.city, order.address?.province, order.address?.postalCode, order.address?.country].filter(Boolean).join(', ')}
                       </p>
                     </div>
                   </div>

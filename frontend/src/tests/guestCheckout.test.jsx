@@ -26,11 +26,13 @@ test('guest can submit a COD order with required contact details', async () => {
   fireEvent.change(screen.getByLabelText(/email/i), { target:{ value:'buyer@example.test' } });
   fireEvent.change(screen.getByLabelText(/street \/ area/i), { target:{ value:'12 Market Road' } });
   fireEvent.change(screen.getByLabelText(/city/i), { target:{ value:'Lahore' } });
+  fireEvent.change(screen.getByLabelText(/mobile number/i), { target:{ value:'0300 1234567' } });
   fireEvent.click(screen.getByRole('button', { name:/confirm & place order/i }));
 
   expect(await screen.findByRole('heading', { name:/order confirmed/i })).toBeInTheDocument();
   const orderRequest = API.post.mock.calls.find(([url]) => url === '/api/orders');
-  expect(orderRequest[1].guestContact).toEqual({ name:'Guest Buyer', email:'buyer@example.test', phone:'' });
+  expect(orderRequest[1].guestContact).toEqual({ name:'Guest Buyer', email:'buyer@example.test', phone:'0300 1234567' });
+  expect(orderRequest[1].address.phone).toBe('0300 1234567');
   expect(clearCart).toHaveBeenCalledOnce();
   expect(screen.queryByRole('button', { name:/view my orders/i })).not.toBeInTheDocument();
   await waitFor(() => expect(API.post).toHaveBeenCalled());
