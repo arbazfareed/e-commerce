@@ -96,7 +96,7 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('cart');
         return API.put('/api/cart', { items: merged.map(item => ({ product: item._id, quantity: item.quantity, selectedColor: item.selectedColor || '', selectedSize: item.selectedSize || '' })) });
       })
-      .then(response => { if (active && response?.data) setItems(response.data); })
+      .then(response => { if (active && Array.isArray(response?.data)) setItems(response.data); })
       .catch(() => { /* Keep this account's browser cache usable if the account API is temporarily unavailable. */ })
       .finally(() => { if (active) { setLoadedForUserId(user._id); setServerCartReady(true); } });
     API.get('/api/wishlist')

@@ -15,7 +15,7 @@ export default function AdminRevenueTrends({
     }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>📈 Sales charts by day / week / month</h3>
+          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Sales charts by day / week / month</h3>
           <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#94a3b8' }}>Trend view for revenue concentration across each comparison window</p>
         </div>
       </div>

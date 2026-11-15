@@ -107,14 +107,13 @@ export default function AdminGlobalStyles() {
       :root:not([data-theme='dark']) .admin-sidebar .nav-btn:hover { background:#eaf5ee !important; color:#075c43 !important; box-shadow:inset 0 0 0 1px rgba(5,150,105,.14) !important; }
       .admin-password-card input { width:100%; min-height:46px; margin-top:6px; padding:10px 12px; border:1px solid #b9cec0; border-radius:10px; box-sizing:border-box; background:#fbfdfb; color:#10251b; }
       .admin-password-card input:focus { outline:3px solid rgba(16,185,129,.2); border-color:#0b8059; }
-      .admin-password-submit { width:100%; min-height:48px; justify-content:center; color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
-      :root[data-theme='dark'] .admin-page .admin-main .admin-green-button { color:#062e22 !important; }
-      .admin-page .admin-pdf-report-button { color:#fff !important; }
+      .admin-password-submit { width:100%; min-height:48px; justify-content:center; color:#fff !important; background:linear-gradient(135deg,#0f5a43,#0b3d2e) !important; }
+            .admin-page .admin-pdf-report-button { color:#fff !important; }
       :root[data-theme='dark'] .admin-password-card input { border-color:#557264 !important; background:#0b1510 !important; color:#f3faf5 !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.4) !important; }
       :root[data-theme='dark'] .admin-password-card input:focus { outline:3px solid rgba(110,231,183,.22); border-color:#72c9a2 !important; }
-      :root[data-theme='dark'] .admin-password-submit { color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
-      .admin-add-product-submit { color:#062e22 !important; background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; }
-      :root[data-theme='dark'] .admin-main .admin-add-product-submit { color:#062e22 !important; }
+      :root[data-theme='dark'] .admin-password-submit { color:#1d1608 !important; background:linear-gradient(135deg,#f6d9a4,#d9a95b 55%,#c4893d) !important; }
+      .admin-add-product-submit { color:#fff !important; background:linear-gradient(135deg,#0f5a43,#0b3d2e) !important; }
+      :root[data-theme='dark'] .admin-main .admin-add-product-submit { color:#1d1608 !important; background:linear-gradient(135deg,#f6d9a4,#d9a95b 55%,#c4893d) !important; }
       :root[data-theme='dark'] .admin-page .admin-market-badge[data-market='local'] { color:#166534 !important; }
       :root[data-theme='dark'] .admin-page .admin-market-badge[data-market='global'] { color:#1d4ed8 !important; }
       :root[data-theme='dark'] .admin-page .admin-status-badge[data-status='pending'] { color:#9a3412 !important; }
@@ -160,8 +159,8 @@ export default function AdminGlobalStyles() {
       :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-settings-card textarea { min-height:40px; border:1px solid #cbd9cf !important; border-radius:10px; background:#fbfdfb !important; color:#183329 !important; font-size:13px !important; }
       :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-zone-rate-card { background:#252d29 !important; border-color:#48564e !important; }
       :root:not([data-theme='dark']) .admin-page .admin-main .admin-settings-page .admin-zone-rate-card { background:#f5f9f6 !important; border-color:#d4e1d8 !important; }
-      .admin-settings-page .admin-settings-card button { min-height:42px; border-radius:10px; color:#062e22 !important; }
-      :root[data-theme='dark'] .admin-page .admin-main .admin-settings-page .admin-settings-card button { background:linear-gradient(135deg,#8ae0bb,#54c7a2) !important; color:#062e22 !important; }
+      .admin-settings-page .admin-settings-card button { min-height:42px; border-radius:10px; }
+      
       :root[data-theme='dark'] .admin-main .market-picker-option-title,
       :root[data-theme='dark'] .admin-main .market-picker-option-check { color:#dce8e1 !important; }
       :root[data-theme='dark'] .admin-main .market-picker-option.is-active[data-market='global'] .market-picker-option-title,

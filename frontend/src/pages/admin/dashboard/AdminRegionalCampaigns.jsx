@@ -14,7 +14,7 @@ export default function AdminRegionalCampaigns({
     }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
-          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>🎯 Regional marketing campaign cards</h3>
+          <h3 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b' }}>Regional marketing campaign cards</h3>
           <p style={{ margin:'4px 0 0', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#94a3b8' }}>Localized offers that match each region’s strongest sales pattern</p>
         </div>
       </div>

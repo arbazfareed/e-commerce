@@ -17,7 +17,7 @@ export function MarketBadge({ isLocal }) {
       border: `1px solid ${isLocal ? '#bbf7d0' : '#bfdbfe'}`,
       padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap',
     }}>
-      {isLocal ? '🇵🇰 Local' : '🌍 Global'}
+      {isLocal ? 'Local' : 'Global'}
     </span>
   );
 }
@@ -87,7 +87,7 @@ export function MarketPicker({ value, onChange, hint = true, darkMode = false })
         })}
       </div>
       {hint && <p className="market-picker-hint" style={{ margin: '8px 0 0', fontSize: 12, color: value ? (darkMode ? '#a7f3d0' : '#047857') : (darkMode ? '#bfdbfe' : '#1d4ed8'), fontWeight: 700 }}>
-        {value ? '🇵🇰 Only Pakistani customers (shopping in PKR mode) will see this product.' : '🌍 Everyone sees this product — both local and international customers.'}
+        {value ? 'Only Pakistani customers (shopping in PKR mode) will see this product.' : 'Everyone sees this product — both local and international customers.'}
       </p>}
     </div>
   );
