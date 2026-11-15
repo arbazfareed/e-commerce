@@ -11,6 +11,7 @@ const publicSettings = (settings) => ({
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
+  freeShippingThreshold: settings.freeShippingThreshold || 0,
   usdRate: settings.usdRate || 278,
   zoneRates: resolveZoneRates(settings.zoneRates),
   courierProvider: settings.courierProvider,
@@ -36,6 +37,7 @@ const checkoutSettings = (settings) => ({
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
+  freeShippingThreshold: settings.freeShippingThreshold || 0,
   usdRate: settings.usdRate || 278,
   zoneRates: resolveZoneRates(settings.zoneRates),
   // No online gateway adapter is implemented yet. Saved provider settings do not activate checkout.
@@ -66,7 +68,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   const allowed = [
-    'internationalEnabled', 'codEnabled', 'codInternationalEnabled', 'codFeeMode', 'codFee', 'codThreshold',
+    'internationalEnabled', 'codEnabled', 'codInternationalEnabled', 'codFeeMode', 'codFee', 'codThreshold', 'freeShippingThreshold',
     'courierProvider', 'courierEnabled', 'courierMode',
     'easypaisaEnabled', 'easypaisaMode', 'easypaisaMerchantId',
   ];
@@ -77,7 +79,7 @@ const updateSettings = async (req, res) => {
       return res.status(400).json({ message: `${field} must be true or false.` });
   if (update.codFeeMode && !['flat', 'percentage'].includes(update.codFeeMode))
     return res.status(400).json({ message: 'codFeeMode must be flat or percentage.' });
-  for (const field of ['codFee', 'codThreshold'])
+  for (const field of ['codFee', 'codThreshold', 'freeShippingThreshold'])
     if (update[field] !== undefined && (!Number.isFinite(Number(update[field])) || Number(update[field]) < 0))
       return res.status(400).json({ message: `${field} must be a non-negative number.` });
   for (const field of ['courierMode', 'easypaisaMode'])

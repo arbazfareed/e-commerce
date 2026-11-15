@@ -176,6 +176,10 @@ export default function AdminSettingsPanel({
             <input style={S.inp} type="number" min="0" value={storeSettings.codThreshold} onChange={e => setStoreSettings(s => ({ ...s, codThreshold:Number(e.target.value) }))} />
           </div>
           <div>
+            <label style={S.lbl}>Free delivery in Pakistan above (PKR, 0 = off)</label>
+            <input style={S.inp} type="number" min="0" value={storeSettings.freeShippingThreshold || 0} onChange={e => setStoreSettings(s => ({ ...s, freeShippingThreshold:Number(e.target.value) }))} />
+          </div>
+          <div>
             <label style={S.lbl}>Courier provider</label>
             <select style={S.inp} value={storeSettings.courierProvider || ''} onChange={e => setStoreSettings(s => ({ ...s, courierProvider:e.target.value }))}>
               <option value="">No courier API</option><option value="PostEx">PostEx</option><option value="Trax">Trax</option><option value="TCS">TCS</option><option value="Leopards">Leopards</option><option value="Custom">Other provider (adapter needed)</option>

@@ -5,12 +5,12 @@ const { calcOrderCharges } = require('../utils/orderCharges');
 test('USD orders convert PKR shipping and COD fees instead of adding rupees to dollars', () => {
   // $20 item to Dubai: shipping Rs 1025 at Rs 278 per USD = $3.69
   const result = calcOrderCharges({ subtotal: 20, currency: 'USD', shippingFeePKR: 1025, paymentMethod: 'COD', settings: { codFee: 278, codFeeMode: 'flat' } });
-  assert.deepEqual(result, { shippingFee: 3.69, codFee: 1, totalPrice: 24.69, usdRate: 278 });
+  assert.deepEqual(result, { shippingFee: 3.69, codFee: 1, totalPrice: 24.69, usdRate: 278, freeShipping: false });
 });
 
 test('PKR orders keep fees in rupees', () => {
   const result = calcOrderCharges({ subtotal: 1500, currency: 'PKR', shippingFeePKR: 80, paymentMethod: 'COD', settings: { codFee: 50, codFeeMode: 'flat', usdRate: 300 } });
-  assert.deepEqual(result, { shippingFee: 80, codFee: 50, totalPrice: 1630, usdRate: 300 });
+  assert.deepEqual(result, { shippingFee: 80, codFee: 50, totalPrice: 1630, usdRate: 300, freeShipping: false });
 });
 
 test('COD threshold is compared in PKR and percentage fees use the order currency', () => {
@@ -18,4 +18,11 @@ test('COD threshold is compared in PKR and percentage fees use the order currenc
   assert.equal(waived.codFee, 0);
   const pct = calcOrderCharges({ subtotal: 20, currency: 'USD', shippingFeePKR: 0, paymentMethod: 'COD', settings: { codFee: 5, codFeeMode: 'percentage' } });
   assert.equal(pct.codFee, 1);
+});
+
+test('free shipping applies in Pakistan once the order reaches the threshold', () => {
+  const settings = { freeShippingThreshold: 3000 };
+  assert.equal(calcOrderCharges({ subtotal: 3000, currency: 'PKR', shippingFeePKR: 250, paymentMethod: 'COD', country: 'Pakistan', settings }).shippingFee, 0);
+  assert.equal(calcOrderCharges({ subtotal: 2999, currency: 'PKR', shippingFeePKR: 250, paymentMethod: 'COD', country: 'Pakistan', settings }).shippingFee, 250);
+  assert.equal(calcOrderCharges({ subtotal: 50, currency: 'USD', shippingFeePKR: 1025, paymentMethod: 'COD', country: 'United Arab Emirates', settings }).shippingFee, 3.69);
 });

@@ -9,9 +9,18 @@ const toOrderCurrency = (amountPKR, currency, usdRate) => {
   return Number((amount / rate).toFixed(2));
 };
 
-const calcOrderCharges = ({ subtotal, currency, shippingFeePKR, paymentMethod, settings = {} }) => {
+// Free delivery inside Pakistan once the order (after coupons) reaches the threshold.
+const qualifiesForFreeShipping = ({ subtotal, currency, country, settings = {} }) => {
+  const threshold = Number(settings.freeShippingThreshold) || 0;
+  if (threshold <= 0 || String(country || 'Pakistan').trim().toLowerCase() !== 'pakistan') return false;
   const usdRate = Number(settings.usdRate) > 0 ? Number(settings.usdRate) : DEFAULT_USD_RATE;
-  const shippingFee = toOrderCurrency(shippingFeePKR, currency, usdRate);
+  return (currency === 'USD' ? subtotal * usdRate : subtotal) >= threshold;
+};
+
+const calcOrderCharges = ({ subtotal, currency, shippingFeePKR, paymentMethod, country, settings = {} }) => {
+  const usdRate = Number(settings.usdRate) > 0 ? Number(settings.usdRate) : DEFAULT_USD_RATE;
+  const freeShipping = qualifiesForFreeShipping({ subtotal, currency, country, settings });
+  const shippingFee = freeShipping ? 0 : toOrderCurrency(shippingFeePKR, currency, usdRate);
   let codFee = 0;
   if (paymentMethod === 'COD') {
     const thresholdPKR = Number(settings.codThreshold) || 0;
@@ -28,7 +37,7 @@ const calcOrderCharges = ({ subtotal, currency, shippingFeePKR, paymentMethod, s
   const totalPrice = currency === 'USD'
     ? Number((subtotal + shippingFee + codFee).toFixed(2))
     : subtotal + shippingFee + codFee;
-  return { shippingFee, codFee, totalPrice, usdRate };
+  return { shippingFee, codFee, totalPrice, usdRate, freeShipping };
 };
 
-module.exports = { calcOrderCharges, toOrderCurrency, DEFAULT_USD_RATE };
+module.exports = { calcOrderCharges, qualifiesForFreeShipping, toOrderCurrency, DEFAULT_USD_RATE };

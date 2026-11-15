@@ -166,7 +166,7 @@ const placeOrder = async (req, res) => {
     const discountedProductTotal = Math.max(0, productTotal - couponDiscount);
     // Shipping and COD fees are configured in PKR; convert them for USD orders.
     const { shippingFee, codFee, totalPrice } = calcOrderCharges({
-      subtotal: discountedProductTotal, currency, shippingFeePKR, paymentMethod, settings,
+      subtotal: discountedProductTotal, currency, shippingFeePKR, paymentMethod, country, settings,
     });
 
     if (coupon) {

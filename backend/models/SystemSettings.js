@@ -10,6 +10,8 @@ const systemSettingsSchema = new mongoose.Schema({
   codFee: { type: Number, min: 0, default: 0 },
   // COD fees are waived when the product total reaches this value (0 disables the threshold).
   codThreshold: { type: Number, min: 0, default: 0 },
+  // Free delivery in Pakistan when the order (after coupons) reaches this amount in PKR. 0 = off.
+  freeShippingThreshold: { type: Number, min: 0, default: 0 },
   // 1 USD = usdRate PKR. Used to convert PKR shipping and COD fees on USD orders.
   usdRate: { type: Number, min: 1, max: 100000, default: 278 },
   // Admin overrides for zone shipping rates, merged over the defaults in utils/zoneShipping.js.

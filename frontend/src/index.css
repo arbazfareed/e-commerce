@@ -2265,3 +2265,6 @@ body {
     font-size: 12px;
   }
 }
+
+:root[data-theme='dark'] .free-shipping-progress { background: rgba(6, 95, 70, 0.22) !important; border-color: rgba(110, 231, 183, 0.3) !important; }
+:root[data-theme='dark'] .free-shipping-progress p { color: #bbf7d0 !important; }
