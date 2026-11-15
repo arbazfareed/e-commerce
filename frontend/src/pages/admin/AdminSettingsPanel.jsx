@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import API from '../../utils/axiosConfig';
+
 export default function AdminSettingsPanel({
   S,
   ZONE_LABELS,
@@ -27,6 +30,16 @@ export default function AdminSettingsPanel({
   zoneRates,
   zoneSaved
 }) {
+  const [testEmailState, setTestEmailState] = useState({ sending:false, message:'', ok:true });
+  const sendTestEmail = async () => {
+    setTestEmailState({ sending:true, message:'', ok:true });
+    try {
+      const { data } = await API.post('/api/settings/test-email', {});
+      setTestEmailState({ sending:false, message:data.message, ok:true });
+    } catch (error) {
+      setTestEmailState({ sending:false, message:error.response?.data?.message || 'Test email could not be sent.', ok:false });
+    }
+  };
   return (
     <div className="admin-settings-page" style={{ animation:'fadeUp .35s ease' }}>
       <div style={S.pgTop}>
@@ -114,14 +127,20 @@ export default function AdminSettingsPanel({
           Configure COD and save courier/EasyPaisa sandbox details for a future adapter. Provider toggles do not activate payment capture or courier booking until the server integration is implemented.
         </p>
         {storeSettings.email && !storeSettings.email.configured && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #fecaca', background:themeMode === 'dark' ? '#3b1d1d' : '#fff1f2', color:themeMode === 'dark' ? '#fecaca' : '#9f1239', fontSize:12, lineHeight:1.55 }}>
-          Email is not set up, so forgot-password and order emails are not being sent. In the backend Vercel project set FRONTEND_URL and either SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS (for Gmail, use an App Password) or RESEND_API_KEY and EMAIL_FROM with a verified domain, then redeploy.
+          Email is not set up, so forgot-password and order emails are not being sent. In Vercel → e-commerce-backend → Settings → Environment Variables, add SMTP_PASS with the Google App Password for induscartvalley@gmail.com, then redeploy.
         </p>}
         {storeSettings.email?.usingResendTestSender && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>
           EMAIL_FROM uses Resend's test sender (resend.dev). Resend only delivers it to your own Resend account email, so customers will not receive emails. Verify your domain in Resend or switch to SMTP.
         </p>}
-        {storeSettings.email?.configured && !storeSettings.email?.usingResendTestSender && <p style={{ margin:'0 0 14px', fontSize:12, color:themeMode === 'dark' ? '#86efac' : '#166534' }}>
-          Email is set up ({storeSettings.email.provider === 'smtp' ? 'SMTP' : 'Resend'}).
+        {storeSettings.email?.configured && !storeSettings.email?.usingResendTestSender && <p style={{ margin:'0 0 8px', fontSize:12, color:themeMode === 'dark' ? '#86efac' : '#166534' }}>
+          Email is set up: sending from {storeSettings.email.sender || (storeSettings.email.provider === 'smtp' ? 'Gmail' : 'Resend')}. New orders and support messages are copied to {storeSettings.email.notifyEmail}.
         </p>}
+        {storeSettings.email && <div style={{ margin:'0 0 14px', display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+          <button type="button" onClick={sendTestEmail} disabled={testEmailState.sending} className="admin-green-button" style={{ ...S.greenBtn, padding:'8px 14px', fontSize:12 }}>
+            {testEmailState.sending ? 'Sending…' : 'Send test email'}
+          </button>
+          {testEmailState.message && <span role="status" style={{ fontSize:12, color: testEmailState.ok ? (themeMode === 'dark' ? '#86efac' : '#166534') : (themeMode === 'dark' ? '#fecaca' : '#9f1239') }}>{testEmailState.message}</span>}
+        </div>}
         {!storeSettings.credentialEncryptionReady && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>Provider secrets are locked until <code>SETTINGS_ENCRYPTION_KEY</code> is added to the backend environment (at least 32 characters). Secret inputs are disabled rather than saving credentials in plaintext.</p>}
         {storeSettings.legacySecretsNeedEncryption && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>An older courier secret is still stored unencrypted. Set <code>SETTINGS_ENCRYPTION_KEY</code>; the server will encrypt it when settings are next loaded.</p>}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:14, marginBottom:16 }}>

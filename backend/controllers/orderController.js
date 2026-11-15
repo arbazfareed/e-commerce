@@ -1,7 +1,7 @@
 const Order   = require('../models/Order');
 const { sendServerError } = require('../utils/httpErrors');
 const crypto = require('crypto');
-const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require('../services/orderEmails');
+const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert } = require('../services/orderEmails');
 const { getFrontendUrl } = require('../services/emailService');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
@@ -205,10 +205,11 @@ const placeOrder = async (req, res) => {
     const frontendUrl = getFrontendUrl();
     // The order is saved: an email problem must never reach the stock-restoring catch below.
     try {
-      await sendOrderConfirmationEmail(
-        { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null },
-        { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' },
-      );
+      const emailOrder = { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null };
+      await Promise.all([
+        sendOrderConfirmationEmail(emailOrder, { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' }),
+        sendNewOrderAlert(emailOrder),
+      ]);
     } catch (emailError) {
       console.error('Order confirmation email error:', emailError.message);
     }

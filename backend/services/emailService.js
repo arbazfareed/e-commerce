@@ -1,26 +1,43 @@
 // Email delivery for IndusCart.
 //
-// Two providers are supported; set the variables for ONE of them in the backend environment:
-//   1. Resend (best for production, needs your own verified domain):
-//        RESEND_API_KEY, EMAIL_FROM="IndusCart <no-reply@yourdomain.com>"
-//   2. Any SMTP server, e.g. Gmail with an App Password (works without a domain, low volume):
-//        SMTP_HOST=smtp.gmail.com, SMTP_PORT=465, SMTP_USER=you@gmail.com, SMTP_PASS=<16-char app password>
-//        EMAIL_FROM="IndusCart <you@gmail.com>" (optional, defaults to SMTP_USER)
-// FRONTEND_URL must be the public store URL so links in emails open the right site.
+// The store sends from its Gmail inbox by default. Only ONE secret is needed in the
+// backend environment (Vercel → e-commerce-backend → Settings → Environment Variables):
+//   SMTP_PASS = the 16-character Google App Password for induscartvalley@gmail.com
+// Everything else has a default and can be overridden:
+//   SMTP_USER (default STORE_EMAIL), SMTP_HOST (smtp.gmail.com), SMTP_PORT (465),
+//   EMAIL_FROM ("IndusCart <SMTP_USER>"), FRONTEND_URL (the live store on Vercel),
+//   ADMIN_NOTIFY_EMAIL (where new-order and support alerts go, default STORE_EMAIL).
+// Resend is still supported instead of SMTP: RESEND_API_KEY + EMAIL_FROM on a verified domain.
+
+const STORE_EMAIL = 'induscartvalley@gmail.com';
+const DEFAULT_PRODUCTION_URL = 'https://e-commerce-coral-eight-95.vercel.app';
 
 const clean = name => process.env[name]?.trim() || '';
 const isPlaceholder = value => /^replace-with-|example\.com|your-verified-domain/i.test(value);
 
+const smtpUser = () => clean('SMTP_USER') || clean('STORE_EMAIL') || STORE_EMAIL;
+const smtpHost = () => clean('SMTP_HOST') || 'smtp.gmail.com';
+const storeEmail = () => clean('STORE_EMAIL') || STORE_EMAIL;
+// Gmail only sends as the signed-in account, so ignore an EMAIL_FROM for another address.
+const fromAddress = () => {
+  const configured = clean('EMAIL_FROM');
+  return configured && configured.toLowerCase().includes(smtpUser().toLowerCase()) ? configured : `IndusCart <${smtpUser()}>`;
+};
+
 const getProvider = () => {
-  if (clean('SMTP_HOST') && clean('SMTP_USER') && clean('SMTP_PASS') && !isPlaceholder(clean('SMTP_PASS'))) return 'smtp';
+  if (clean('SMTP_PASS') && !isPlaceholder(clean('SMTP_PASS'))) return 'smtp';
   if (clean('RESEND_API_KEY') && clean('EMAIL_FROM') && !isPlaceholder(clean('RESEND_API_KEY')) && !isPlaceholder(clean('EMAIL_FROM'))) return 'resend';
   return null;
 };
 
 const getFrontendUrl = () => {
   const url = clean('FRONTEND_URL');
-  return url && !isPlaceholder(url) ? url.replace(/\/+$/, '') : '';
+  if (url && !isPlaceholder(url)) return url.replace(/\/+$/, '');
+  // On Vercel production, links point at the live store unless FRONTEND_URL says otherwise.
+  return process.env.VERCEL ? DEFAULT_PRODUCTION_URL : '';
 };
+
+const getNotifyEmail = () => clean('ADMIN_NOTIFY_EMAIL') || storeEmail();
 
 const isConfigured = () => Boolean(getProvider() && getFrontendUrl());
 
@@ -30,6 +47,8 @@ const getEmailStatus = () => ({
   provider: getProvider() || 'none',
   frontendUrlConfigured: Boolean(getFrontendUrl()),
   usingResendTestSender: getProvider() === 'resend' && /@resend\.dev>?$/i.test(clean('EMAIL_FROM')),
+  sender: getProvider() === 'smtp' ? smtpUser() : (getProvider() === 'resend' ? clean('EMAIL_FROM') : ''),
+  notifyEmail: getNotifyEmail(),
 });
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -42,10 +61,10 @@ const getSmtpTransport = () => {
     const nodemailer = require('nodemailer');
     const port = Number(clean('SMTP_PORT')) || 465;
     smtpTransport = nodemailer.createTransport({
-      host: clean('SMTP_HOST'),
+      host: smtpHost(),
       port,
       secure: port === 465,
-      auth: { user: clean('SMTP_USER'), pass: clean('SMTP_PASS').replace(/\s+/g, '') },
+      auth: { user: smtpUser(), pass: clean('SMTP_PASS').replace(/\s+/g, '') },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
@@ -54,7 +73,7 @@ const getSmtpTransport = () => {
   return smtpTransport;
 };
 
-const sendEmail = async ({ to, subject, text, html }) => {
+const sendEmail = async ({ to, subject, text, html, replyTo }) => {
   const provider = getProvider();
   if (!provider || !getFrontendUrl()) {
     const error = new Error('Email delivery is not configured. Set FRONTEND_URL and either SMTP_* or RESEND_API_KEY + EMAIL_FROM.');
@@ -64,7 +83,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
 
   if (provider === 'smtp') {
     try {
-      await getSmtpTransport().sendMail({ from: clean('EMAIL_FROM') || clean('SMTP_USER'), to, subject, text, html });
+      await getSmtpTransport().sendMail({ from: fromAddress(), to, subject, text, html, replyTo: replyTo || storeEmail() });
     } catch (cause) {
       const error = new Error(`SMTP server rejected the message (${cause.responseCode || cause.code || 'error'}).`);
       error.code = 'EMAIL_DELIVERY_FAILED';
@@ -79,7 +98,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${clean('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: clean('EMAIL_FROM'), to: [to], subject, text, html }),
+      body: JSON.stringify({ from: clean('EMAIL_FROM'), to: [to], subject, text, html, reply_to: replyTo || storeEmail() }),
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -117,7 +136,22 @@ const sendCustomerPasswordResetEmail = async ({ to, name, resetUrl, requestedBy 
   });
 };
 
+// Alert the store inbox (new orders, support messages). Never throws.
+const notifyStore = async ({ subject, text, html, replyTo }) => {
+  if (!isConfigured()) return false;
+  try {
+    await sendEmail({ to: getNotifyEmail(), subject, text, html, replyTo });
+    return true;
+  } catch (error) {
+    console.error('Store notification email failed:', error.code || 'EMAIL_ERROR', '-', error.message);
+    return false;
+  }
+};
+
 module.exports = {
+  STORE_EMAIL,
+  notifyStore,
+  getNotifyEmail,
   sendEmail,
   sendCustomerPasswordResetEmail,
   isConfigured,
