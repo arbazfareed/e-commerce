@@ -1,0 +1,247 @@
+/* Premium storefront header.
+   Desktop (901px+) gets the new layout; the mobile header and slide-out menu keep their own styles. */
+
+.ph-icon { display: block; flex-shrink: 0; }
+
+/* Slim promo strip above the header (from real store settings). */
+.ph-promo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 16px;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, #06402f, #0b5d43 45%, #0d6a4f);
+  color: #e6f6ec;
+  font: 600 12px/1.3 'DM Sans', 'Segoe UI', sans-serif;
+  letter-spacing: .02em;
+  text-align: center;
+}
+.ph-promo .ph-icon { color: #f2c98a; }
+/* The mobile menu is positioned under a 60px header, so the strip is desktop-only. */
+@media (max-width: 900px) { .ph-promo { display: none; } }
+
+@media (min-width: 901px) {
+  nav.site-nav.premium-header {
+    height: 72px !important;
+    padding: 0 clamp(16px, 3vw, 40px) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px;
+    background: rgba(255, 255, 255, .82) !important;
+    backdrop-filter: saturate(180%) blur(18px) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(18px) !important;
+    border-bottom: 1px solid rgba(11, 93, 67, .10) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .6) inset, 0 10px 30px -12px rgba(15, 45, 32, .18) !important;
+  }
+
+  /* Brand */
+  .premium-header .navbar-brand-group { margin-right: 6px !important; }
+  .premium-header .brandText { font-size: 19px !important; font-weight: 800 !important; letter-spacing: -.03em !important; color: #10261c !important; }
+  .premium-header .brandSuffix { font-weight: 600; color: #1d4d3a; }
+
+  /* Main links: quiet text with an underline-style active state */
+  .premium-header .site-nav-links { display: flex !important; align-items: center; gap: 2px !important; }
+  .premium-header .site-nav-link {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    color: #3b5248 !important;
+    font: 600 14px 'DM Sans', 'Segoe UI', sans-serif !important;
+    text-decoration: none;
+    background: transparent !important;
+    transition: color .15s ease, background .15s ease;
+  }
+  .premium-header .site-nav-link .ph-icon { opacity: .75; }
+  .premium-header .site-nav-link:hover { color: #0b5d43 !important; background: rgba(11, 93, 67, .06) !important; }
+  .premium-header .site-nav-link.is-active { color: #0b5d43 !important; background: rgba(11, 93, 67, .08) !important; font-weight: 700 !important; }
+  .premium-header .site-nav-link.is-active .ph-icon { opacity: 1; }
+
+  /* Search: the widest element, centred */
+  .premium-header .navbar-live-search { flex: 1 1 340px !important; max-width: 460px !important; min-width: 200px; margin: 0 auto !important; }
+  .premium-header .navbar-search-form {
+    height: 44px;
+    padding: 0 16px !important;
+    gap: 10px;
+    border-radius: 999px !important;
+    border: 1px solid #dbe7e0 !important;
+    background: #f5f8f6 !important;
+    box-shadow: inset 0 1px 2px rgba(15, 45, 32, .04);
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .premium-header .navbar-search-form:focus-within { background: #fff !important; border-color: #3aa77a !important; box-shadow: 0 0 0 4px rgba(16, 185, 129, .12) !important; }
+  .premium-header .navbar-search-icon { display: inline-flex; color: #6b8579; }
+  .premium-header .navbar-search-input { padding: 0 !important; font-size: 14px !important; font-weight: 500 !important; }
+
+  /* Round icon buttons: theme, wishlist, cart */
+  .premium-header .ph-actions { display: flex; align-items: center; gap: 4px; }
+  .premium-header .ph-icon-btn {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0 !important;
+    border: 1px solid transparent !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: #2f4a3e !important;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
+  }
+  .premium-header .ph-icon-btn:hover { background: rgba(11, 93, 67, .07) !important; color: #0b5d43 !important; }
+  .premium-header .ph-icon-btn.is-active { background: rgba(11, 93, 67, .09) !important; color: #0b5d43 !important; }
+  .premium-header .ph-icon-btn:focus-visible,
+  .premium-header .site-nav-link:focus-visible,
+  .premium-header .ph-account-btn:focus-visible,
+  .premium-header .ph-login:focus-visible,
+  .premium-header .ph-register:focus-visible { outline: 2px solid #16845d; outline-offset: 2px; }
+  .premium-header .ph-badge {
+    position: absolute;
+    top: 3px;
+    right: 1px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    background: linear-gradient(135deg, #f2b25a, #dd7a2c);
+    color: #fff;
+    font: 800 10px/14px 'DM Sans', 'Segoe UI', sans-serif;
+    text-align: center;
+  }
+
+  /* Account / auth */
+  .premium-header .site-nav-auth { display: flex !important; align-items: center; gap: 8px; margin-left: 4px; }
+  .premium-header .ph-guest { display: flex; align-items: center; gap: 6px; }
+  .premium-header .ph-login {
+    display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 999px;
+    color: #234237; font: 600 14px 'DM Sans', 'Segoe UI', sans-serif; text-decoration: none;
+  }
+  .premium-header .ph-login:hover { background: rgba(11, 93, 67, .07); color: #0b5d43; }
+  .premium-header .ph-register {
+    display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px;
+    background: linear-gradient(135deg, #12855f, #0a5a40); color: #fff !important;
+    font: 700 14px 'DM Sans', 'Segoe UI', sans-serif; text-decoration: none; white-space: nowrap;
+    box-shadow: 0 8px 18px -8px rgba(10, 90, 64, .7), inset 0 1px 0 rgba(255, 255, 255, .18);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .premium-header .ph-register:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 12px 22px -10px rgba(10, 90, 64, .8); }
+
+  .premium-header .ph-account { position: relative; }
+  .premium-header .ph-account-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 10px 0 4px;
+    border: 1px solid #dbe7e0; border-radius: 999px; background: #fff; color: #23392f; cursor: pointer;
+    font: 600 14px 'DM Sans', 'Segoe UI', sans-serif;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .premium-header .ph-account-btn:hover,
+  .premium-header .ph-account-btn[aria-expanded='true'] { border-color: #9fd3b8; box-shadow: 0 6px 16px -8px rgba(15, 45, 32, .35); }
+  .premium-header .ph-avatar {
+    display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #19a76d, #0f4d39); color: #fff; font-size: 13px; font-weight: 800;
+  }
+  .premium-header .ph-account-name { display: inline-flex; align-items: center; gap: 6px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .premium-header .ph-admin-badge { font-size: 9px; font-weight: 800; letter-spacing: .06em; color: #0d6a49; background: #e3f4ea; padding: 2px 6px; border-radius: 6px; }
+  .premium-header .ph-menu {
+    position: absolute; right: 0; top: calc(100% + 10px); z-index: 260; width: 240px; padding: 8px;
+    border: 1px solid #e1ebe5; border-radius: 16px; background: #fff;
+    box-shadow: 0 24px 48px -16px rgba(15, 45, 32, .35);
+    animation: phMenuIn .14s ease-out;
+  }
+  @keyframes phMenuIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .premium-header .ph-menu-head { display: grid; gap: 2px; margin: 0 0 6px; padding: 8px 10px 10px; border-bottom: 1px solid #edf3ef; }
+  .premium-header .ph-menu-head strong { color: #10261c; font-size: 14px; }
+  .premium-header .ph-menu-head small { color: #6b8579; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .premium-header .ph-menu a,
+  .premium-header .ph-menu button {
+    display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; padding: 10px; border: 0; border-radius: 10px;
+    background: transparent; color: #23392f; font: 600 14px 'DM Sans', 'Segoe UI', sans-serif; text-decoration: none; text-align: left; cursor: pointer;
+  }
+  .premium-header .ph-menu a:hover, .premium-header .ph-menu button:hover { background: #f1f7f3; color: #0b5d43; }
+  .premium-header .ph-menu .ph-menu-logout { margin-top: 4px; border-top: 1px solid #edf3ef; border-radius: 0 0 10px 10px; color: #9f1239; }
+  .premium-header .ph-menu .ph-menu-logout:hover { background: #fff1f2; color: #9f1239; }
+
+  /* Admin entry: small and quiet for shoppers */
+  .premium-header .ph-admin-entry {
+    display: inline-flex !important; align-items: center; gap: 6px; width: auto !important; min-width: 0 !important;
+    height: 38px !important; padding: 0 12px 0 6px !important; margin: 0 !important;
+    border-radius: 999px !important; border: 1px solid #cfe3d8 !important;
+    background: #f4faf6 !important; box-shadow: none !important; color: #0b5d43 !important;
+  }
+  .premium-header .ph-admin-entry:hover { background: #e8f5ed !important; border-color: #9fd3b8 !important; filter: none !important; }
+  .premium-header .ph-admin-entry > span[aria-hidden] { background: conic-gradient(#0f766e var(--hold, 0%), rgba(11, 93, 67, .14) 0deg) !important; border-color: transparent !important; }
+  .premium-header .ph-admin-entry svg { color: #0b5d43 !important; }
+  .premium-header .ph-admin-entry > span[aria-hidden] { background: conic-gradient(#0f766e var(--hold, 0%), #e3f2ea 0deg) !important; }
+  .premium-header .ph-admin-label { color: #0b5d43; font: 700 12px 'DM Sans', 'Segoe UI', sans-serif; letter-spacing: .02em; }
+}
+
+/* Mid-size screens: keep everything on one line without cutting off buttons. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .premium-header .site-nav-link { padding: 0 9px !important; }
+  .premium-header .site-nav-link .ph-icon { display: none; }
+  .premium-header .navbar-live-search { flex: 1 1 240px !important; min-width: 180px; max-width: 360px !important; }
+  .premium-header .navbar-search-input { padding: 0 !important; font-size: 13px !important; }
+  .premium-header .ph-admin-entry { width: 38px !important; height: 38px !important; }
+  .premium-header .ph-account-name { display: none; }
+  .premium-header .ph-admin-label { display: none; }
+  .premium-header .ph-admin-entry { padding: 0 6px !important; }
+  .premium-header .ph-login { padding: 0 10px; }
+  .premium-header .ph-register { padding: 0 14px; }
+}
+@media (min-width: 901px) and (max-width: 1000px) {
+  .premium-header .brandSuffix { display: none !important; }
+}
+
+/* Phones and tablets: the header's existing mobile layout handles these. */
+@media (max-width: 900px) {
+  .premium-header .ph-desktop-only { display: none !important; }
+  .premium-header .ph-actions { display: none !important; }
+}
+
+/* Dark theme */
+@media (min-width: 901px) {
+  :root[data-theme='dark'] nav.site-nav.premium-header {
+    background: rgba(10, 22, 17, .82) !important;
+    border-bottom-color: rgba(110, 231, 183, .12) !important;
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .6) !important;
+  }
+  :root[data-theme='dark'] .premium-header .brandText { color: #ecf6f0 !important; }
+  :root[data-theme='dark'] .premium-header .brandSuffix { color: #a7d9bd; }
+  :root[data-theme='dark'] .premium-header .site-nav-link { color: #c3d6cb !important; }
+  :root[data-theme='dark'] .premium-header .site-nav-link:hover,
+  :root[data-theme='dark'] .premium-header .site-nav-link.is-active { color: #a7f3d0 !important; background: rgba(110, 231, 183, .09) !important; }
+  :root[data-theme='dark'] .premium-header .navbar-search-form { background: #15241d !important; border-color: #2c4337 !important; }
+  :root[data-theme='dark'] .premium-header .navbar-search-form:focus-within { background: #182a21 !important; border-color: #4fbf8e !important; }
+  :root[data-theme='dark'] .premium-header .navbar-search-icon { color: #8fb3a1; }
+  :root[data-theme='dark'] .premium-header .navbar-search-input { background: transparent !important; color: #edf5f0 !important; }
+  :root[data-theme='dark'] .premium-header .desktop-theme-toggle { background: transparent !important; border-color: transparent !important; }
+  :root[data-theme='dark'] .premium-header .ph-admin-entry svg { color: #a7f3d0 !important; }
+  :root[data-theme='dark'] .premium-header .ph-admin-entry > span[aria-hidden] { background: conic-gradient(#34d399 var(--hold, 0%), #1f3a2e 0deg) !important; }
+  :root[data-theme='dark'] .premium-header .ph-icon-btn { color: #cfe3d7 !important; }
+  :root[data-theme='dark'] .premium-header .ph-icon-btn:hover,
+  :root[data-theme='dark'] .premium-header .ph-icon-btn.is-active { background: rgba(110, 231, 183, .1) !important; color: #a7f3d0 !important; }
+  :root[data-theme='dark'] .premium-header .ph-badge { border-color: #0a1611; }
+  :root[data-theme='dark'] .premium-header .ph-login { color: #d4e7dc; }
+  :root[data-theme='dark'] .premium-header .ph-login:hover { background: rgba(110, 231, 183, .09); color: #a7f3d0; }
+  :root[data-theme='dark'] .premium-header .ph-account-btn { background: #13231b; border-color: #2c4337; color: #e3f0e8; }
+  :root[data-theme='dark'] .premium-header .ph-menu { background: #13231b; border-color: #2c4337; box-shadow: 0 24px 48px -16px rgba(0, 0, 0, .7); }
+  :root[data-theme='dark'] .premium-header .ph-menu-head { border-color: #243a2f; }
+  :root[data-theme='dark'] .premium-header .ph-menu-head strong { color: #ecf6f0; }
+  :root[data-theme='dark'] .premium-header .ph-menu a,
+  :root[data-theme='dark'] .premium-header .ph-menu button { color: #d4e7dc; }
+  :root[data-theme='dark'] .premium-header .ph-menu a:hover,
+  :root[data-theme='dark'] .premium-header .ph-menu button:hover { background: #1b3127; color: #a7f3d0; }
+  :root[data-theme='dark'] .premium-header .ph-menu .ph-menu-logout { color: #fda4af; border-color: #243a2f; }
+  :root[data-theme='dark'] .premium-header .ph-admin-entry { background: #13231b !important; border-color: #2c4337 !important; }
+  :root[data-theme='dark'] .premium-header .ph-admin-label { color: #a7f3d0; }
+}
+:root[data-theme='dark'] .ph-promo { background: linear-gradient(90deg, #04241a, #073826 45%, #08402d); color: #cfe9da; }
