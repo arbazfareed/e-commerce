@@ -156,6 +156,11 @@ export default function AdminSettingsPanel({
             <input type="checkbox" checked={storeSettings.codEnabled} onChange={e => setStoreSettings(s => ({ ...s, codEnabled:e.target.checked }))} />
             <span style={{ fontWeight:800, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Enable COD checkout</span>
           </label>
+          <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'12px 14px', borderRadius:12, border:themeMode === 'dark' ? '1px solid rgba(110,231,183,0.22)' : '1px solid #bbf7d0', background:themeMode === 'dark' ? 'rgba(6,95,70,0.18)' : '#f0fdf4' }}>
+            <input type="checkbox" checked={storeSettings.codInternationalEnabled !== false} onChange={e => setStoreSettings(s => ({ ...s, codInternationalEnabled:e.target.checked }))} />
+            <span style={{ fontWeight:800, color:themeMode === 'dark' ? '#d1fae5' : '#166534', fontSize:13 }}>Allow COD outside Pakistan</span>
+            <span style={{ fontSize:11, color:themeMode === 'dark' ? '#a7c4b5' : '#4b6b5a' }}>Turn off when you only want to collect cash in Pakistan. While COD is the only payment method, turning this off stops international orders.</span>
+          </label>
           <div>
             <label style={S.lbl}>COD fee mode</label>
             <select style={S.inp} value={storeSettings.codFeeMode} onChange={e => setStoreSettings(s => ({ ...s, codFeeMode:e.target.value }))}>

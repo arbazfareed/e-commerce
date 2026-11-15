@@ -7,6 +7,7 @@ const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../confi
 const publicSettings = (settings) => ({
   internationalEnabled: settings.internationalEnabled !== false,
   codEnabled: settings.codEnabled,
+  codInternationalEnabled: settings.codInternationalEnabled !== false,
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
@@ -31,6 +32,7 @@ const publicSettings = (settings) => ({
 const checkoutSettings = (settings) => ({
   internationalEnabled: settings.internationalEnabled !== false,
   codEnabled: settings.codEnabled,
+  codInternationalEnabled: settings.codInternationalEnabled !== false,
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
@@ -64,13 +66,13 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   const allowed = [
-    'internationalEnabled', 'codEnabled', 'codFeeMode', 'codFee', 'codThreshold',
+    'internationalEnabled', 'codEnabled', 'codInternationalEnabled', 'codFeeMode', 'codFee', 'codThreshold',
     'courierProvider', 'courierEnabled', 'courierMode',
     'easypaisaEnabled', 'easypaisaMode', 'easypaisaMerchantId',
   ];
   const update = {};
   for (const field of allowed) if (req.body[field] !== undefined) update[field] = req.body[field];
-  for (const field of ['internationalEnabled', 'codEnabled', 'courierEnabled', 'easypaisaEnabled'])
+  for (const field of ['internationalEnabled', 'codEnabled', 'codInternationalEnabled', 'courierEnabled', 'easypaisaEnabled'])
     if (update[field] !== undefined && typeof update[field] !== 'boolean')
       return res.status(400).json({ message: `${field} must be true or false.` });
   if (update.codFeeMode && !['flat', 'percentage'].includes(update.codFeeMode))
