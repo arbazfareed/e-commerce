@@ -39,7 +39,7 @@ export default function RegisterPage() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.password.length < 8)       { setError('Password must be at least 8 characters.'); return; }
+    if (form.password.length < 12)      { setError('Password must be at least 12 characters.'); return; }
     if (form.password !== form.confirm) { setError('Passwords do not match.');                 return; }
 
     // Guard: make sure register exists and is a function
