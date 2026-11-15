@@ -18,7 +18,7 @@ export default function LoginPage({ adminOnly = false }) {
     setError(''); setLoading(true);
     try {
       const u = await login(email.trim(), password, { adminOnly });
-      navigate(adminOnly || u.isAdmin ? '/admin' : '/');
+      navigate(adminOnly || u.isAdmin || u.isSubAdmin ? '/admin' : '/');
     } catch (err) {
       setError(err.code === 'ADMIN_ACCESS_REQUIRED' ? err.message : err.response?.data?.message || `Cannot connect to the server at ${API_BASE}.`);
     } finally { setLoading(false); }

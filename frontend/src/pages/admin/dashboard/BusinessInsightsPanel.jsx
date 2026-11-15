@@ -16,7 +16,9 @@ const Change = ({ value, inverse = false, dark }) => {
   return <span style={{ fontSize:11, fontWeight:800, color: good ? (dark ? '#6ee7b7' : '#047857') : (dark ? '#fda4af' : '#be123c') }}>{value > 0 ? '▲' : '▼'} {Math.abs(value)}%</span>;
 };
 
-export default function BusinessInsightsPanel({ themeMode = 'light' }) {
+// endpoint/params let the same panel show the whole business, one store (main admin),
+// or a store owner's own store (/api/stores/analytics, which answers with scope: 'store').
+export default function BusinessInsightsPanel({ themeMode = 'light', endpoint = '/api/orders/business', params = null, title = 'Business insights' }) {
   const dark = themeMode === 'dark';
   const [days, setDays] = useState(30);
   const [data, setData] = useState(null);
@@ -27,7 +29,7 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
     let active = true;
     setLoading(true);
     setError('');
-    API.get('/api/orders/business', { params:{ days } })
+    API.get(endpoint, { params:{ ...(params || {}), days } })
       .then(({ data: result }) => {
         if (!active) return;
         // Never let an unexpected reply break the whole dashboard.
@@ -38,7 +40,7 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
       .catch(err => { if (active) setError(err.response?.data?.message || 'Business insights could not be loaded.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [days]);
+  }, [days, endpoint, params?.store]);
 
   const c = {
     card: { background: dark ? 'rgba(15,23,42,.72)' : '#fff', border: dark ? '1px solid rgba(148,163,184,.18)' : '1px solid #e2ece6', borderRadius:16, padding:16 },
@@ -50,6 +52,8 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
   };
 
   const k = data?.kpis;
+  // Store reports count only that store's order lines: no shipping, COD cash or coupons.
+  const storeScope = data?.scope === 'store';
   const maxTrend = Math.max(1, ...(data?.trend || []).map(d => d.netSales));
   const kpiCards = k ? [
     ['Net sales', formatPKR(k.netSales.value), <Change key="c" value={k.netSales.change} dark={dark} />, 'Cancelled and returned orders not counted'],
@@ -58,16 +62,18 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
     ['New customers', String(k.newCustomers.value), null, `${data.customers.returningInPeriod} returning`],
     ['Cancelled', `${k.cancelRate.value}%`, null, `before: ${k.cancelRate.previous}%`],
     ['Returned', `${k.returnRate.value}%`, null, `before: ${k.returnRate.previous}%`],
-    ['COD to collect', formatPKR(k.codToCollect.value), null, 'Not delivered or paid yet'],
-    ['Repeat customers', `${data.customers.repeatRate}%`, null, `of ${data.customers.totalCustomers} customers`],
+    ...(storeScope ? [['Products', String(data.productCount ?? data.inventory.totalProducts), null, `${data.inventory.outOfStock.length} out of stock`]] : [
+      ['COD to collect', formatPKR(k.codToCollect.value), null, 'Not delivered or paid yet'],
+      ['Repeat customers', `${data.customers.repeatRate}%`, null, `of ${data.customers.totalCustomers} customers`],
+    ]),
   ] : [];
 
   return (
     <section aria-labelledby="business-insights-title" style={{ marginBottom:22 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:12 }}>
         <div>
-          <h2 id="business-insights-title" style={{ margin:0, fontSize:19, fontWeight:900, color: dark ? '#f8fafc' : '#0f172a' }}>Business insights</h2>
-          <p style={{ ...c.muted, margin:'3px 0 0' }}>All amounts in PKR{data ? ` (USD orders at Rs ${data.usdRate} per $)` : ''}. Compared with the {days === 365 ? '12 months' : `${days} days`} before.</p>
+          <h2 id="business-insights-title" style={{ margin:0, fontSize:19, fontWeight:900, color: dark ? '#f8fafc' : '#0f172a' }}>{title}</h2>
+          <p style={{ ...c.muted, margin:'3px 0 0' }}>All amounts in PKR{data ? ` (USD orders at Rs ${data.usdRate} per $)` : ''}. Compared with the {days === 365 ? '12 months' : `${days} days`} before.{storeScope ? ' Sales are this store\'s products only (shipping and COD fees not included).' : ''}</p>
         </div>
         <div role="group" aria-label="Period" style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
           {PERIODS.map(([value, label]) => (
@@ -158,7 +164,7 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
             </ul>
           </div>
 
-          <div style={c.card}>
+          {(!storeScope || data.customers.top.length > 0) && <div style={c.card}>
             <h3 style={c.h}>Top customers</h3>
             {data.customers.top.length === 0 ? <p style={c.muted}>No customers yet.</p> : (
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -169,9 +175,9 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
               </table>
             )}
             <p style={{ ...c.muted, margin:'8px 0 0' }}>Average spend per customer: {formatPKR(data.customers.averageLifetimeValue)} · {data.customers.lapsed} have not ordered for 60+ days</p>
-          </div>
+          </div>}
 
-          <div style={c.card}>
+          {!storeScope && <div style={c.card}>
             <h3 style={c.h}>Coupons</h3>
             {data.coupons.length === 0 ? <p style={c.muted}>No coupons used in this period.</p> : (
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -182,20 +188,24 @@ export default function BusinessInsightsPanel({ themeMode = 'light' }) {
               </table>
             )}
             <p style={{ ...c.muted, margin:'8px 0 0' }}>{data.current.couponUseRate}% of orders used a coupon{data.unusedCoupons.length ? ` · unused: ${data.unusedCoupons.slice(0, 4).join(', ')}` : ''}</p>
-          </div>
+          </div>}
 
           <div style={c.card}>
             <h3 style={c.h}>Money breakdown</h3>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <tbody>
-                {[
+                {(storeScope ? [
+                  ['Product sales', data.current.productSales],
+                  ['Paid so far', data.current.collected],
+                  ['Lost to cancellations and returns', -data.current.lostSales],
+                ] : [
                   ['Products (after coupons)', data.current.productSales],
                   ['Shipping charged', data.current.shippingFees],
                   ['COD fees charged', data.current.codFees],
                   ['Coupon discounts given', -data.current.discounts],
                   ['Cash collected (paid orders)', data.current.collected],
                   ['Lost to cancellations and returns', -data.current.lostSales],
-                ].map(([label, value]) => (
+                ]).map(([label, value]) => (
                   <tr key={label}><td style={c.td}>{label}</td><td style={{ ...c.td, textAlign:'right', fontWeight:700 }}>{value < 0 ? `−${formatPKR(-value)}` : formatPKR(value)}</td></tr>
                 ))}
               </tbody>

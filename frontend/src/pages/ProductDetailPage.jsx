@@ -122,6 +122,7 @@ export default function ProductDetailPage() {
         <div className="product-detail-info" style={S.info}>
           <p style={S.category}>{product.category}</p>
           <h1 style={S.title}>{product.name}</h1>
+          {product.storeName && <p className="product-seller" style={{ margin:'-4px 0 10px', fontSize:13, color:'#52675d' }}>Sold by <strong style={{ color:'#0b5d43' }}>{product.storeName}</strong></p>}
           <p aria-label={`${reviewInfo.averageRating || product.averageRating || 0} out of 5 stars from ${reviewInfo.reviewCount || product.reviewCount || 0} reviews`} style={{ margin:'-10px 0 16px', color:'#a66b12', fontSize:14, fontWeight:800 }}>
             {'★'.repeat(Math.round(reviewInfo.averageRating || product.averageRating || 0))}{'☆'.repeat(5 - Math.round(reviewInfo.averageRating || product.averageRating || 0))}
             <span style={{ marginLeft:8, color:'#64748b', fontSize:12, fontWeight:600 }}>{(reviewInfo.averageRating || product.averageRating || 0).toFixed(1)} · {reviewInfo.reviewCount || product.reviewCount || 0} reviews</span>

@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, { adminOnly = false } = {}) => {
     const loginEndpoint = adminOnly ? '/api/auth/admin/login' : '/api/auth/login';
     const { data } = await API.post(loginEndpoint, { email: email.trim(), password });
-    if (adminOnly && !data.isAdmin) {
+    if (adminOnly && !data.isAdmin && !data.isSubAdmin) {
       const error = new Error('This account does not have administrator access.');
       error.code = 'ADMIN_ACCESS_REQUIRED';
       throw error;

@@ -6,6 +6,7 @@ import BrandMark from './BrandMark';
 import API, { assetUrl } from '../utils/axiosConfig';
 import NavbarContent from './navbar/NavbarContent';
 import NavbarStyles from './navbar/NavbarStyles';
+import { isStaff, isStoreOwner } from '../utils/roles';
 
 const THEME_KEY = 'ic_theme_preference';
 const ADMIN_THEME_KEY = 'ic_admin_theme';
@@ -44,7 +45,7 @@ export default function Navbar({ adminPortal = false }) {
   const on = (p) => pathname === p;
   const adminOn = pathname.startsWith('/admin');
 
-  const doLogout = () => { const loginPath = user?.isAdmin ? '/admin/login' : '/login'; logout(); navigate(loginPath); setOpen(false); };
+  const doLogout = () => { const loginPath = isStaff(user) ? '/admin/login' : '/login'; logout(); navigate(loginPath); setOpen(false); };
   const isDark = theme === 'dark';
   const toggleTheme = () => setTheme(current => {
     const nextTheme = current === 'dark' ? 'light' : 'dark';
@@ -95,11 +96,13 @@ export default function Navbar({ adminPortal = false }) {
 
   // Admins get a different nav — only Admin panel + Support
   // Regular users get Shop, Cart, Orders, Support
-  const isAdmin = user?.isAdmin;
+  // Store owners use the same admin-style header as the main admin.
+  const isAdmin = isStaff(user);
   const adminPortalUrl = import.meta.env.VITE_ADMIN_PORTAL_URL || '/admin/login';
   const shopperPortalUrl = import.meta.env.VITE_SHOPPER_PORTAL_URL
     || (import.meta.env.VITE_APP_MODE === 'admin' ? `${window.location.protocol}//${window.location.hostname}:3000/` : '/');
-  const showAdminEntry = !adminPortal;
+  // The hidden admin entry is for reaching the admin login; signed-in staff are already there.
+  const showAdminEntry = !adminPortal && !isStaff(user);
 
   const clearAdminHold = (resetProgress = true) => {
     if (adminHoldTimerRef.current) {
@@ -269,7 +272,7 @@ export default function Navbar({ adminPortal = false }) {
             {user ? (
               <div className="mobile-account-card">
                 <div className="mobile-account-avatar">{user.name?.[0]?.toUpperCase() || 'U'}</div>
-                <div className="mobile-account-copy"><strong>{user.name?.split(' ')[0] || 'Account'}</strong><span>{isAdmin ? 'Administrator' : 'Signed in'}</span></div>
+                <div className="mobile-account-copy"><strong>{user.name?.split(' ')[0] || 'Account'}</strong><span>{isStoreOwner(user) ? 'Store owner' : isAdmin ? 'Administrator' : 'Signed in'}</span></div>
                 <button className="mobile-logout" type="button" onClick={doLogout}>Log out</button>
               </div>
             ) : (
