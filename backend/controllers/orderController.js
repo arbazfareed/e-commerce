@@ -19,6 +19,7 @@ const { ordersCounter } = require('../middleware/metrics');
 const { calcZoneShipping } = require('../utils/zoneShipping');
 const { calcOrderCharges } = require('../utils/orderCharges');
 const { describeThankYouCoupon } = require('../utils/thankYouCoupon');
+const { isStoreInactive } = require('../utils/storeStatus');
 const { isValidPhone, normalizePhone } = require('../utils/phone');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
@@ -97,7 +98,7 @@ const placeOrder = async (req, res) => {
         return res.status(400).json({ message: 'Your cart contains an item that is no longer available.' });
       const db = await Product.findById(productId);
       if (!db) return res.status(404).json({ message: `Product not found: ${item.name}` });
-      if (db.isVisible === false)
+      if (db.isVisible === false || await isStoreInactive(db.store))
         return res.status(400).json({ message: `"${db.name}" is no longer available.` });
       if (db.isLocal && country !== 'Pakistan')
         return res.status(400).json({ message: `"${db.name}" is only available within Pakistan.` });

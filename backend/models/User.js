@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       selectedSize: { type: String, default: '' },
     }],
     isAdmin:  { type: Boolean, default: false },
+    // Store owner (sub-admin): manages only the products of `store`. Never has isAdmin.
+    isSubAdmin: { type: Boolean, default: false },
+    store: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', default: null },
+    // Set when the main admin creates or resets the account; cleared on first password change.
+    mustChangePassword: { type: Boolean, default: false },
     // Bumped on every password change or reset; older sign-in tokens stop working.
     tokenVersion: { type: Number, default: 0, min: 0 },
     passwordResetTokenHash: { type: String, select: false },

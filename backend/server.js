@@ -82,6 +82,7 @@ app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 app.use('/api/cart',     require('./routes/cartRoutes'));
 app.use('/api/support',  require('./routes/supportRoutes'));   // ← NEW
 app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/stores',   require('./routes/storeRoutes'));
 
 // ─── Home Route ───────────────────────────────────────────────
 app.get('/', (req, res) => {

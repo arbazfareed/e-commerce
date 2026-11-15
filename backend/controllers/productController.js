@@ -4,6 +4,12 @@ const Review = require('../models/Review');
 const Order = require('../models/Order');
 const mongoose = require('mongoose');
 const SystemSettings = require('../models/SystemSettings');
+const Store = require('../models/Store');
+
+const { getInactiveStoreIds } = require('../utils/storeStatus');
+
+// A sub-admin may only touch products of their own store.
+const inScope = (product, storeScope) => !storeScope || String(product.store || '') === String(storeScope);
 const path    = require('path');
 const fs      = require('fs');
 const { filterRetainedImages, resolveUploadedImagePath } = require('../utils/productImageSafety');
@@ -35,7 +41,11 @@ const getProducts = async (req, res) => {
       filter.isLocal = false;
     } else if (isLocal === 'true') filter.isLocal = true;
     const canIncludeHidden = includeHidden === 'true' && req.user?.isAdmin;
-    if (!canIncludeHidden) filter.isVisible = { $ne: false };
+    if (!canIncludeHidden) {
+      filter.isVisible = { $ne: false };
+      const inactiveStores = await getInactiveStoreIds();
+      if (inactiveStores.length) filter.store = { $nin: inactiveStores };
+    }
     const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
     if (search) {
       const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -145,16 +155,36 @@ const getCategories = async (req, res) => {
 // ─── @GET /api/products/:id ────────────────────────────────────
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (product && product.isVisible !== false) {
+    const product = await Product.findById(req.params.id).populate('store', 'name isActive');
+    if (product && product.isVisible !== false && (!product.store || product.store.isActive !== false)) {
       const [rating] = await Review.aggregate([
         { $match: { product: product._id, status: 'approved' } },
         { $group: { _id: '$product', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
       ]);
-      res.json({ ...product.toObject(), averageRating: rating ? Number(rating.averageRating.toFixed(1)) : 0, reviewCount: rating?.reviewCount || 0 });
+      const body = product.toObject();
+      // Shoppers see the seller's name; the store id stays available for links.
+      body.storeName = product.store?.name || '';
+      body.store = product.store?._id || null;
+      res.json({ ...body, averageRating: rating ? Number(rating.averageRating.toFixed(1)) : 0, reviewCount: rating?.reviewCount || 0 });
     } else {
       res.status(404).json({ message: 'Product not found' });
     }
+  } catch (error) {
+    sendServerError(res, error);
+  }
+};
+
+// ─── @GET /api/products/manage ─────────────────────────────────
+// Store management list: a sub-admin sees only their store's products (hidden ones too);
+// the main admin sees everything, or one store with ?store=<id>|main.
+const getManagedProducts = async (req, res) => {
+  try {
+    const filter = {};
+    if (req.storeScope) filter.store = req.storeScope;
+    else if (req.query.store === 'main') filter.store = null;
+    else if (req.query.store && mongoose.isValidObjectId(req.query.store)) filter.store = req.query.store;
+    const products = await Product.find(filter).sort({ createdAt: -1 }).lean();
+    res.json(products);
   } catch (error) {
     sendServerError(res, error);
   }
@@ -176,7 +206,8 @@ const getAlsoBought = async (req, res) => {
       { $limit: 12 },
     ]);
     if (!pairs.length) return res.json([]);
-    const products = await Product.find({ _id: { $in: pairs.map(p => p._id) }, isVisible: { $ne: false }, stock: { $gt: 0 } })
+    const inactiveStores = await getInactiveStoreIds();
+    const products = await Product.find({ _id: { $in: pairs.map(p => p._id) }, isVisible: { $ne: false }, stock: { $gt: 0 }, ...(inactiveStores.length ? { store: { $nin: inactiveStores } } : {}) })
       .select('name pricePKR priceUSD discountPercent discountStartDate discountEndDate images category isLocal stock').lean();
     const byId = new Map(products.map(p => [String(p._id), p]));
     const result = pairs.map(p => byId.get(String(p._id))).filter(Boolean).slice(0, 4)
@@ -223,7 +254,17 @@ const createProduct = async (req, res) => {
 
     const images = req.files ? req.files.map(mapUploadedFileToImage) : [];
 
+    // Sub-admins always create in their own store; the main admin may pick a store.
+    let store = null;
+    if (req.storeScope) store = req.storeScope;
+    else if (req.body.store) {
+      if (!mongoose.isValidObjectId(req.body.store) || !(await Store.exists({ _id: req.body.store })))
+        return res.status(400).json({ message: 'Choose a valid store.' });
+      store = req.body.store;
+    }
+
     const product = await Product.create({
+      store,
       name:        name.trim(),
       pricePKR:    Number(pricePKR),
       priceUSD:    Number(priceUSD),
@@ -258,7 +299,8 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) {
+    // Another store's product looks like "not found" to a sub-admin.
+    if (!product || !inScope(product, req.storeScope)) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
@@ -268,6 +310,12 @@ const updateProduct = async (req, res) => {
       }
       return file.filename;
     };
+
+    if (!req.storeScope && req.body.store !== undefined) {
+      if (req.body.store === '' || req.body.store === 'main') product.store = null;
+      else if (mongoose.isValidObjectId(req.body.store) && await Store.exists({ _id: req.body.store })) product.store = req.body.store;
+      else return res.status(400).json({ message: 'Choose a valid store.' });
+    }
 
     product.name        = req.body.name        ?? product.name;
     product.pricePKR    = req.body.pricePKR    !== undefined ? Number(req.body.pricePKR)   : product.pricePKR;
@@ -325,6 +373,8 @@ const updateProduct = async (req, res) => {
 // ─── @DELETE /api/products/:id ─────────────────────────────────
 const deleteProduct = async (req, res) => {
   try {
+    const existing = await Product.findById(req.params.id).select('store');
+    if (!existing || !inScope(existing, req.storeScope)) return res.status(404).json({ message: 'Product not found' });
     const product = await Product.findByIdAndDelete(req.params.id);
     if (product) {
       (product.images || []).forEach(img => {
@@ -345,6 +395,7 @@ const deleteProduct = async (req, res) => {
 };
 
 module.exports = {
+  getManagedProducts,
   getAlsoBought,
   getProducts,
   getCategories,

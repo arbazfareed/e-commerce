@@ -86,9 +86,14 @@ const loginWithRole = async (req, res, isAdminLogin) => {
     const normalizedIdentifier = identifier.trim().toLowerCase();
     const user = await User.findOne({
       $or: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
-    }).collation({ locale: 'en', strength: 2 });
+    }).collation({ locale: 'en', strength: 2 }).populate('store', 'name isActive');
 
-    if (user && (await user.matchPassword(password)) && Boolean(user.isAdmin) === isAdminLogin) {
+    // Admin login is for the main admin and store owners (sub-admins); shopper login for everyone else.
+    const isStaffAccount = Boolean(user?.isAdmin || user?.isSubAdmin);
+    if (user && (await user.matchPassword(password)) && isStaffAccount === isAdminLogin) {
+      if (user.isSubAdmin && (!user.store || user.store.isActive === false)) {
+        return res.status(403).json({ message: 'Your store is switched off. Contact the IndusCart admin.' });
+      }
       res.json({
         _id:     user._id,
         name:    user.name,
@@ -98,6 +103,10 @@ const loginWithRole = async (req, res, isAdminLogin) => {
         country: user.country,
         city:    user.city,
         isAdmin: user.isAdmin,
+        isSubAdmin: Boolean(user.isSubAdmin),
+        store:   user.store?._id || null,
+        storeName: user.store?.name || '',
+        mustChangePassword: Boolean(user.mustChangePassword),
         token:   generateToken(user._id, user.tokenVersion),
       });
     } else {
@@ -136,6 +145,7 @@ const changeOwnPassword = async (req, res) => {
 
     user.password = newPassword;
     user.tokenVersion = (user.tokenVersion || 0) + 1;
+    user.mustChangePassword = false;
     await user.save();
     // Other devices are signed out; this one gets a fresh token.
     return res.json({ message: 'Your password was changed successfully. Other devices have been signed out.', token: generateToken(user._id, user.tokenVersion) });
@@ -178,6 +188,9 @@ const resetCustomerPassword = async (req, res) => {
     if (!customer) return res.status(404).json({ message: 'No customer account was found for that email.' });
     if (customer.isAdmin) {
       return res.status(403).json({ message: 'Admin passwords must be changed by that administrator.' });
+    }
+    if (customer.isSubAdmin) {
+      return res.status(403).json({ message: 'This is a store owner account. Reset it from Admin → Stores.' });
     }
 
     try {
@@ -252,6 +265,7 @@ const completeCustomerPasswordReset = async (req, res) => {
 
     user.password = newPassword;
     user.tokenVersion = (user.tokenVersion || 0) + 1;
+    user.mustChangePassword = false;
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();
@@ -307,6 +321,17 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-const verifySession = (req, res) => res.json({ valid: true, user: req.user });
+const verifySession = async (req, res) => {
+  const user = req.user.toObject ? req.user.toObject() : { ...req.user };
+  delete user.passwordResetTokenHash;
+  delete user.passwordResetExpiresAt;
+  if (user.isSubAdmin && user.store) {
+    const Store = require('../models/Store');
+    const store = await Store.findById(user.store).select('name isActive').lean();
+    if (!store || store.isActive === false) return res.status(403).json({ message: 'Your store is switched off. Contact the IndusCart admin.' });
+    user.storeName = store.name;
+  }
+  res.json({ valid: true, user });
+};
 
 module.exports = { updateUserProfile, registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession };

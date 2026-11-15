@@ -5,7 +5,7 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 
-const { getAlsoBought,
+const { getManagedProducts, getAlsoBought,
   getProducts,
   getCategories,
   getSubcategories,
@@ -15,7 +15,7 @@ const { getAlsoBought,
   deleteProduct,
 } = require('../controllers/productController');
 
-const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
+const { protect, staff, optionalProtect } = require('../middleware/authMiddleware');
 const { removeUploadedFiles, validateImageUploads } = require('../middleware/validateImageUploads');
 
 // ─── Multer: keep images in memory to store directly in the database ─────────
@@ -55,17 +55,20 @@ router.get('/subcategories', optionalProtect, getSubcategories);
 // GET  /api/products          → all products (public)
 router.get('/',    optionalProtect, getProducts);
 
+// GET  /api/products/manage   → main admin (all) or store owner (own store only)
+router.get('/manage', protect, staff, getManagedProducts);
+
 // GET  /api/products/:id      → single product (public)
 router.get('/:id/also-bought', requireValidId('Product'), getAlsoBought);
 router.get('/:id', requireValidId('Product'), getProductById);
 
 // POST /api/products          → admin: create product (up to five images)
-router.post('/',   protect, admin, handleProductImageUpload, validateImageUploads, createProduct);
+router.post('/',   protect, staff, handleProductImageUpload, validateImageUploads, createProduct);
 
 // PUT  /api/products/:id      → admin: update product
-router.put('/:id', protect, admin, handleProductImageUpload, validateImageUploads, requireValidId('Product'), updateProduct);
+router.put('/:id', protect, staff, handleProductImageUpload, validateImageUploads, requireValidId('Product'), updateProduct);
 
 // DELETE /api/products/:id    → admin: delete product
-router.delete('/:id', protect, admin, requireValidId('Product'), deleteProduct);
+router.delete('/:id', protect, staff, requireValidId('Product'), deleteProduct);
 
 module.exports = router;
