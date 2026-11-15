@@ -88,6 +88,20 @@ app.get('/', (req, res) => {
   const isDbReady = mongoose.connection.readyState === 1;
   res.status(200).send(`IndusCart API is running ✅${isDbReady ? ' (Database connected)' : ''}`);
 });
+// Sitemap for search engines (linked from the storefront's robots.txt).
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) await connectDB();
+    const Product = require('./models/Product');
+    const products = await Product.find({ isVisible: { $ne: false } }).select('_id updatedAt').sort({ updatedAt: -1 }).limit(5000).lean();
+    const storeUrl = require('./services/emailService').getFrontendUrl() || 'https://e-commerce-coral-eight-95.vercel.app';
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.type('application/xml').send(require('./utils/sitemap').buildSitemap(storeUrl, products));
+  } catch (error) {
+    console.error('Sitemap failed:', error.message);
+    res.status(503).type('text/plain').send('Sitemap is temporarily unavailable.');
+  }
+});
 app.get('/health/live', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'induscart-api' });
 });
