@@ -127,7 +127,7 @@ const placeOrder = async (req, res) => {
     }
 
     // ✅ Zone-based shipping — correct for Multan→Karachi, Pakistan→Dubai, etc.
-    const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city);
+    const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city, settings.zoneRates);
     const productTotal = enrichedItems.reduce((s, i) => s + i.price * i.quantity, 0);
     let codFee = 0;
     const discountedProductTotal = Math.max(0, productTotal - couponDiscount);

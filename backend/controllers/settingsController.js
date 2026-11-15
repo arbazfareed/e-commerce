@@ -1,4 +1,5 @@
 const SystemSettings = require('../models/SystemSettings');
+const { resolveZoneRates, validateZoneRates } = require('../utils/zoneShipping');
 const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../config/credentialVault');
 
 const publicSettings = (settings) => ({
@@ -7,6 +8,8 @@ const publicSettings = (settings) => ({
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
+  usdRate: settings.usdRate || 278,
+  zoneRates: resolveZoneRates(settings.zoneRates),
   courierProvider: settings.courierProvider,
   courierEnabled: Boolean(settings.courierEnabled),
   courierMode: settings.courierMode || 'sandbox',
@@ -28,6 +31,8 @@ const checkoutSettings = (settings) => ({
   codFeeMode: settings.codFeeMode,
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
+  usdRate: settings.usdRate || 278,
+  zoneRates: resolveZoneRates(settings.zoneRates),
   // No online gateway adapter is implemented yet. Saved provider settings do not activate checkout.
   supportedPaymentMethods: settings.codEnabled ? ['COD'] : [],
 });
@@ -77,6 +82,18 @@ const updateSettings = async (req, res) => {
     return res.status(400).json({ message: 'Courier provider must be at most 100 characters.' });
   if (update.easypaisaMerchantId !== undefined && (typeof update.easypaisaMerchantId !== 'string' || update.easypaisaMerchantId.trim().length > 120))
     return res.status(400).json({ message: 'EasyPaisa merchant ID must be at most 120 characters.' });
+
+  if (req.body.usdRate !== undefined) {
+    const rate = Number(req.body.usdRate);
+    if (!Number.isFinite(rate) || rate < 1 || rate > 100000)
+      return res.status(400).json({ message: 'usdRate must be a number between 1 and 100000.' });
+    update.usdRate = rate;
+  }
+  if (req.body.zoneRates !== undefined) {
+    const result = validateZoneRates(req.body.zoneRates);
+    if (result.error) return res.status(400).json({ message: result.error });
+    update.zoneRates = result.value;
+  }
 
   const secretFields = [
     ['courierApiKey', 'clearCourierApiKey'],

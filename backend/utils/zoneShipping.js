@@ -81,9 +81,45 @@ const detectZone = (toCountry = 'Pakistan', toCity = '') => {
   if (PAK_CITIES.has(tCity)) return 'domestic_pak';
   return 'rest_of_world';
 };
-const calcZoneShipping = (items, toCountry, toCity) => {
+const RATE_FIELDS = ['baseRate', 'perKg', 'minFee'];
+
+// Merge saved admin overrides over the defaults; ignore unknown zones and bad numbers.
+const resolveZoneRates = (overrides) => {
+  const merged = {};
+  for (const [zone, defaults] of Object.entries(DEFAULT_ZONE_RATES)) {
+    const saved = overrides && typeof overrides === 'object' ? overrides[zone] : null;
+    merged[zone] = { ...defaults };
+    if (saved && typeof saved === 'object') {
+      for (const field of RATE_FIELDS) {
+        const value = Number(saved[field]);
+        if (saved[field] !== undefined && saved[field] !== '' && Number.isFinite(value) && value >= 0) merged[zone][field] = value;
+      }
+    }
+  }
+  return merged;
+};
+
+// Returns an error message, or the cleaned rates object to store.
+const validateZoneRates = (input) => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return { error: 'Zone rates must be an object.' };
+  const clean = {};
+  for (const [zone, rate] of Object.entries(input)) {
+    if (!DEFAULT_ZONE_RATES[zone]) return { error: `Unknown shipping zone: ${zone}.` };
+    if (!rate || typeof rate !== 'object') return { error: `Rates for ${zone} must be an object.` };
+    clean[zone] = {};
+    for (const field of RATE_FIELDS) {
+      const value = Number(rate[field]);
+      if (!Number.isFinite(value) || value < 0 || value > 10000000) return { error: `${zone} ${field} must be a non-negative number.` };
+      clean[zone][field] = value;
+    }
+  }
+  return { value: clean };
+};
+
+const calcZoneShipping = (items, toCountry, toCity, rateOverrides = null) => {
   const zone      = detectZone(toCountry, toCity);
-  const zoneRate  = DEFAULT_ZONE_RATES[zone] || DEFAULT_ZONE_RATES.rest_of_world;
+  const rates     = resolveZoneRates(rateOverrides);
+  const zoneRate  = rates[zone] || rates.rest_of_world;
 
   const totalWeight = items.reduce((sum, item) => {
     const w = Number(item.weightKg);
@@ -98,4 +134,4 @@ const calcZoneShipping = (items, toCountry, toCity) => {
   return { fee, totalWeight: roundedWeight, zone };
 };
 
-module.exports = { calcZoneShipping, detectZone, ZONE_MAP, PAK_CITIES, DEFAULT_ZONE_RATES };
+module.exports = { calcZoneShipping, resolveZoneRates, validateZoneRates, detectZone, ZONE_MAP, PAK_CITIES, DEFAULT_ZONE_RATES };

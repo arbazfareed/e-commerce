@@ -41,3 +41,15 @@ test('server shipping zones match the storefront country list', () => {
   assert.equal(detectZone('India', 'Hyderabad'), 'south_asia');
   assert.equal(detectZone('Pakistan', 'Hyderabad'), 'domestic_pak');
 });
+
+test('admin zone rate overrides are applied and validated', () => {
+  const { validateZoneRates, resolveZoneRates } = require('../utils/zoneShipping');
+  const overrides = { domestic_pak: { baseRate: 200, perKg: 50, minFee: 200 } };
+  assert.deepEqual(calcZoneShipping([{ weightKg: 1, quantity: 1 }], 'Pakistan', 'Multan', overrides), {
+    fee: 250, totalWeight: 1, zone: 'domestic_pak',
+  });
+  assert.equal(resolveZoneRates({ europe: { baseRate: 'abc' } }).europe.baseRate, 1800);
+  assert.ok(validateZoneRates({ mars: { baseRate: 1, perKg: 1, minFee: 1 } }).error);
+  assert.ok(validateZoneRates({ europe: { baseRate: -1, perKg: 1, minFee: 1 } }).error);
+  assert.deepEqual(validateZoneRates(overrides).value, overrides);
+});
