@@ -10,6 +10,8 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) return res.status(401).json({ message: 'Not authorized, user not found' });
+      if ((decoded.v || 0) !== (req.user.tokenVersion || 0))
+        return res.status(401).json({ message: 'Your session has ended. Please sign in again.' });
       return next();
     } catch {
       return res.status(401).json({ message: 'Not authorized, token failed' });
@@ -31,7 +33,8 @@ const optionalProtect = async (req, res, next) => {
   if (!header?.startsWith('Bearer ')) return next();
   try {
     const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password');
+    if (user && (decoded.v || 0) === (user.tokenVersion || 0)) req.user = user;
   } catch {
     // Invalid optional credentials do not turn a public catalog request into a 401.
   }

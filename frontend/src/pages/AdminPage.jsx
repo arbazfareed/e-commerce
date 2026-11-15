@@ -234,6 +234,13 @@ export default function AdminPage() {
         newPassword: ownPasswordForm.newPassword,
       });
       setOwnPasswordForm({ newPassword:'', confirmPassword:'' });
+      // Older tokens are revoked on the server; keep this browser signed in with the new one.
+      if (data.token) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('user') || 'null');
+          if (stored) localStorage.setItem('user', JSON.stringify({ ...stored, token: data.token }));
+        } catch { /* the next request will ask the admin to sign in again */ }
+      }
       flash(data.message || 'Your password was changed successfully.');
     } catch (error) {
       flash(error.response?.data?.message || getApiErrorMessage(error, 'Password could not be changed.'), false);

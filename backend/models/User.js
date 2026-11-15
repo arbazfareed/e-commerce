@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema(
       selectedSize: { type: String, default: '' },
     }],
     isAdmin:  { type: Boolean, default: false },
+    // Bumped on every password change or reset; older sign-in tokens stop working.
+    tokenVersion: { type: Number, default: 0, min: 0 },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },
   },

@@ -109,8 +109,13 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
     assert.equal(ownPasswordChange.status, 200);
     admin = await User.findById(admin._id);
     assert.equal(await admin.matchPassword(updatedAdminPassword), true);
+    // Changing the password signs out older sessions; the response carries a fresh token.
+    assert.equal((await send(server, 'GET', '/api/auth/session', null, token)).status, 401);
+    const freshToken = ownPasswordChange.body.token;
+    assert.ok(freshToken);
+    assert.equal((await send(server, 'GET', '/api/auth/session', null, freshToken)).status, 200);
 
-    const customerReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:customerEmail }, token);
+    const customerReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:customerEmail }, freshToken);
     assert.equal(customerReset.status, 200);
     assert.equal(sentResetEmails.length, 2);
     assert.equal(sentResetEmails[1].to, customerEmail);
@@ -129,7 +134,7 @@ test('admin emails a hashed, expiring, single-use customer reset link', async (t
     const replayedReset = await send(server, 'POST', '/api/auth/password/reset', { token:resetToken, newPassword:'Another customer passphrase 123!' });
     assert.equal(replayedReset.status, 400);
 
-    const otherAdminReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:adminEmail }, token);
+    const otherAdminReset = await send(server, 'PUT', '/api/auth/admin/customer-password', { email:adminEmail }, freshToken);
     assert.equal(otherAdminReset.status, 403);
     assert.equal(sentResetEmails.length, 2);
   } finally {

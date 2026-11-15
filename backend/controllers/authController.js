@@ -4,8 +4,9 @@ const crypto = require('crypto');
 const emailService = require('../services/emailService');
 
 // Helper: generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+// `v` is the user's tokenVersion; protect() rejects tokens issued before a password change.
+const generateToken = (id, tokenVersion = 0) => {
+  return jwt.sign({ id, v: tokenVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 // ─── @POST /api/auth/register ──────────────────────────────────
@@ -58,7 +59,7 @@ const registerUser = async (req, res) => {
       country: user.country,
       city:    user.city,
       isAdmin: user.isAdmin,
-      token:   generateToken(user._id),
+      token:   generateToken(user._id, user.tokenVersion),
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -92,7 +93,7 @@ const loginWithRole = async (req, res, isAdminLogin) => {
         country: user.country,
         city:    user.city,
         isAdmin: user.isAdmin,
-        token:   generateToken(user._id),
+        token:   generateToken(user._id, user.tokenVersion),
       });
     } else {
       res.status(401).json({ message: 'Invalid username/email or password.' });
@@ -123,8 +124,10 @@ const changeOwnPassword = async (req, res) => {
     }
 
     user.password = newPassword;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
-    return res.json({ message: 'Your password was changed successfully.' });
+    // Other devices are signed out; this one gets a fresh token.
+    return res.json({ message: 'Your password was changed successfully. Other devices have been signed out.', token: generateToken(user._id, user.tokenVersion) });
   } catch (error) {
     console.error('Password change error:', error.message);
     return res.status(500).json({ message: 'Password could not be changed.' });
@@ -237,6 +240,7 @@ const completeCustomerPasswordReset = async (req, res) => {
     }
 
     user.password = newPassword;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();
