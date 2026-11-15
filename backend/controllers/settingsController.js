@@ -1,5 +1,6 @@
 const SystemSettings = require('../models/SystemSettings');
 const { resolveZoneRates, validateZoneRates } = require('../utils/zoneShipping');
+const { getEmailStatus } = require('../services/emailService');
 const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../config/credentialVault');
 
 const publicSettings = (settings) => ({
@@ -19,6 +20,7 @@ const publicSettings = (settings) => ({
   easypaisaMerchantId: settings.easypaisaMerchantId || '',
   easypaisaApiKeyConfigured: Boolean(settings.easypaisaApiKey),
   credentialEncryptionReady: hasEncryptionKey(),
+  email: getEmailStatus(),
   legacySecretsNeedEncryption: Boolean(
     (settings.courierApiKey && !isEncryptedSecret(settings.courierApiKey))
     || (settings.easypaisaApiKey && !isEncryptedSecret(settings.easypaisaApiKey))

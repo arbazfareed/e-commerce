@@ -131,18 +131,19 @@ const changeOwnPassword = async (req, res) => {
   }
 };
 
-const issueCustomerPasswordReset = async customer => {
+const issueCustomerPasswordReset = async (customer, requestedBy = 'customer') => {
   const token = crypto.randomBytes(32).toString('base64url');
   customer.passwordResetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
   customer.passwordResetExpiresAt = new Date(Date.now() + 20 * 60 * 1000);
   await customer.save();
 
-  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  const frontendUrl = emailService.getFrontendUrl() || 'http://localhost:3000';
   try {
     await emailService.sendCustomerPasswordResetEmail({
       to: customer.email,
       name: customer.name,
       resetUrl: `${frontendUrl}/reset-password/${token}`,
+      requestedBy,
     });
   } catch (error) {
     customer.passwordResetTokenHash = undefined;
@@ -166,7 +167,7 @@ const resetCustomerPassword = async (req, res) => {
     }
 
     try {
-      await issueCustomerPasswordReset(customer);
+      await issueCustomerPasswordReset(customer, 'admin');
     } catch (error) {
       console.error('Password reset email delivery failed:', error.code || 'EMAIL_ERROR');
       return res.status(503).json({ message: 'Reset email could not be sent. Check email service settings and try again.' });
@@ -191,7 +192,8 @@ const requestCustomerPasswordReset = async (req, res) => {
         await issueCustomerPasswordReset(customer);
       } catch (error) {
         // Keep the public response identical whether a user exists or email delivery fails.
-        console.error('Public password reset email delivery failed:', error.code || 'EMAIL_ERROR');
+        console.error('Public password reset email delivery failed:', error.code || 'EMAIL_ERROR', '-', error.message,
+          '(check FRONTEND_URL and SMTP_* or RESEND_API_KEY/EMAIL_FROM in the backend environment)');
       }
     }
   } catch (error) {

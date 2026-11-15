@@ -113,6 +113,15 @@ export default function AdminSettingsPanel({
         <p style={{ margin:'0 0 18px', fontSize:12, color: themeMode === 'dark' ? '#cbd5e1' : '#64748b' }}>
           Configure COD and save courier/EasyPaisa sandbox details for a future adapter. Provider toggles do not activate payment capture or courier booking until the server integration is implemented.
         </p>
+        {storeSettings.email && !storeSettings.email.configured && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #fecaca', background:themeMode === 'dark' ? '#3b1d1d' : '#fff1f2', color:themeMode === 'dark' ? '#fecaca' : '#9f1239', fontSize:12, lineHeight:1.55 }}>
+          Email is not set up, so forgot-password and order emails are not being sent. In the backend Vercel project set FRONTEND_URL and either SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS (for Gmail, use an App Password) or RESEND_API_KEY and EMAIL_FROM with a verified domain, then redeploy.
+        </p>}
+        {storeSettings.email?.usingResendTestSender && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>
+          EMAIL_FROM uses Resend's test sender (resend.dev). Resend only delivers it to your own Resend account email, so customers will not receive emails. Verify your domain in Resend or switch to SMTP.
+        </p>}
+        {storeSettings.email?.configured && !storeSettings.email?.usingResendTestSender && <p style={{ margin:'0 0 14px', fontSize:12, color:themeMode === 'dark' ? '#86efac' : '#166534' }}>
+          Email is set up ({storeSettings.email.provider === 'smtp' ? 'SMTP' : 'Resend'}).
+        </p>}
         {!storeSettings.credentialEncryptionReady && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>Provider secrets are locked until <code>SETTINGS_ENCRYPTION_KEY</code> is added to the backend environment (at least 32 characters). Secret inputs are disabled rather than saving credentials in plaintext.</p>}
         {storeSettings.legacySecretsNeedEncryption && <p role="alert" style={{ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, border:'1px solid #f3d08a', background:themeMode === 'dark' ? '#342b1e' : '#fffbeb', color:themeMode === 'dark' ? '#fde68a' : '#854d0e', fontSize:12, lineHeight:1.55 }}>An older courier secret is still stored unencrypted. Set <code>SETTINGS_ENCRYPTION_KEY</code>; the server will encrypt it when settings are next loaded.</p>}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:14, marginBottom:16 }}>
