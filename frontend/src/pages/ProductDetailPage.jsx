@@ -12,6 +12,7 @@ export default function ProductDetailPage() {
   const { addToCart, addToRecentlyViewed } = useCart();
   const [product, setProduct] = useState(null);
   const [related, setRelated] = useState([]);
+  const [alsoBought, setAlsoBought] = useState([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState('');
@@ -40,6 +41,9 @@ export default function ProductDetailPage() {
         setSelectedSize(data.sizes?.[0] || '');
         addToRecentlyViewed(data);
         // Ask only for a few products in the same category instead of the whole catalog.
+        API.get(`/api/products/${data._id}/also-bought`).then(({ data: result }) => {
+          if (active) setAlsoBought(Array.isArray(result) ? result.filter(p => p?._id && p._id !== data._id) : []);
+        }).catch(() => { if (active) setAlsoBought([]); });
         API.get('/api/products', { params: { category: data.category, page: 1, limit: 5 } }).then(({ data: result }) => {
           const products = Array.isArray(result) ? result : result?.items || [];
           if (active) setRelated(products.filter(p => p._id !== data._id && p.category === data.category).slice(0, 4));
@@ -173,6 +177,7 @@ export default function ProductDetailPage() {
           {reviewMessage && <p aria-live="polite" style={{ margin:0, color:reviewMessage.includes('awaiting') ? '#047857' : '#b91c1c', fontSize:12, lineHeight:1.5 }}>{reviewMessage}</p>}
         </form> : user && reviewInfo.hasReviewed ? <p style={{ color:'#047857', fontSize:13 }}>Thank you—your review has been submitted for moderation.</p> : user ? <p style={{ color:'#64748b', fontSize:13, lineHeight:1.6 }}>Reviews are available after this product has been delivered to you.</p> : <p style={{ color:'#64748b', fontSize:13 }}>Sign in and place an order to leave a verified review.</p>}
       </section>
+      {alsoBought.length > 0 && <section className="related-products also-bought" style={S.related} aria-labelledby="also-bought-heading"><p className="related-kicker">BOUGHT TOGETHER</p><h2 id="also-bought-heading">Customers also bought</h2><div className="related-products-grid" style={S.relatedGrid}>{alsoBought.map(item => { const itemDiscount = getActiveDiscountPercent(item); const original = isLocalMarket ? item.pricePKR : item.priceUSD; const sale = getDiscountedPrice(original, itemDiscount, isLocalMarket ? 'PKR' : 'USD'); return <Link key={item._id} to={`/products/${item._id}`} style={S.relatedCard} aria-label={`View ${item.name}`}><div style={S.relatedImage}>{item.images?.[0] ? <img src={assetUrl(item.images[0])} alt={item.name} /> : item.name[0]}</div><strong>{item.name}</strong><span>{isLocalMarket ? formatPKR(sale) : formatUSD(sale)}</span></Link>; })}</div></section>}
       {related.length > 0 && <section className="related-products" style={S.related}><p className="related-kicker">YOU MAY ALSO LIKE</p><h2>More from {product.category}</h2><div className="related-products-grid" style={S.relatedGrid}>{related.map(item => { const itemDiscount = getActiveDiscountPercent(item); const original = isLocalMarket ? item.pricePKR : item.priceUSD; const sale = getDiscountedPrice(original, itemDiscount, isLocalMarket ? 'PKR' : 'USD'); return <Link key={item._id} to={`/products/${item._id}`} style={S.relatedCard} aria-label={`View ${item.name}`}><div style={S.relatedImage}>{item.images?.[0] ? <img src={assetUrl(item.images[0])} alt={item.name} /> : item.name[0]}</div><strong>{item.name}</strong><span>{isLocalMarket ? formatPKR(sale) : formatUSD(sale)}</span></Link>; })}</div></section>}
     </main>
   );

@@ -5,7 +5,7 @@ const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
 
-const {
+const { getAlsoBought,
   getProducts,
   getCategories,
   getSubcategories,
@@ -56,6 +56,7 @@ router.get('/subcategories', optionalProtect, getSubcategories);
 router.get('/',    optionalProtect, getProducts);
 
 // GET  /api/products/:id      → single product (public)
+router.get('/:id/also-bought', requireValidId('Product'), getAlsoBought);
 router.get('/:id', requireValidId('Product'), getProductById);
 
 // POST /api/products          → admin: create product (up to five images)
