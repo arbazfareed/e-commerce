@@ -38,3 +38,17 @@ test('no promo strip when the server reply is not settings', async () => {
   expect(await screen.findByRole('link', { name:'Register' })).toBeInTheDocument();
   expect(screen.queryByRole('note')).not.toBeInTheDocument();
 });
+
+test('category quick links and the "/" shortcut to search', async () => {
+  useAuth.mockReturnValue({ user:null });
+  useCart.mockReturnValue({ totalItems:0 });
+  API.get.mockImplementation(url => Promise.resolve({ data: url === '/api/products/categories' ? ['Skincare', 'Home decor'] : url === '/api/settings/public' ? { codEnabled:true } : { items:[] } }));
+  render(<MemoryRouter><Navbar /></MemoryRouter>);
+
+  const categories = await screen.findByRole('navigation', { name:/shop by category/i });
+  expect(categories).toHaveTextContent('All products');
+  expect(screen.getByRole('link', { name:'Home decor' })).toHaveAttribute('href', '/?category=Home%20decor');
+
+  fireEvent.keyDown(document.body, { key:'/' });
+  expect(screen.getByRole('searchbox', { name:/search products/i })).toHaveFocus();
+});

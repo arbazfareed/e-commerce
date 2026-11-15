@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import API from '../../utils/axiosConfig';
 import './premiumHeader.css';
 
@@ -54,7 +55,53 @@ export default function NavbarContent({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [promo, setPromo] = useState([]);
+  const [promoIndex, setPromoIndex] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [scrolled, setScrolled] = useState(false);
   const menuRef = useRef(null);
+  const location = useLocation();
+  const activeCategory = location.pathname === '/' ? new URLSearchParams(location.search).get('category') || '' : null;
+  const shopper = !isAdmin && !adminPortal;
+
+  // Compact, stronger header once the page is scrolled.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Rotate the promo messages one at a time (paused for reduced-motion users).
+  useEffect(() => {
+    if (promo.length < 2) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const timer = window.setInterval(() => setPromoIndex(i => (i + 1) % promo.length), 4500);
+    return () => window.clearInterval(timer);
+  }, [promo.length]);
+
+  // Shop categories for the quick links row.
+  useEffect(() => {
+    if (!shopper) return undefined;
+    let active = true;
+    Promise.resolve(API.get('/api/products/categories'))
+      .then(response => { if (active && Array.isArray(response?.data)) setCategories(response.data.filter(c => typeof c === 'string' && c.trim()).slice(0, 9)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [shopper]);
+
+  // Press "/" anywhere to jump to the search box.
+  useEffect(() => {
+    if (!shopper) return undefined;
+    const onKey = event => {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      const tag = event.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable) return;
+      const input = searchRef?.current?.querySelector('input');
+      if (input) { event.preventDefault(); input.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [shopper, searchRef]);
 
   // Close the account menu on outside click or Escape.
   useEffect(() => {
@@ -87,15 +134,19 @@ export default function NavbarContent({
 
   return (
     <>
-    {promo.length > 0 && <div className="ph-promo" role="note"><Icon name="truck" size={15} /><span>{promo.join('  ·  ')}</span></div>}
-    <nav className="site-nav premium-header" style={S.bar}>
+    {promo.length > 0 && <div className="ph-promo" role="note" aria-label={promo.join('. ')}>
+      <Icon name="truck" size={15} />
+      <span key={promoIndex} className="ph-promo-text" aria-hidden="true">{promo[promoIndex % promo.length]}</span>
+      {promo.length > 1 && <span className="ph-promo-dots" aria-hidden="true">{promo.map((_, i) => <i key={i} className={i === promoIndex % promo.length ? 'is-on' : ''} />)}</span>}
+    </div>}
+    <nav className={`site-nav premium-header${scrolled ? ' is-scrolled' : ''}`} style={S.bar}>
       {/* Brand */}
       <div className="navbar-brand-group" style={S.brandGroup}>
         <Link to={isAdmin ? '/admin' : adminPortal ? '/admin/login' : '/'} style={S.brand} onClick={() => setOpen(false)}>
           <BrandMark size={34} style={{ filter:'drop-shadow(0 7px 12px rgba(13,92,66,.22))' }} />
           <span className="brandText" style={S.brandText}>
-            <span style={{ color:'#b58a4a' }}>IndusCart</span>
-            <span className="brandSuffix">{adminPortal ? 'Valley Admin' : <>Valley <span style={{ opacity: 0.9 }}>🇵🇰</span></>}</span>
+            <span className="ph-brand-gold">IndusCart</span>
+            <span className="brandSuffix">{adminPortal ? 'Valley Admin' : <>Valley <span className="ph-brand-tag" aria-label="Pakistan">PK</span></>}</span>
           </span>
         </Link>
         {adminPortal && <a className="navbar-portal-entry" href={shopperPortalUrl} aria-label="Shopper storefront" title="Shopper storefront" style={S.portalEntryBtn}>
@@ -146,6 +197,7 @@ export default function NavbarContent({
             onChange={event => { setSearchQuery(event.target.value); setSearchOpen(true); }}
             onKeyDown={event => { if (event.key === 'Escape') setSearchOpen(false); }}
           />
+          {!searchQuery && <kbd className="ph-kbd" aria-hidden="true" title="Press / to search">/</kbd>}
           {searchQuery && <button className="navbar-search-clear" type="button" aria-label="Clear search" onClick={() => { setSearchQuery(''); setSearchOpen(false); }}>×</button>}
         </form>
         {searchOpen && searchQuery.trim().length >= 2 && <div className="navbar-search-popover" id="navbar-search-results" aria-label="Search results">
@@ -238,7 +290,7 @@ export default function NavbarContent({
         ) : (
           <div className="ph-guest">
             <Link to="/login" className="ph-login">Login</Link>
-            <Link to="/register" className="ph-register">Register</Link>
+            <Link to="/register" className="ph-register"><span>Register</span></Link>
           </div>
         )}
       </div>
@@ -266,6 +318,16 @@ export default function NavbarContent({
         </Link>
       )}
     </nav>
+    {shopper && categories.length > 0 && (
+      <nav className="ph-categories" aria-label="Shop by category">
+        <div className="ph-categories-inner">
+          <Link to="/?category=all" className={activeCategory === 'all' ? 'is-active' : ''}>All products</Link>
+          {categories.map(name => (
+            <Link key={name} to={`/?category=${encodeURIComponent(name)}`} className={activeCategory === name ? 'is-active' : ''} aria-current={activeCategory === name ? 'page' : undefined}>{name}</Link>
+          ))}
+        </div>
+      </nav>
+    )}
     </>
   );
 }
