@@ -1,20 +1,24 @@
 const SupportTicket = require('../models/SupportTicket');
 
+// Validate and clean ticket fields; returns { error } or { value }.
+const readTicket = (body = {}) => {
+  const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+  const name = text(body.name, 120);
+  const email = text(body.email, 254).toLowerCase();
+  const message = text(body.message, 5000);
+  if (!name || !email || !message) return { error: 'Name, email and message are required.' };
+  if (!/^\S+@\S+\.\S+$/.test(email)) return { error: 'Please enter a valid email address.' };
+  if (message.length < 5) return { error: 'Please describe your question in a few more words.' };
+  return { value: { name, email, message, subject: text(body.subject, 120) || 'General', orderId: text(body.orderId, 40) } };
+};
+
 /* ── Create ticket (logged-in user) ─────────────────────────── */
 exports.createTicket = async (req, res) => {
   try {
-    const { name, email, subject, message, orderId } = req.body;
-    if (!name || !email || !message)
-      return res.status(400).json({ message: 'Name, email and message are required.' });
+    const ticketInput = readTicket(req.body);
+    if (ticketInput.error) return res.status(400).json({ message: ticketInput.error });
 
-    const ticket = await SupportTicket.create({
-      user:    req.user._id,
-      name:    name.trim(),
-      email:   email.trim().toLowerCase(),
-      subject: subject || 'General',
-      message: message.trim(),
-      orderId: orderId || '',
-    });
+    const ticket = await SupportTicket.create({ user: req.user._id, ...ticketInput.value });
     res.status(201).json(ticket);
   } catch (err) {
     console.error('createTicket:', err);
@@ -25,18 +29,10 @@ exports.createTicket = async (req, res) => {
 /* ── Create ticket (guest / not logged in) ───────────────────── */
 exports.createGuestTicket = async (req, res) => {
   try {
-    const { name, email, subject, message, orderId } = req.body;
-    if (!name || !email || !message)
-      return res.status(400).json({ message: 'Name, email and message are required.' });
+    const ticketInput = readTicket(req.body);
+    if (ticketInput.error) return res.status(400).json({ message: ticketInput.error });
 
-    const ticket = await SupportTicket.create({
-      user:    null,
-      name:    name.trim(),
-      email:   email.trim().toLowerCase(),
-      subject: subject || 'General',
-      message: message.trim(),
-      orderId: orderId || '',
-    });
+    const ticket = await SupportTicket.create({ user: null, ...ticketInput.value });
     res.status(201).json(ticket);
   } catch (err) {
     console.error('createGuestTicket:', err);
@@ -97,8 +93,8 @@ exports.updateStatus = async (req, res) => {
 /* ── Admin: save reply (user will see this) ──────────────────── */
 exports.replyTicket = async (req, res) => {
   try {
-    const { text } = req.body;
-    if (!text || !text.trim())
+    const text = typeof req.body?.text === 'string' ? req.body.text.slice(0, 5000) : '';
+    if (!text.trim())
       return res.status(400).json({ message: 'Reply text is required.' });
 
     const ticket = await SupportTicket.findByIdAndUpdate(
@@ -113,3 +109,5 @@ exports.replyTicket = async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 };
+
+exports.readTicket = readTicket;
