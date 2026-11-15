@@ -11,7 +11,7 @@ const { validateManualCashSale } = require('../utils/manualCashSale');
 const SystemSettings = require('../models/SystemSettings');
 const Coupon = require('../models/Coupon');
 const { dispatchOrder } = require('../services/courierService');
-const { isOrderStatus, canChangeOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
+const { isOrderStatus, canChangeOrderStatus, shouldRestoreStock } = require('../utils/orderStatus');
 const { validateCouponForSubtotal } = require('../utils/couponPricing');
 const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 const { ordersCounter } = require('../middleware/metrics');
@@ -337,12 +337,12 @@ const updateOrderStatus = async (req, res) => {
     if (!canChangeOrderStatus(previousStatus, nextStatus))
       return res.status(409).json({ message: `An order that is ${previousStatus} cannot be changed to ${nextStatus}.` });
     if (previousStatus === nextStatus) return res.json(o);
-    if (nextStatus === 'Cancelled' && shouldRestoreStockAfterCancellation(previousStatus))
+    if (shouldRestoreStock(previousStatus, nextStatus))
       for (const item of o.products) {
         if (item.product)
           await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
       }
-    if (nextStatus === 'Cancelled' && !o.isPaid) o.paymentStatus = 'cancelled';
+    if (['Cancelled', 'Returned'].includes(nextStatus) && !o.isPaid) o.paymentStatus = 'cancelled';
     o.status = nextStatus;
     if (nextStatus === 'Delivered' && ['COD', 'Cash'].includes(o.paymentMethod)) {
       o.isPaid = true;
@@ -369,7 +369,7 @@ const updateOrderShipment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found.' });
-    if (order.status === 'Cancelled') return res.status(409).json({ message: 'Cancelled orders cannot be assigned tracking details.' });
+    if (['Cancelled', 'Returned'].includes(order.status)) return res.status(409).json({ message: 'Cancelled orders cannot be assigned tracking details.' });
     order.shippingProvider = normalized.value.shippingProvider;
     order.trackingNumber = normalized.value.trackingNumber;
     order.trackingUrl = normalized.value.trackingUrl;

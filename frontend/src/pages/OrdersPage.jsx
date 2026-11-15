@@ -10,6 +10,7 @@ const STATUS_CFG = {
   Shipped:    { lightColor:'#0369a1', lightBg:'#f0f9ff', darkColor:'#d7f0ff', darkBg:'rgba(16, 73, 108, 0.42)', dot:'#38bdf8', icon:'🚚' },
   Delivered:  { lightColor:'#166534', lightBg:'#f0fdf4', darkColor:'#d9ffe8', darkBg:'rgba(22, 84, 53, 0.42)', dot:'#4ade80', icon:'✅' },
   Cancelled:  { lightColor:'#be123c', lightBg:'#fff1f2', darkColor:'#ffd5de', darkBg:'rgba(103, 36, 49, 0.42)', dot:'#fb7185', icon:'❌' },
+  Returned:   { lightColor:'#6d28d9', lightBg:'#f5f3ff', darkColor:'#ede9fe', darkBg:'rgba(76, 29, 149, 0.42)', dot:'#a78bfa', icon:'↩️' },
 };
 
 const StatusBadge = ({ status, isDark }) => {
@@ -181,7 +182,7 @@ export default function OrdersPage() {
                         const statuses = ['Pending','Processing','Shipped','Delivered'];
                         const currentIdx = statuses.indexOf(order.status);
                         const thisIdx    = statuses.indexOf(s);
-                        const done = order.status === 'Cancelled' ? false : thisIdx <= currentIdx;
+                        const done = ['Cancelled', 'Returned'].includes(order.status) ? false : thisIdx <= currentIdx;
                         const active = thisIdx === currentIdx;
                         return (
                           <div key={s} style={{ display:'flex', flexDirection:'column', alignItems:'center', flex:1 }}>
@@ -197,6 +198,11 @@ export default function OrdersPage() {
                       })}
                     </div>
 
+                    {order.status === 'Returned' && (
+                      <div style={{ background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:'10px', padding:'10px 14px', fontSize:'13px', color:'#6d28d9', fontWeight:'600', marginBottom:'16px' }}>
+                        ↩️ This order was returned.
+                      </div>
+                    )}
                     {order.status === 'Cancelled' && (
                       <div style={{ background:'#fff1f2', border:'1px solid #fecdd3', borderRadius:'10px', padding:'10px 14px', fontSize:'13px', color:'#be123c', fontWeight:'600', marginBottom:'16px' }}>
                         ❌ This order was cancelled.

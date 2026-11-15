@@ -75,6 +75,7 @@ const STATUS_TEXT = {
   Shipped: 'Your order is on its way.',
   Delivered: 'Your order has been delivered. Thank you for shopping with IndusCart!',
   Cancelled: 'Your order has been cancelled. If you did not ask for this, please contact support.',
+  Returned: 'Your order has been marked as returned. If you paid already, we will contact you about the refund.',
 };
 
 const sendOrderStatusEmail = async (order) => {

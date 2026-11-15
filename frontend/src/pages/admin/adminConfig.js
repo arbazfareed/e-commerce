@@ -1,4 +1,4 @@
-export const STATUS_LIST = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+export const STATUS_LIST = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 export const STATUS_CFG = {
   Pending: { bg: '#fff7ed', color: '#c2410c', dot: '#f97316', icon: '⏳' },
@@ -6,6 +6,7 @@ export const STATUS_CFG = {
   Shipped: { bg: '#f0f9ff', color: '#0369a1', dot: '#0ea5e9', icon: '🚚' },
   Delivered: { bg: '#f0fdf4', color: '#166534', dot: '#16a34a', icon: '✅' },
   Cancelled: { bg: '#fff1f2', color: '#be123c', dot: '#f43f5e', icon: '❌' },
+  Returned: { bg: '#f5f3ff', color: '#6d28d9', dot: '#8b5cf6', icon: '↩️' },
 };
 
 export const CATEGORY_TREE = {
