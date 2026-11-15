@@ -81,7 +81,8 @@ export default function CartPage() {
   const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
   const countryOptions = getDeliveryCountries({ internationalEnabled: checkoutSettings?.internationalEnabled !== false, current: addr.country });
   const supportedPaymentMethods = checkoutSettings?.supportedPaymentMethods || ['COD'];
-  const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codSettings.codEnabled));
+  const codAllowedHere = codSettings.codEnabled && (isPak || codSettings.codInternationalEnabled !== false);
+  const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codAllowedHere));
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const discountedSubtotal = Math.max(0, subTotal - couponDiscount);
   // Same rules as backend/utils/orderCharges.js: the COD threshold and flat fee are in PKR.
@@ -140,6 +141,7 @@ export default function CartPage() {
       setError(addr.country === 'Pakistan' ? 'Enter a valid mobile number, for example 0300 1234567.' : 'Enter a valid phone number with country code.');
       return;
     }
+    if (payment === 'COD' && !codAllowedHere) { setError(isPak ? 'Cash on delivery is currently unavailable.' : 'Cash on delivery is only available for delivery in Pakistan.'); return; }
     if (!payment || !supportedPaymentMethods.includes(payment)) { setError('No working payment method is available. Please contact the store administrator.'); return; }
     setPlacing(true);
     try {

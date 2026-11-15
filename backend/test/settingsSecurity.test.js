@@ -44,3 +44,8 @@ test('checkout settings share the stored USD rate and zone rates with the storef
   assert.equal(settings.zoneRates.domestic_pak.baseRate, 80);
   assert.equal(checkoutSettings({}).usdRate, 278);
 });
+
+test('COD outside Pakistan stays allowed unless the admin turns it off', () => {
+  assert.equal(checkoutSettings({ codEnabled: true }).codInternationalEnabled, true);
+  assert.equal(checkoutSettings({ codEnabled: true, codInternationalEnabled: false }).codInternationalEnabled, false);
+});

@@ -4,6 +4,8 @@ const systemSettingsSchema = new mongoose.Schema({
   key: { type: String, default: 'global', unique: true, immutable: true },
   internationalEnabled: { type: Boolean, default: true },
   codEnabled: { type: Boolean, default: true },
+  // Off = cash on delivery only for addresses in Pakistan.
+  codInternationalEnabled: { type: Boolean, default: true },
   codFeeMode: { type: String, enum: ['flat', 'percentage'], default: 'flat' },
   codFee: { type: Number, min: 0, default: 0 },
   // COD fees are waived when the product total reaches this value (0 disables the threshold).

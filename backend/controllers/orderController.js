@@ -136,6 +136,8 @@ const placeOrder = async (req, res) => {
 
     if (paymentMethod === 'COD' && !settings.codEnabled)
       return res.status(400).json({ message: 'Cash on delivery is currently unavailable.' });
+    if (paymentMethod === 'COD' && country !== 'Pakistan' && settings.codInternationalEnabled === false)
+      return res.status(400).json({ message: 'Cash on delivery is only available for delivery in Pakistan.' });
 
     for (const item of enrichedItems) {
       const reserved = await Product.findOneAndUpdate(
