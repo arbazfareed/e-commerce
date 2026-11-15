@@ -183,6 +183,45 @@ export default function AdminSettingsPanel({
             <label style={S.lbl}>Thank-you coupon for the next order (code, optional)</label>
             <input style={S.inp} maxLength={40} placeholder="e.g. THANKYOU10" value={storeSettings.thankYouCouponCode || ''} onChange={e => setStoreSettings(s => ({ ...s, thankYouCouponCode:e.target.value.toUpperCase() }))} />
           </div>
+          <div style={{ gridColumn:'1 / -1', marginTop:8, paddingTop:14, borderTop:'1px solid rgba(16,38,28,.10)' }}>
+            <strong style={{ fontSize:14 }}>Delivery & returns policy</strong>
+            <p style={{ margin:'4px 0 0', fontSize:12, color:'#64748b' }}>Shown to customers in the footer under Shipping & Returns. Write only what you really offer.</p>
+          </div>
+          <div>
+            <label style={S.lbl} htmlFor="set-delivery-local">Delivery time in Pakistan</label>
+            <input id="set-delivery-local" style={S.inp} maxLength={60} value={storeSettings.deliveryTimeLocal ?? ''} onChange={e => setStoreSettings(s => ({ ...s, deliveryTimeLocal:e.target.value }))} />
+          </div>
+          <div>
+            <label style={S.lbl} htmlFor="set-delivery-intl">Delivery time outside Pakistan</label>
+            <input id="set-delivery-intl" style={S.inp} maxLength={60} value={storeSettings.deliveryTimeIntl ?? ''} onChange={e => setStoreSettings(s => ({ ...s, deliveryTimeIntl:e.target.value }))} />
+          </div>
+          <div>
+            <label style={S.lbl} htmlFor="set-return-days">Return window (days, 0 = no returns)</label>
+            <input id="set-return-days" style={S.inp} type="number" min="0" max="90" step="1" value={storeSettings.returnWindowDays ?? 7} onChange={e => setStoreSettings(s => ({ ...s, returnWindowDays:Number(e.target.value) }))} />
+          </div>
+          <div>
+            <label style={S.lbl} htmlFor="set-return-pay">Return shipping is paid by</label>
+            <select id="set-return-pay" style={S.inp} value={storeSettings.returnShippingPaidBy || 'customer'} onChange={e => setStoreSettings(s => ({ ...s, returnShippingPaidBy:e.target.value }))}>
+              <option value="customer">Customer (free if item arrived damaged or wrong)</option><option value="store">Store</option>
+            </select>
+          </div>
+          <div style={{ gridColumn:'1 / -1' }}>
+            <label style={S.lbl} htmlFor="set-nonreturnable">Items that cannot be returned (optional)</label>
+            <textarea id="set-nonreturnable" style={{ ...S.inp, minHeight:60, resize:'vertical' }} maxLength={300} value={storeSettings.nonReturnableNote ?? ''} onChange={e => setStoreSettings(s => ({ ...s, nonReturnableNote:e.target.value }))} />
+          </div>
+          <div style={{ gridColumn:'1 / -1', marginTop:8, paddingTop:14, borderTop:'1px solid rgba(16,38,28,.10)' }}>
+            <strong style={{ fontSize:14 }}>Social media links</strong>
+            <p style={{ margin:'4px 0 0', fontSize:12, color:'#64748b' }}>Full links starting with https://. Empty links are hidden from the footer.</p>
+          </div>
+          {[['socialInstagram','Instagram','https://instagram.com/yourpage'],['socialFacebook','Facebook','https://facebook.com/yourpage'],['socialTikTok','TikTok','https://tiktok.com/@yourpage']].map(([key, label, ph]) => (
+            <div key={key}>
+              <label style={S.lbl} htmlFor={`set-${key}`}>{label}</label>
+              <input id={`set-${key}`} style={S.inp} type="url" maxLength={200} placeholder={ph} value={storeSettings[key] || ''} onChange={e => setStoreSettings(s => ({ ...s, [key]:e.target.value }))} />
+            </div>
+          ))}
+          <div style={{ gridColumn:'1 / -1', marginTop:8, paddingTop:14, borderTop:'1px solid rgba(16,38,28,.10)' }}>
+            <strong style={{ fontSize:14 }}>Payment and courier providers</strong>
+          </div>
           <div>
             <label style={S.lbl}>Courier provider</label>
             <select style={S.inp} value={storeSettings.courierProvider || ''} onChange={e => setStoreSettings(s => ({ ...s, courierProvider:e.target.value }))}>

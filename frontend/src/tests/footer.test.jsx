@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
+vi.mock('../utils/axiosConfig', () => ({ default: { get: () => Promise.resolve({ data: {} }) }, assetUrl: x => x }));
 import Footer from '../components/Footer';
 
 describe('Global Footer Component', () => {
@@ -48,6 +50,8 @@ describe('Global Footer Component', () => {
 
     // Click Shipping & Returns
     fireEvent.click(screen.getByRole('button', { name: /Shipping & Returns/i }));
-    expect(screen.getByText(/Free Expedited Shipping/i)).toBeInTheDocument();
+    expect(screen.getByText(/usually arrive in/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Free Expedited Shipping/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/within/i)).toHaveTextContent(/7 days/);
   });
 });

@@ -18,6 +18,16 @@ const systemSettingsSchema = new mongoose.Schema({
   usdRate: { type: Number, min: 1, max: 100000, default: 278 },
   // Admin overrides for zone shipping rates, merged over the defaults in utils/zoneShipping.js.
   zoneRates: { type: mongoose.Schema.Types.Mixed, default: null },
+  // Store policies shown in the footer. Admin can edit these in Settings.
+  deliveryTimeLocal: { type: String, trim: true, maxlength: 60, default: '3–5 working days' },
+  deliveryTimeIntl: { type: String, trim: true, maxlength: 60, default: '7–14 working days' },
+  returnWindowDays: { type: Number, min: 0, max: 90, default: 7 },
+  returnShippingPaidBy: { type: String, enum: ['customer', 'store'], default: 'customer' },
+  nonReturnableNote: { type: String, trim: true, maxlength: 300, default: 'Opened skincare and personal-care products cannot be returned for hygiene reasons, unless they arrived damaged or wrong.' },
+  // Social profiles shown in the footer when set.
+  socialInstagram: { type: String, trim: true, maxlength: 200, default: '' },
+  socialFacebook: { type: String, trim: true, maxlength: 200, default: '' },
+  socialTikTok: { type: String, trim: true, maxlength: 200, default: '' },
   courierProvider: { type: String, trim: true, default: '' },
   courierEnabled: { type: Boolean, default: false },
   courierMode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' },

@@ -1,6 +1,7 @@
 const Coupon = require('../models/Coupon');
 const SystemSettings = require('../models/SystemSettings');
 const { resolveZoneRates, validateZoneRates } = require('../utils/zoneShipping');
+const { validateStoreProfile } = require('../utils/storeProfile');
 const emailService = require('../services/emailService');
 const { getEmailStatus } = emailService;
 const { encryptSecret, isEncryptedSecret, hasEncryptionKey } = require('../config/credentialVault');
@@ -14,6 +15,14 @@ const publicSettings = (settings) => ({
   codThreshold: settings.codThreshold,
   freeShippingThreshold: settings.freeShippingThreshold || 0,
   thankYouCouponCode: settings.thankYouCouponCode || '',
+  deliveryTimeLocal: settings.deliveryTimeLocal || '3–5 working days',
+  deliveryTimeIntl: settings.deliveryTimeIntl || '7–14 working days',
+  returnWindowDays: Number.isFinite(settings.returnWindowDays) ? settings.returnWindowDays : 7,
+  returnShippingPaidBy: settings.returnShippingPaidBy || 'customer',
+  nonReturnableNote: settings.nonReturnableNote ?? '',
+  socialInstagram: settings.socialInstagram || '',
+  socialFacebook: settings.socialFacebook || '',
+  socialTikTok: settings.socialTikTok || '',
   usdRate: settings.usdRate || 278,
   zoneRates: resolveZoneRates(settings.zoneRates),
   courierProvider: settings.courierProvider,
@@ -42,6 +51,14 @@ const checkoutSettings = (settings) => ({
   freeShippingThreshold: settings.freeShippingThreshold || 0,
   usdRate: settings.usdRate || 278,
   zoneRates: resolveZoneRates(settings.zoneRates),
+  deliveryTimeLocal: settings.deliveryTimeLocal || '3–5 working days',
+  deliveryTimeIntl: settings.deliveryTimeIntl || '7–14 working days',
+  returnWindowDays: Number.isFinite(settings.returnWindowDays) ? settings.returnWindowDays : 7,
+  returnShippingPaidBy: settings.returnShippingPaidBy || 'customer',
+  nonReturnableNote: settings.nonReturnableNote ?? '',
+  socialInstagram: settings.socialInstagram || '',
+  socialFacebook: settings.socialFacebook || '',
+  socialTikTok: settings.socialTikTok || '',
   // No online gateway adapter is implemented yet. Saved provider settings do not activate checkout.
   supportedPaymentMethods: settings.codEnabled ? ['COD'] : [],
 });
@@ -91,6 +108,10 @@ const updateSettings = async (req, res) => {
     return res.status(400).json({ message: 'Courier provider must be at most 100 characters.' });
   if (update.easypaisaMerchantId !== undefined && (typeof update.easypaisaMerchantId !== 'string' || update.easypaisaMerchantId.trim().length > 120))
     return res.status(400).json({ message: 'EasyPaisa merchant ID must be at most 120 characters.' });
+
+  const storeProfile = validateStoreProfile(req.body);
+  if (storeProfile.error) return res.status(400).json({ message: storeProfile.error });
+  Object.assign(update, storeProfile.update);
 
   if (req.body.thankYouCouponCode !== undefined) {
     if (typeof req.body.thankYouCouponCode !== 'string' || req.body.thankYouCouponCode.trim().length > 40)
