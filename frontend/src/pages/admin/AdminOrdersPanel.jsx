@@ -73,6 +73,7 @@ export default function AdminOrdersPanel({
                     <td style={S.td}>
                       <p style={{ margin:'0 0 2px', fontWeight:700, color: themeMode === 'dark' ? '#f8fafc' : '#1e293b', fontSize:13, fontFamily:"'Sora',sans-serif" }}>{o.user?.name || o.guestContact?.name || '—'}</p>
                       <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#aebbb3' : '#64748b' }}>{o.guestContact?.email || o.user?.email || o.address?.city || '—'}</p>
+                      {o.address?.phone && <p style={{ margin:0, fontSize:11, color: themeMode === 'dark' ? '#aebbb3' : '#64748b' }}>{o.address.phone}{o.address?.city ? ` · ${o.address.city}` : ''}</p>}
                     </td>
                     <td style={{ ...S.td, maxWidth:160 }}>
                       <p style={{ margin:0, fontSize:12, color: themeMode === 'dark' ? '#dbeafe' : '#475569', lineHeight:1.7 }}>

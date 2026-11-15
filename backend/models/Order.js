@@ -47,7 +47,10 @@ const orderSchema = new mongoose.Schema(
     address: {
       street:  { type: String },
       city:    { type: String },
+      province: { type: String, trim: true, maxlength: 80, default: '' },
+      postalCode: { type: String, trim: true, maxlength: 20, default: '' },
       country: { type: String, default: 'Pakistan' },
+      phone:   { type: String, trim: true, maxlength: 40, default: '' },
     },
 
     // ─── Payment ──────────────────────────────────────────────

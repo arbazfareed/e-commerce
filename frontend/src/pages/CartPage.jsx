@@ -10,6 +10,7 @@ import CartSummary from './cart/CartSummary';
 import OrderConfirmation from './cart/OrderConfirmation';
 import EmptyCart from './cart/EmptyCart';
 import { getDeliveryCountries } from '../utils/countries';
+import { isValidPhone } from '../utils/phone';
 
 
 const PAYMENTS = [
@@ -30,7 +31,10 @@ export default function CartPage() {
   const [addr,    setAddr]    = useState({
     street:  '',
     city:    user?.city    || '',
+    province: '',
+    postalCode: '',
     country: user?.country || 'Pakistan',
+    phone:   user?.phone   || '',
   });
   // Prices follow the delivery country, which is what the server charges.
   const isPak = (addr.country || 'Pakistan').trim().toLowerCase() === 'pakistan';
@@ -57,7 +61,7 @@ export default function CartPage() {
   }, []);
 
   useEffect(() => {
-    setAddr(prev => ({ ...prev, city: '', country: user?.country || 'Pakistan' }));
+    setAddr(prev => ({ ...prev, city: '', country: user?.country || 'Pakistan', phone: user?.phone || prev.phone || '' }));
   }, [user?._id]);
 
   // Safe totals — always work even if items is []
@@ -131,6 +135,10 @@ export default function CartPage() {
     }
     if (!addr.street.trim()) { setError('Please enter your street address.'); return; }
     if (!addr.city.trim())   { setError('Please enter your city.'); return; }
+    if (!isValidPhone(addr.phone, addr.country)) {
+      setError(addr.country === 'Pakistan' ? 'Enter a valid mobile number, for example 0300 1234567.' : 'Enter a valid phone number with country code.');
+      return;
+    }
     if (!payment || !supportedPaymentMethods.includes(payment)) { setError('No working payment method is available. Please contact the store administrator.'); return; }
     setPlacing(true);
     try {
@@ -148,7 +156,7 @@ export default function CartPage() {
         address:       addr,
         paymentMethod: payment,
         couponCode:    appliedCoupon?.code || '',
-        ...(!user ? { guestContact: { name:guestContact.name.trim(), email:guestContact.email.trim(), phone:guestContact.phone.trim() } } : {}),
+        ...(!user ? { guestContact: { name:guestContact.name.trim(), email:guestContact.email.trim(), phone:addr.phone.trim() } } : {}),
       });
       setOrderId(data._id);
       setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));

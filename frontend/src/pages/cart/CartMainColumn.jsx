@@ -106,10 +106,6 @@ export default function CartMainColumn({
                 <label htmlFor="guest-email" style={S.lbl}>Email *</label>
                 <input id="guest-email" style={S.inp} type="email" autoComplete="email" maxLength={254} value={guestContact.email} onChange={event => setGuestContact(contact => ({ ...contact, email:event.target.value }))} required />
               </div>
-              <div>
-                <label htmlFor="guest-phone" style={S.lbl}>Phone (optional)</label>
-                <input id="guest-phone" style={S.inp} type="tel" autoComplete="tel" maxLength={40} value={guestContact.phone} onChange={event => setGuestContact(contact => ({ ...contact, phone:event.target.value }))} />
-              </div>
             </div>
           </>}
           <h3 style={S.secTitle}>📍 Delivery Address</h3>
@@ -132,6 +128,29 @@ export default function CartMainColumn({
                 value={addr.city}
                 autoComplete="off"
                 onChange={e => setAddr(a => ({ ...a, city: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="delivery-phone" style={S.lbl}>Mobile number *</label>
+              <input id="delivery-phone" style={S.inp} type="tel" autoComplete="tel" maxLength={40}
+                placeholder={addr.country === 'Pakistan' ? '0300 1234567' : '+971 50 123 4567'}
+                value={addr.phone || ''}
+                onChange={e => setAddr(a => ({ ...a, phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="delivery-province" style={S.lbl}>Province / State</label>
+              <input id="delivery-province" style={S.inp} maxLength={80} autoComplete="address-level1"
+                placeholder={addr.country === 'Pakistan' ? 'Punjab' : ''}
+                value={addr.province || ''}
+                onChange={e => setAddr(a => ({ ...a, province: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label htmlFor="delivery-postal" style={S.lbl}>Postal code</label>
+              <input id="delivery-postal" style={S.inp} maxLength={20} autoComplete="postal-code"
+                value={addr.postalCode || ''}
+                onChange={e => setAddr(a => ({ ...a, postalCode: e.target.value }))}
               />
             </div>
             <div>

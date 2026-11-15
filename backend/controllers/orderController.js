@@ -13,6 +13,7 @@ const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 const { ordersCounter } = require('../middleware/metrics');
 const { calcZoneShipping } = require('../utils/zoneShipping');
 const { calcOrderCharges } = require('../utils/orderCharges');
+const { isValidPhone, normalizePhone } = require('../utils/phone');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -54,8 +55,24 @@ const placeOrder = async (req, res) => {
     if (!PAYMENT_METHODS.has(paymentMethod))
       return res.status(400).json({ message: 'Please choose a supported payment method.' });
     const paymentChannel = paymentMethod === 'COD' || paymentMethod === 'Cash' || paymentMethod === 'Manual Cash' ? 'cash' : 'online';
-    if (!address?.street?.trim() || !address?.city?.trim() || !address?.country?.trim())
+    if (typeof address?.street !== 'string' || !address.street.trim() || typeof address?.city !== 'string' || !address.city.trim()
+      || typeof address?.country !== 'string' || !address.country.trim())
       return res.status(400).json({ message: 'Complete delivery address is required.' });
+    // The courier needs a number to call before delivery.
+    const deliveryPhone = normalizePhone(address.phone || guestContact?.phone || req.user?.phone || '');
+    if (!isValidPhone(deliveryPhone, address.country))
+      return res.status(400).json({ message: address.country.trim().toLowerCase() === 'pakistan'
+        ? 'Enter a valid mobile number, for example 0300 1234567.'
+        : 'Enter a valid phone number with country code.' });
+    const cleanAddress = {
+      street: address.street.trim().slice(0, 300),
+      city: address.city.trim().slice(0, 100),
+      province: typeof address.province === 'string' ? address.province.trim().slice(0, 80) : '',
+      postalCode: typeof address.postalCode === 'string' ? address.postalCode.trim().slice(0, 20) : '',
+      country: address.country.trim(),
+      phone: deliveryPhone,
+    };
+    if (guestContact && !guestContact.phone) guestContact.phone = deliveryPhone;
 
     const country       = address?.country || 'Pakistan';
     const city          = address?.city    || '';
@@ -159,7 +176,7 @@ const placeOrder = async (req, res) => {
     const order = await Order.create({
       user: req.user?._id || null, guestContact, products: enrichedItems,
       productTotal, shippingFee, codFee, couponCode: coupon?.code || '', couponDiscount, currency, totalWeight, shippingZone, totalPrice,
-      address, paymentMethod, paymentChannel,
+      address: cleanAddress, paymentMethod, paymentChannel,
       isPaid: false,
       paymentStatus: 'pending',
       paidAt: null,
