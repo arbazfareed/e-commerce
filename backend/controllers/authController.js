@@ -111,7 +111,10 @@ const loginUser = (req, res) => loginWithRole(req, res, false);
 const loginAdminUser = (req, res) => loginWithRole(req, res, true);
 
 const changeOwnPassword = async (req, res) => {
-  const { newPassword } = req.body || {};
+  const { currentPassword, newPassword } = req.body || {};
+  if (typeof currentPassword !== 'string' || !currentPassword) {
+    return res.status(400).json({ message: 'Enter your current password.' });
+  }
   if (typeof newPassword !== 'string' || !newPassword) {
     return res.status(400).json({ message: 'New password is required.' });
   }
@@ -122,6 +125,10 @@ const changeOwnPassword = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User account was not found.' });
+    // A stolen session alone must not be enough to take over the account.
+    if (!(await user.matchPassword(currentPassword))) {
+      return res.status(400).json({ message: 'Your current password is not correct.' });
+    }
     if (await user.matchPassword(newPassword)) {
       return res.status(400).json({ message: 'New password must be different from your current password.' });
     }

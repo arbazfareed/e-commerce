@@ -63,6 +63,9 @@ export default function AdminSettingsPanel({
             <h4 style={{ ...S.cardH, color: themeMode === 'dark' ? '#e2e8f0' : '#1e293b', marginBottom:6 }}>Change your password</h4>
             <p style={{ margin:'0 0 14px', fontSize:11, color: themeMode === 'dark' ? '#aebfba' : '#64748b' }}>Choose a new password you can remember and confirm it below.</p>
             <form onSubmit={submitOwnPasswordChange} style={{ display:'grid', gap:11 }}>
+              <label style={S.lbl}>Current password
+                <input style={S.inp} type="password" autoComplete="current-password" value={ownPasswordForm.currentPassword || ''} onChange={event => setOwnPasswordForm(form => ({ ...form, currentPassword:event.target.value }))} required />
+              </label>
               <label style={S.lbl}>New password
                 <input style={S.inp} type="password" autoComplete="new-password" minLength={12} value={ownPasswordForm.newPassword} onChange={event => setOwnPasswordForm(form => ({ ...form, newPassword:event.target.value }))} required />
               </label>
