@@ -1,5 +1,7 @@
 const express = require('express');
 const router  = express.Router();
+const { validateObjectIdParam } = require('../middleware/validateObjectId');
+router.param('id', validateObjectIdParam('Ticket'));
 const ctrl    = require('../controllers/supportController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
