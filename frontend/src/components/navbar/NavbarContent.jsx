@@ -67,6 +67,7 @@ export default function NavbarContent({
             {user && <>
               <Link to="/orders" className={`site-nav-link${on('/orders') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/orders') ? S.lnkOn : {}) }}>📦 Orders</Link>
               <Link to="/wishlist" className={`site-nav-link${on('/wishlist') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/wishlist') ? S.lnkOn : {}) }}>♥ Wishlist</Link>
+              <Link to="/account" className={`site-nav-link${on('/account') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/account') ? S.lnkOn : {}) }}>👤 Account</Link>
             </>}
             <Link to="/support" className={`site-nav-link${on('/support') ? ' is-active' : ''}`} style={{ ...S.lnk, ...(on('/support') ? S.lnkOn : {}) }}>🎧 Support</Link>
           </>

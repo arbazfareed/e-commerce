@@ -2,7 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router  = express.Router();
 
-const { registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession } = require('../controllers/authController');
+const { updateUserProfile, registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 const authLimiter = rateLimit({
@@ -44,6 +44,7 @@ router.post('/password/reset/request', passwordResetRequestLimiter, requestCusto
 
 // GET  /api/auth/profile   → get my profile (must be logged in)
 router.get('/profile', protect, getUserProfile);
+router.put('/profile', authLimiter, protect, updateUserProfile);
 router.get('/session', protect, verifySession);
 
 module.exports = router;
