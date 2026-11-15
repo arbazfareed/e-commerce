@@ -1,3 +1,10 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /cart
+Disallow: /orders
+Disallow: /account
+Disallow: /track/
+Disallow: /reset-password/
+
+Sitemap: https://e-commerce-backend-afjdevops.vercel.app/sitemap.xml
