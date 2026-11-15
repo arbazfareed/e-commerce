@@ -14,6 +14,10 @@ dotenv.config();
 assertEnvironment();
 
 const app = express();
+// Vercel (and nginx in Docker) sit in front of the API. Trust one proxy hop so rate limits
+// see each shopper's own IP instead of the proxy's shared one. Override with TRUST_PROXY.
+const trustProxy = process.env.TRUST_PROXY ?? (process.env.VERCEL ? '1' : '');
+if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
 const staticUploadsDirs = [
   path.join(__dirname, 'uploads'),
   path.join(process.cwd(), 'uploads'),
