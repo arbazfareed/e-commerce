@@ -2,9 +2,10 @@
 const ORDER_STATUS_TRANSITIONS = {
   Pending: ['Processing', 'Shipped', 'Delivered', 'Cancelled'],
   Processing: ['Pending', 'Shipped', 'Delivered', 'Cancelled'],
-  Shipped: ['Delivered', 'Cancelled'],
-  Delivered: [],
+  Shipped: ['Delivered', 'Cancelled', 'Returned'],
+  Delivered: ['Returned'],
   Cancelled: [],
+  Returned: [],
 };
 
 export default function AdminOrdersPanel({

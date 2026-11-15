@@ -83,7 +83,7 @@ const getProducts = async (req, res) => {
       }
       if (req.query.sort === 'popular') {
         const popularProducts = await Order.aggregate([
-          { $match: { status: { $ne: 'Cancelled' } } }, { $unwind: '$products' },
+          { $match: { status: { $nin: ['Cancelled', 'Returned'] } } }, { $unwind: '$products' },
           { $match: { 'products.product': { $ne: null } } },
           { $group: { _id: '$products.product', units: { $sum: '$products.quantity' } } },
           { $sort: { units: -1 } },

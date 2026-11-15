@@ -24,3 +24,15 @@ test('delivered and cancelled orders are final and shipped orders cannot go back
   assert.equal(canChangeOrderStatus('Delivered', 'Cancelled'), false);
   assert.equal(canChangeOrderStatus('Delivered', 'Delivered'), true);
 });
+
+test('returned parcels are final and always give the stock back', () => {
+  const { canChangeOrderStatus, shouldRestoreStock, isOrderStatus } = require('../utils/orderStatus');
+  assert.equal(isOrderStatus('Returned'), true);
+  assert.equal(canChangeOrderStatus('Shipped', 'Returned'), true);
+  assert.equal(canChangeOrderStatus('Delivered', 'Returned'), true);
+  assert.equal(canChangeOrderStatus('Returned', 'Delivered'), false);
+  assert.equal(canChangeOrderStatus('Pending', 'Returned'), false);
+  assert.equal(shouldRestoreStock('Shipped', 'Returned'), true);
+  assert.equal(shouldRestoreStock('Shipped', 'Cancelled'), false);
+  assert.equal(shouldRestoreStock('Pending', 'Cancelled'), true);
+});
