@@ -1,3 +1,12 @@
+// Same rules as backend/utils/orderStatus.js: Delivered and Cancelled are final.
+const ORDER_STATUS_TRANSITIONS = {
+  Pending: ['Processing', 'Shipped', 'Delivered', 'Cancelled'],
+  Processing: ['Pending', 'Shipped', 'Delivered', 'Cancelled'],
+  Shipped: ['Delivered', 'Cancelled'],
+  Delivered: [],
+  Cancelled: [],
+};
+
 export default function AdminOrdersPanel({
   Badge,
   S,
@@ -92,7 +101,7 @@ export default function AdminOrdersPanel({
                     <td style={S.td}>
                       <select value={o.status} onChange={e => changeStatus(o._id, e.target.value)}
                         style={{ border: themeMode === 'dark' ? '1.5px solid rgba(148,163,184,.28)' : '1.5px solid #e2e8f0', borderRadius:9, padding:'7px 10px', fontSize:12, cursor:'pointer', background: themeMode === 'dark' ? '#0f172a' : '#fff', color: themeMode === 'dark' ? '#e2e8f0' : '#334155', outline:'none', fontFamily:"'Sora',sans-serif", fontWeight:600 }}>
-                        {STATUS_LIST.map(s => <option key={s}>{s}</option>)}
+                        {STATUS_LIST.map(s => <option key={s} disabled={s !== o.status && !(ORDER_STATUS_TRANSITIONS[o.status] || []).includes(s)}>{s}</option>)}
                       </select>
                       <button type="button" aria-label={`Print invoice for order ${o._id.slice(-8).toUpperCase()}`} onClick={() => navigate(`/orders/${o._id}/invoice`)} style={{ display:'block', marginTop:6, border:'1px solid #cbd5e1', borderRadius:8, padding:'6px 9px', background:themeMode === 'dark' ? '#1f2b25' : '#f8fafc', color:themeMode === 'dark' ? '#e2e8f0' : '#334155', cursor:'pointer', fontSize:11, fontWeight:700 }}>🖨 Print</button>
                       <ShipmentTrackingEditor order={o} darkMode={themeMode === 'dark'} flash={flash} onSaved={updated => setOrders(current => current.map(order => order._id === updated._id ? updated : order))} />

@@ -10,7 +10,7 @@ const { validateManualCashSale } = require('../utils/manualCashSale');
 const SystemSettings = require('../models/SystemSettings');
 const Coupon = require('../models/Coupon');
 const { dispatchOrder } = require('../services/courierService');
-const { isOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
+const { isOrderStatus, canChangeOrderStatus, shouldRestoreStockAfterCancellation } = require('../utils/orderStatus');
 const { validateCouponForSubtotal } = require('../utils/couponPricing');
 const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 const { ordersCounter } = require('../middleware/metrics');
@@ -323,6 +323,9 @@ const updateOrderStatus = async (req, res) => {
     if (!isOrderStatus(nextStatus))
       return res.status(400).json({ message: 'Invalid order status.' });
     const previousStatus = o.status;
+    if (!canChangeOrderStatus(previousStatus, nextStatus))
+      return res.status(409).json({ message: `An order that is ${previousStatus} cannot be changed to ${nextStatus}.` });
+    if (previousStatus === nextStatus) return res.json(o);
     if (nextStatus === 'Cancelled' && shouldRestoreStockAfterCancellation(previousStatus))
       for (const item of o.products) {
         if (item.product)
