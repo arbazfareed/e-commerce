@@ -18,6 +18,8 @@ const InvoicePage = lazy(() => import('./pages/InvoicePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const AccountPage = lazy(() => import('./pages/AccountPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const StoreAdminPage = lazy(() => import('./pages/StoreAdminPage'));
+import { isStaff } from './utils/roles';
 const SupportPage = lazy(() => import('./pages/SupportPage'));
 import ProductDetailPage from './pages/ProductDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -30,7 +32,7 @@ const GuestRoute = ({ children }) => {
   const adminTarget = import.meta.env.VITE_APP_MODE === 'shopper'
     ? import.meta.env.VITE_ADMIN_PORTAL_URL || `${window.location.protocol}//${window.location.hostname}:3001/admin/login`
     : '/admin';
-  return <Navigate to={user.isAdmin ? adminTarget : '/'} replace />;
+  return <Navigate to={isStaff(user) ? adminTarget : '/'} replace />;
 };
 
 /* Redirect unauthenticated users to login */
@@ -42,22 +44,28 @@ const PrivateRoute = ({ children }) => {
 const AdminLoginRoute = ({ children, adminPortal = false }) => {
   const { user } = useAuth();
   if (!user) return children;
-  if (user.isAdmin) return <Navigate to="/admin" replace />;
+  if (isStaff(user)) return <Navigate to="/admin" replace />;
   return adminPortal ? children : <Navigate to="/" replace />;
+};
+
+/* Main admin gets the full admin page; a store owner gets their own store panel. */
+const AdminHome = () => {
+  const { user } = useAuth();
+  return user?.isAdmin ? <AdminPage /> : <StoreAdminPage />;
 };
 
 /* Admin-only route */
 const AdminRoute = ({ children }) => {
   const { user } = useAuth();
   if (!user)         return <Navigate to="/admin/login" replace />;
-  if (!user.isAdmin) return <Navigate to="/"      replace />;
+  if (!isStaff(user)) return <Navigate to="/"      replace />;
   return children;
 };
 
 /* Root route: admin → /admin, user → HomePage */
 const RootRoute = () => {
   const { user } = useAuth();
-  if (user?.isAdmin) {
+  if (isStaff(user)) {
     const adminTarget = import.meta.env.VITE_APP_MODE === 'shopper'
       ? import.meta.env.VITE_ADMIN_PORTAL_URL || `${window.location.protocol}//${window.location.hostname}:3001/admin/login`
       : '/admin';
@@ -68,15 +76,15 @@ const RootRoute = () => {
 
 const AdminPortalRoot = () => {
   const { user } = useAuth();
-  return <Navigate to={user?.isAdmin ? '/admin' : '/admin/login'} replace />;
+  return <Navigate to={isStaff(user) ? '/admin' : '/admin/login'} replace />;
 };
 
 const AdminPortalRoutes = () => (
   <Routes>
     <Route path="/" element={<AdminPortalRoot />} />
     <Route path="/admin/login" element={<AdminLoginRoute adminPortal><LoginPage adminOnly /></AdminLoginRoute>} />
-    <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-    <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
+    <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
+    <Route path="/admin/:section" element={<AdminRoute><AdminHome /></AdminRoute>} />
     <Route path="/support" element={<AdminRoute><SupportPage /></AdminRoute>} />
     <Route path="/orders/:id/invoice" element={<AdminRoute><InvoicePage /></AdminRoute>} />
     <Route path="*" element={<AdminPortalRoot />} />
@@ -120,8 +128,8 @@ const SharedPortalRoutes = () => (
     <Route path="/orders/:id" element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
     <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
       <Route path="/track/:id" element={<OrderTrackPage />} />
-    <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-    <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
+    <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
+    <Route path="/admin/:section" element={<AdminRoute><AdminHome /></AdminRoute>} />
     <Route path="/support" element={<SupportPage />} />
     <Route path="*" element={<NotFoundPage />} />
   </Routes>

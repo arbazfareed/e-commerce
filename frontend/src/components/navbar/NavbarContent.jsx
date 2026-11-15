@@ -112,7 +112,7 @@ export default function NavbarContent({
         {isAdmin ? (
           /* ── Admin nav ── */
           <>
-            <Link to="/admin" className={`site-nav-link${adminOn ? ' is-active' : ''}`}><Icon name="admin" size={17} />Admin panel</Link>
+            <Link to="/admin" className={`site-nav-link${adminOn ? ' is-active' : ''}`}><Icon name="admin" size={17} />{user?.isSubAdmin && !user?.isAdmin ? 'My store' : 'Admin panel'}</Link>
             <Link to="/support" className={`site-nav-link${on('/support') ? ' is-active' : ''}`}><Icon name="support" size={17} />Support</Link>
           </>
         ) : adminPortal ? null : (
@@ -221,7 +221,7 @@ export default function NavbarContent({
           <div className="ph-account" ref={menuRef}>
             <button type="button" className="ph-account-btn" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)}>
               <span className="ph-avatar" aria-hidden="true">{user.name[0].toUpperCase()}</span>
-              <span className="ph-account-name">{firstName}{isAdmin && <span className="nav-admin-badge ph-admin-badge">ADMIN</span>}</span>
+              <span className="ph-account-name">{firstName}{isAdmin && <span className="nav-admin-badge ph-admin-badge">{user?.isSubAdmin && !user?.isAdmin ? 'STORE' : 'ADMIN'}</span>}</span>
               <Icon name="chevron" size={15} />
             </button>
             {menuOpen && <div className="ph-menu" role="menu" aria-label="Account menu">
@@ -231,7 +231,7 @@ export default function NavbarContent({
                 <Link role="menuitem" to="/orders" onClick={() => setMenuOpen(false)}><Icon name="orders" size={17} />My orders</Link>
                 <Link role="menuitem" to="/wishlist" onClick={() => setMenuOpen(false)}><Icon name="heart" size={17} />Wishlist</Link>
               </>}
-              {isAdmin && <Link role="menuitem" to="/admin" onClick={() => setMenuOpen(false)}><Icon name="admin" size={17} />Admin panel</Link>}
+              {isAdmin && <Link role="menuitem" to="/admin" onClick={() => setMenuOpen(false)}><Icon name="admin" size={17} />{user?.isSubAdmin && !user?.isAdmin ? 'My store' : 'Admin panel'}</Link>}
               <button type="button" role="menuitem" className="nav-logout-button ph-menu-logout" onClick={() => { setMenuOpen(false); doLogout(); }}><Icon name="logout" size={17} />Logout</button>
             </div>}
           </div>

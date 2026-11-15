@@ -9,6 +9,7 @@ import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/admi
 
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
 import CouponsPanel from './admin/CouponsPanel';
+import StoresPanel from './admin/StoresPanel';
 import ReviewsPanel from './admin/ReviewsPanel';
 import ShipmentTrackingEditor from './admin/ShipmentTrackingEditor';
 import AdminDashboard from './admin/AdminDashboard';
@@ -42,7 +43,7 @@ export default function AdminPage() {
   const { user, logout } = useAuth();
   const navigate         = useNavigate();
   const { section }      = useParams();
-  const adminSections    = ['dashboard', 'products', 'add', 'orders', 'coupons', 'reviews', 'settings'];
+  const adminSections    = ['dashboard', 'products', 'add', 'orders', 'stores', 'coupons', 'reviews', 'settings'];
   const savedSection     = localStorage.getItem('ic_admin_last_section');
   const initialSection   = adminSections.includes(section) ? section : adminSections.includes(savedSection) ? savedSection : 'dashboard';
 
@@ -744,6 +745,7 @@ return (
             { id:'products',  icon:'⬢', label:'Products',   badge: products.length },
             { id:'add',       icon:'⊕', label:'Add Product' },
             { id:'orders',    icon:'◎', label:'Orders',      badge: pending, warn: true },
+            { id:'stores',    icon:'▦', label:'Stores' },
             { id:'coupons',   icon:'🏷', label:'Promo Codes' },
             { id:'reviews',   icon:'★', label:'Reviews' },
             { id:'settings',  icon:'⚙', label:'Settings' },
@@ -908,6 +910,7 @@ return (
         {/* ─── ORDERS ─────────────────────────────────────────── */}
         {tab === 'orders' && <AdminOrdersPanel {...adminPanelProps.orders} />}
 
+        {tab === 'stores' && <StoresPanel themeMode={themeMode} flash={flash} />}
         {tab === 'coupons' && <CouponsPanel darkMode={themeMode === 'dark'} flash={flash} />}
         {tab === 'reviews' && <ReviewsPanel darkMode={themeMode === 'dark'} flash={flash} />}
 

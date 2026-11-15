@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema(
   {
     name:        { type: String, required: [true, 'Product name is required'], trim: true, maxlength: 200 },
+    // Seller store; null = the main IndusCart store run by the main admin.
+    store:       { type: mongoose.Schema.Types.ObjectId, ref: 'Store', default: null, index: true },
     description: { type: String, default: '', trim: true, maxlength: 5000 },
     category:    { type: String, required: [true, 'Category is required'], trim: true, maxlength: 100 },
     subcategory: { type: String, default: '', trim: true },

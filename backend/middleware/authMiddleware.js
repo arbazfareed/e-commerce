@@ -1,5 +1,6 @@
 const jwt  = require('jsonwebtoken');
 const User = require('../models/User');
+const Store = require('../models/Store');
 
 // Must be logged in
 const protect = async (req, res, next) => {
@@ -26,6 +27,25 @@ const admin = (req, res, next) => {
   res.status(403).json({ message: 'Not authorized as admin' });
 };
 
+// Main admin OR an active store owner (sub-admin). Sets req.storeScope:
+//   null       → main admin, may work on every store
+//   ObjectId   → sub-admin, limited to this one store
+const staff = async (req, res, next) => {
+  if (req.user?.isAdmin) { req.storeScope = null; return next(); }
+  if (req.user?.isSubAdmin && req.user.store) {
+    try {
+      const store = await Store.findById(req.user.store).select('name isActive').lean();
+      if (!store || !store.isActive) return res.status(403).json({ message: 'Your store is switched off. Contact the IndusCart admin.' });
+      req.store = store;
+      req.storeScope = store._id;
+      return next();
+    } catch {
+      return res.status(500).json({ message: 'Store access could not be checked. Please try again.' });
+    }
+  }
+  return res.status(403).json({ message: 'Not authorized for store management' });
+};
+
 // Attach a valid user when a bearer token is present, but keep public routes public.
 // This lets catalog routes expose hidden records only to authenticated admins.
 const optionalProtect = async (req, res, next) => {
@@ -41,4 +61,4 @@ const optionalProtect = async (req, res, next) => {
   return next();
 };
 
-module.exports = { protect, admin, optionalProtect };
+module.exports = { protect, admin, staff, optionalProtect };
