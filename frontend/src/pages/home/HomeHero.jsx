@@ -1,193 +1,96 @@
+import { Link } from 'react-router-dom';
+import { assetUrl } from '../../utils/axiosConfig';
+
+const Check = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" /></svg>
+);
+
+// Home hero: honest promises from the store settings and real newest products.
 export default function HomeHero({
   BRAND_NAME,
   chooseMarket,
+  featured = [],
+  getDisplayPrice,
   internationalEnabled,
-  isDarkTheme,
   isLocal,
   marketSettingsLoaded,
-  search,
-  setSearch,
+  storePromises = {},
   styles
 }) {
+  const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const promises = [
+    storePromises.freeShippingThreshold > 0 && `Free delivery over Rs ${Number(storePromises.freeShippingThreshold).toLocaleString('en-PK')}`,
+    storePromises.codEnabled !== false && 'Cash on delivery',
+    'Secure checkout',
+  ].filter(Boolean);
+
   return (
-    <section className="hero" style={styles.hero}>
+    <section className="hero lux-hero" style={styles.hero}>
       <div className="hero-image-slider" aria-hidden="true">
         <div className="hero-image-track">
-          <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="Pure Mountain Honey" loading="eager" /></div>
-          <div className="hero-image-slide"><img src="/botanical-ritual-cover.jpg" alt="Botanical Facial Oils & Saffron" loading="lazy" /></div>
-          <div className="hero-image-slide"><img src="/mountain-honey-cover.jpg" alt="Wild Mountain Raw Honeycomb" loading="lazy" /></div>
-          <div className="hero-image-slide"><img src="/artisan-sanctuary-cover.jpg" alt="Artisan Botanical Soaps & Hydrosols" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/hero-cover.jpg" alt="" loading="eager" /></div>
+          <div className="hero-image-slide"><img src="/botanical-ritual-cover.jpg" alt="" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/mountain-honey-cover.jpg" alt="" loading="lazy" /></div>
+          <div className="hero-image-slide"><img src="/artisan-sanctuary-cover.jpg" alt="" loading="lazy" /></div>
         </div>
       </div>
-      <div style={styles.heroGlow} />
-      <div className="hero-content" style={styles.heroContent}>
-        <div className="hero-copy" style={styles.heroCopy}>
-          <div style={styles.eyebrow}>🇵🇰 {BRAND_NAME} • Luxury skincare & home rituals</div>
-          <h1 style={styles.title}>
+      <div className="lux-hero-veil" aria-hidden="true" />
+
+      <div className="lux-hero-inner">
+        <div className="lux-hero-copy">
+          <p className="lux-eyebrow"><span className="lux-eyebrow-dot" aria-hidden="true" />{BRAND_NAME} · Skincare, home &amp; handmade finds</p>
+          <h1 className="lux-title">
             Rituals for
-            <br />
-            <span style={styles.titleAccent}>softer, richer living.</span>
+            <span className="lux-title-accent"> softer, richer living.</span>
           </h1>
-          <p style={styles.subtitle}>
-            Thoughtful finds for a slower, richer life—discover refined skincare, body rituals, and elevated home essentials crafted to calm the senses and enrich everyday routines.
+          <p className="lux-subtitle">
+            Refined skincare, body rituals and home essentials from makers across Pakistan, chosen to calm the senses and last.
           </p>
-          <div className="hero-actions" style={styles.heroActions}>
-            <button
-              type="button"
-              style={styles.exploreBtn}
-              onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Shop the collection <span aria-hidden="true">↓</span>
+          <div className="lux-actions hero-actions">
+            <button type="button" className="lux-btn-gold" onClick={() => scrollTo('shop-collection')}>
+              Shop the collection <span aria-hidden="true">→</span>
             </button>
-            <span style={styles.deliveryNote}>
-              • Free shipping over PKR 10,000 • Trusted checkout
-            </span>
+            <button type="button" className="lux-btn-ghost" onClick={() => scrollTo('shop-categories')}>
+              Browse categories
+            </button>
           </div>
-          <div className="hero-stats" style={styles.heroStats}>
-            <span className="hero-stat" style={styles.heroStat}><strong>★ 4.9/5</strong> customer rating</span>
-            <span className="hero-stat" style={styles.heroStat}><strong>24h</strong> dispatch support</span>
-            <span className="hero-stat" style={styles.heroStat}><strong>2k+</strong> happy shoppers</span>
-          </div>
-        </div>
-    
-        <div className="hero-shell" style={styles.heroShell}>
-          <div className="hero-glass-interactive" style={styles.heroGlassCard}>
-            <div style={styles.heroGlassHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={styles.heroGlyph}>✦</span>
-                <strong style={styles.heroGlassTitle}>Ritual curation</strong>
-              </div>
-              <span style={styles.heroGlassBadge}>
-                Active Batch 04
-              </span>
-            </div>
+          <ul className="lux-promises" aria-label="Store promises">
+            {promises.map(text => <li key={text}><Check />{text}</li>)}
+          </ul>
 
-            {/* Featured Visual Showcase with smooth 3D animated styling */}
-            <div style={styles.heroGlassMediaWrap}>
-              <img
-                src="/curation-neroli-saffron.png"
-                alt="Cold-Pressed Neroli & Saffron"
-                className="curation-media-img"
-                style={{
-                  width: '100%',
-                  height: '130px',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
-            </div>
-
-            <div style={styles.heroGlassGrid}>
-              <div style={styles.heroGlassMetric}>
-                <span style={styles.heroMetricLabel}>Top ritual</span>
-                <strong style={styles.heroMetricValue}>Glow care</strong>
-                <span style={styles.heroMetricSub}>★ 4.97 • 1,280 reviews</span>
-              </div>
-              <div style={styles.heroGlassMetric}>
-                <span style={styles.heroMetricLabel}>Repeat buyers</span>
-                <strong style={styles.heroMetricValue}>63%</strong>
-                <span style={styles.heroMetricSub}>Exceptional loyalty</span>
-              </div>
-              <div style={styles.heroGlassMetric}>
-                <span style={styles.heroMetricLabel}>Avg. order</span>
-                <strong style={styles.heroMetricValue}>Rs 8,400</strong>
-                <span style={styles.heroMetricSub}>Complimentary sampler</span>
-              </div>
-              <div style={styles.heroGlassMetric}>
-                <span style={styles.heroMetricLabel}>Loyalty</span>
-                <strong style={styles.heroMetricValue}>A+</strong>
-                <span style={styles.heroMetricSub}>Organic Harvested</span>
-              </div>
-            </div>
-
-            {/* Card Footer */}
-            <div style={styles.heroGlassFooter}>
-              <span style={styles.heroGlassFooterText}>
-                <span style={styles.heroGlassFooterDot} />
-                Handcrafted in small batches
-              </span>
-              <button
-                type="button"
-                className="hero-glass-explore-btn"
-                onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
-                style={styles.heroGlassExploreBtn}
-                onMouseEnter={(e) => e.currentTarget.style.color = isDarkTheme ? '#fef08a' : '#78350f'}
-                onMouseLeave={(e) => e.currentTarget.style.color = isDarkTheme ? '#fcd34d' : '#92400e'}
-              >
-                Explore this ritual →
-              </button>
-            </div>
+          <div className="lux-market market-toggle" role="group" aria-label="Show prices in">
+            <span className="lux-market-label">Prices in</span>
+            <button type="button" aria-pressed={isLocal} className={isLocal ? 'is-on' : ''} onClick={() => chooseMarket('local')}>Pakistan (PKR)</button>
+            {marketSettingsLoaded && internationalEnabled && (
+              <button type="button" aria-pressed={!isLocal} className={!isLocal ? 'is-on' : ''} onClick={() => chooseMarket('global')}>International (USD)</button>
+            )}
           </div>
         </div>
-      </div>
-    
-      <div className="hero-tools" style={styles.heroTools}>
-        {/* Market Toggle */}
-        <div className="market-toggle" style={styles.marketToggle}>
-          <button
-            type="button"
-            aria-pressed={isLocal}
-            onClick={() => chooseMarket('local')}
-            style={{
-              ...styles.marketBtn,
-              gridColumn: internationalEnabled ? undefined : '1 / -1',
-              ...(isLocal ? styles.marketBtnActive : styles.marketBtnInactive)
-            }}
-          >
-            🇵🇰 Pakistan (PKR)
-          </button>
-          {marketSettingsLoaded && internationalEnabled && <button
-            type="button"
-            aria-pressed={!isLocal}
-            onClick={() => chooseMarket('global')}
-            style={{
-              ...styles.marketBtn,
-              ...(!isLocal ? styles.marketBtnActive : styles.marketBtnInactive)
-            }}
-          >
-            🌍 International (USD)
-          </button>}
-        </div>
-    
-        {/* Search Bar */}
-        <div className="search-wrapper" style={styles.searchWrapper}>
-          <span style={styles.searchIcon} aria-hidden="true">⌕</span>
-          <input
-            id="product-search"
-            name="productSearch"
-            type="text"
-            className="search-input"
-            aria-label="Search products"
-            style={styles.searchInput}
-            placeholder="Search products, crafts, categories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => document.getElementById('shop-collection')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{
-              position: 'absolute',
-              right: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(255, 255, 255, 0.10)',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              color: '#ffffff',
-              padding: '6px 16px',
-              borderRadius: '999px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              letterSpacing: '0.3px',
-              transition: 'background 0.2s ease',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)'}
-          >
-            Filter
-          </button>
-        </div>
+
+        <aside className="lux-showcase" aria-label="New in the shop">
+          <div className="lux-showcase-head">
+            <span>New in the shop</span>
+            <button type="button" onClick={() => scrollTo('shop-collection')}>View all →</button>
+          </div>
+          {featured.length > 0 ? (
+            <div className="lux-showcase-grid">
+              {featured.map((product, index) => (
+                <Link key={product._id} to={`/products/${product._id}`} className={`lux-showcase-card${index === 0 ? ' is-main' : ''}`}>
+                  <img src={assetUrl(product.images[0])} alt="" loading={index === 0 ? 'eager' : 'lazy'} />
+                  <span className="lux-showcase-meta">
+                    <strong>{product.name}</strong>
+                    <span>{getDisplayPrice?.(product)}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="lux-showcase-empty">
+              <img src="/curation-neroli-saffron.png" alt="" />
+              <p>Handpicked pieces, added every week.</p>
+            </div>
+          )}
+        </aside>
       </div>
     </section>
   );

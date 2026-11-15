@@ -56,7 +56,8 @@ export default function HomeCategoryBar({
   validSub
 }) {
   return (
-    <div className="cat-bar" style={styles.catBar}>
+    <div id="shop-categories" className="cat-bar lux-cat-bar" style={styles.catBar}>
+      <div className="lux-cat-head"><span className="lux-kicker">Shop by category</span></div>
       <div className="cat-container" style={styles.catContainer}>
         {categories.map(cat => {
           const meta = getCategoryMeta(cat);
@@ -73,7 +74,6 @@ export default function HomeCategoryBar({
                 ...(isActive ? styles.catBtnActive : {})
               }}
             >
-              <span className="cat-icon" aria-hidden="true" style={{ fontSize: '15px', lineHeight: 1 }}>{meta.icon}</span>
               <span>{meta.label}</span>
             </button>
           );

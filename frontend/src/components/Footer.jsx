@@ -19,158 +19,42 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="global-site-footer" style={{
-        backgroundColor: '#061612',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        color: '#ffffff',
-        padding: '38px 24px 34px',
-        position: 'relative',
-        zIndex: 10,
-        fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)',
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '24px 36px',
-        }}>
-          {/* Left: Brand + Separator + Copyright */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px 14px',
-          }}>
-            <Link to="/" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              lineHeight: 1.05,
-              textDecoration: 'none',
-              color: '#ffffff',
-              userSelect: 'none',
-            }}>
-              <span style={{
-                fontSize: '20px',
-                fontWeight: 800,
-                letterSpacing: '-0.5px',
-                color: '#ffffff',
-              }}>
-                IndusCart
-              </span>
-              <span style={{
-                fontSize: '20px',
-                fontWeight: 800,
-                letterSpacing: '-0.5px',
-                color: '#ffffff',
-              }}>
-                Valley
-              </span>
+      <footer className="global-site-footer lux-footer">
+        <div className="lux-footer-inner">
+          <div className="lux-footer-brand">
+            <Link to="/" className="lux-footer-logo" aria-label="IndusCart Valley home">
+              <span>IndusCart</span>
+              <span className="lux-footer-logo-accent">Valley</span>
             </Link>
-
-            <span style={{
-              color: 'rgba(255, 255, 255, 0.35)',
-              fontSize: '14px',
-              userSelect: 'none',
-            }} aria-hidden="true">•</span>
-
-            <span style={{
-              color: 'rgba(255, 255, 255, 0.70)',
-              fontSize: '13px',
-              lineHeight: 1.5,
-              fontWeight: 400,
-              maxWidth: '380px',
-            }}>
-              © 2026 IndusCart Valley. Mindfully crafted rituals. All rights reserved.
-            </span>
+            <p className="lux-footer-tagline">Skincare, home rituals and handmade finds from makers across Pakistan.</p>
+            <a className="lux-footer-mail" href="mailto:induscartvalley@gmail.com">induscartvalley@gmail.com</a>
           </div>
 
-          {/* Right: Navigation Links in 2 structured rows */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-          }}>
-            {/* Top row */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '18px 26px',
-            }}>
-              <button
-                type="button"
-                onClick={handleEditorialClick}
-                style={linkBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Editorial Rituals
-              </button>
+          <nav className="lux-footer-col" aria-label="Shop">
+            <h2>Shop</h2>
+            <button type="button" onClick={handleEditorialClick}>Editorial Rituals</button>
+            <Link to="/wishlist">Wishlist</Link>
+            <Link to="/cart">Your bag</Link>
+          </nav>
 
-              <button
-                type="button"
-                onClick={() => setActiveModal('sustainability')}
-                style={linkBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Sustainability & Sourcing
-              </button>
+          <nav className="lux-footer-col" aria-label="Help">
+            <h2>Help</h2>
+            <button type="button" onClick={() => setActiveModal('shipping')}>Shipping & Returns</button>
+            <Link to="/orders">Track an order</Link>
+            <Link to="/support">Contact Concierge</Link>
+          </nav>
 
-              <button
-                type="button"
-                onClick={() => setActiveModal('shipping')}
-                style={linkBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Shipping & Returns
-              </button>
+          <nav className="lux-footer-col" aria-label="About">
+            <h2>About</h2>
+            <button type="button" onClick={() => setActiveModal('sustainability')}>Sustainability & Sourcing</button>
+            <button type="button" onClick={() => setActiveModal('terms')}>Terms of Service</button>
+            <button type="button" onClick={() => setActiveModal('privacy')}>Privacy Policy</button>
+          </nav>
+        </div>
 
-              <Link
-                to="/support"
-                style={{
-                  ...linkBtnStyle,
-                  textDecoration: 'none',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Contact Concierge
-              </Link>
-            </div>
-
-            {/* Bottom row */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '18px 26px',
-            }}>
-              <button
-                type="button"
-                onClick={() => setActiveModal('terms')}
-                style={linkBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Terms of Service
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveModal('privacy')}
-                style={linkBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.82)'}
-              >
-                Privacy Policy
-              </button>
-            </div>
-          </div>
+        <div className="lux-footer-bottom">
+          <span>© 2026 IndusCart Valley. Mindfully crafted rituals. All rights reserved.</span>
+          <span className="lux-footer-pay">Cash on delivery · Secure checkout</span>
         </div>
       </footer>
 
@@ -318,17 +202,3 @@ export default function Footer() {
     </>
   );
 }
-
-const linkBtnStyle = {
-  background: 'none',
-  border: 'none',
-  padding: 0,
-  margin: 0,
-  color: 'rgba(255, 255, 255, 0.82)',
-  fontSize: '13px',
-  fontWeight: 600,
-  letterSpacing: '0.2px',
-  cursor: 'pointer',
-  transition: 'color 0.2s ease',
-  fontFamily: 'inherit',
-};

@@ -151,7 +151,7 @@ export default function ProductDetailPage() {
           <div style={{ ...S.status, color: outOfStock ? '#dc2626' : product.stock < 5 ? '#c2410c' : '#047857', background: outOfStock ? '#fef2f2' : product.stock < 5 ? '#fff7ed' : '#ecfdf5' }}>
             {outOfStock ? '✕ Out of stock' : product.stock < 5 ? `⚠ Only ${product.stock} left` : '✓ In stock and ready to ship'}
           </div>
-          {restricted && <p style={S.notice}>🇵🇰 This product is available to customers shopping from Pakistan.</p>}
+          {restricted && <p style={S.notice}>This product is available to customers shopping from Pakistan.</p>}
           <p style={S.description}>{product.description || 'A carefully selected product from our collection.'}</p>
           {!outOfStock && !restricted && <div className="product-purchase" style={S.purchase}>
             <label htmlFor="product-quantity" style={S.label}>Quantity</label>
@@ -159,6 +159,11 @@ export default function ProductDetailPage() {
             <button type="button" onClick={handleAdd} style={S.addButton}>{added ? '✓ Added to cart' : 'Add to cart'}</button>
             {added && <button type="button" onClick={() => navigate('/cart')} style={S.cartLink}>View cart →</button>}
           </div>}
+          <ul className="lux-trust" aria-label="Shopping with IndusCart">
+            <li><strong>Real support</strong><span>Message our concierge anytime</span></li>
+            <li><strong>Tracked delivery</strong><span>Follow every step of your order</span></li>
+            <li><strong>Secure checkout</strong><span>Your details stay private</span></li>
+          </ul>
         </div>
       </section>
       <section className="customer-reviews-section" aria-labelledby="customer-reviews-heading" style={{ ...S.related, marginTop:34, padding:24, background:'var(--surface, #fff)', border:'1px solid #e2e8f0', borderRadius:18 }}>

@@ -39,10 +39,10 @@ describe('IndusCart UI and navigation smoke tests', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/handmade pottery set/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/handmade pottery set/i)[0]).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/thoughtful finds/i)).toBeInTheDocument();
+    expect(screen.getByText(/softer, richer living/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /shop the collection/i })).toBeInTheDocument();
     const collectionControls = screen.getByRole('group', { name:/sort and refine products/i });
     expect(collectionControls).toContainElement(screen.getByRole('combobox', { name:/sort products/i }));

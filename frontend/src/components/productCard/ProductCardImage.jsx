@@ -106,7 +106,7 @@ export default function ProductCardImage({
       {/* Badges */}
       <div style={styles.badges}>
         {discountPercent > 0 && <span style={styles.badgeDiscount}>SAVE {discountPercent}%</span>}
-        {promotionCountdown && <span className="product-discount-countdown" title={`Promotion ends ${p.discountEndDate}`} aria-label={`Promotion ends in ${promotionCountdown.replace('ENDS IN ', '')}`}>⏳ {promotionCountdown}</span>}
+        {promotionCountdown && <span className="product-discount-countdown" title={`Promotion ends ${p.discountEndDate}`} aria-label={`Promotion ends in ${promotionCountdown.replace('ENDS IN ', '')}`}>{promotionCountdown}</span>}
         {hasUpcomingDiscount && <span className="product-discount-upcoming" style={styles.badgeDiscountUpcoming} title={`Promotion starts ${p.discountStartDate}`}>{configuredDiscountPercent}% OFF · {upcomingDateLabel}</span>}
         {p.isLocal && !isRestricted && (
           <span style={styles.badgeLocal}>🇵🇰 Local</span>
@@ -115,7 +115,7 @@ export default function ProductCardImage({
           <span style={styles.badgeRestricted}>🇵🇰 Pakistan Only</span>
         )}
         {!isOut && isLow && (
-          <span className="product-scarcity-badge" style={styles.badgeLowStock} aria-label={`Low stock: only ${p.stock} left`}>⚠️ Only {p.stock} left</span>
+          <span className="product-scarcity-badge" style={styles.badgeLowStock} aria-label={`Low stock: only ${p.stock} left`}>Only {p.stock} left</span>
         )}
         {isOut && (
           <span style={styles.badgeSoldOut}>✕ Sold Out</span>
