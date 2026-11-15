@@ -1,4 +1,5 @@
 const SupportTicket = require('../models/SupportTicket');
+const emailService = require('../services/emailService');
 
 // Validate and clean ticket fields; returns { error } or { value }.
 const readTicket = (body = {}) => {
@@ -10,6 +11,27 @@ const readTicket = (body = {}) => {
   if (!/^\S+@\S+\.\S+$/.test(email)) return { error: 'Please enter a valid email address.' };
   if (message.length < 5) return { error: 'Please describe your question in a few more words.' };
   return { value: { name, email, message, subject: text(body.subject, 120) || 'General', orderId: text(body.orderId, 40) } };
+};
+
+// Let the customer know an answer is waiting. Never blocks saving the reply.
+const sendReplyEmail = async (ticket) => {
+  if (!emailService.isConfigured() || !ticket?.email) return false;
+  const { escapeHtml, layout, getFrontendUrl } = emailService;
+  const link = ticket.user ? `${getFrontendUrl()}/support` : '';
+  try {
+    await emailService.sendEmail({
+      to: ticket.email,
+      subject: `Re: ${ticket.subject || 'Your IndusCart support request'}`,
+      text: `Hello ${ticket.name || 'there'},\n\n${ticket.adminReply}\n\nYour message:\n${ticket.message}\n${link ? `\nView your tickets: ${link}\n` : ''}`,
+      html: layout(`<p>Hello ${escapeHtml(ticket.name || 'there')},</p><p style="white-space:pre-wrap">${escapeHtml(ticket.adminReply)}</p>
+<p style="color:#64748b;border-left:3px solid #e2e8f0;padding-left:10px;white-space:pre-wrap">${escapeHtml(ticket.message)}</p>
+${link ? `<p><a href="${escapeHtml(link)}">View your support tickets</a></p>` : ''}`),
+    });
+    return true;
+  } catch (error) {
+    console.error('Support reply email failed:', error.code || 'EMAIL_ERROR', '-', error.message);
+    return false;
+  }
 };
 
 /* ── Create ticket (logged-in user) ─────────────────────────── */
@@ -103,6 +125,7 @@ exports.replyTicket = async (req, res) => {
       { new: true }
     );
     if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
+    await sendReplyEmail(ticket);
     res.json(ticket);
   } catch (err) {
     console.error('replyTicket:', err);
@@ -111,3 +134,4 @@ exports.replyTicket = async (req, res) => {
 };
 
 exports.readTicket = readTicket;
+exports.sendReplyEmail = sendReplyEmail;
