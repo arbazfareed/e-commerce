@@ -18,6 +18,7 @@ const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 const { ordersCounter } = require('../middleware/metrics');
 const { calcZoneShipping } = require('../utils/zoneShipping');
 const { calcOrderCharges } = require('../utils/orderCharges');
+const { describeThankYouCoupon } = require('../utils/thankYouCoupon');
 const { isValidPhone, normalizePhone } = require('../utils/phone');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
@@ -211,12 +212,18 @@ const placeOrder = async (req, res) => {
         return Order.findByIdAndUpdate(order._id, { courierDispatchStatus: 'failed' });
       });
     const trackPath = `/track/${order._id}?token=${trackingToken}`;
+    let nextOrderCoupon = null;
+    if (settings.thankYouCouponCode) {
+      try {
+        nextOrderCoupon = describeThankYouCoupon(await Coupon.findOne({ code: settings.thankYouCouponCode }).lean());
+      } catch (couponError) { console.error('Thank-you coupon lookup failed:', couponError.message); }
+    }
     const frontendUrl = getFrontendUrl();
     // The order is saved: an email problem must never reach the stock-restoring catch below.
     try {
       const emailOrder = { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null };
       await Promise.all([
-        sendOrderConfirmationEmail(emailOrder, { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' }),
+        sendOrderConfirmationEmail(emailOrder, { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '', nextOrderCoupon }),
         sendNewOrderAlert(emailOrder),
         lowStock.length ? sendLowStockAlert(lowStock) : null,
       ]);
@@ -225,7 +232,7 @@ const placeOrder = async (req, res) => {
     }
     const body = order.toObject();
     delete body.trackingTokenHash;
-    res.status(201).json({ ...body, trackingToken, trackPath });
+    res.status(201).json({ ...body, trackingToken, trackPath, nextOrderCoupon });
   } catch (e) {
     for (const item of reservedItems)
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
