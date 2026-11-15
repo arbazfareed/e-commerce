@@ -12,6 +12,7 @@ const { validateCouponForSubtotal } = require('../utils/couponPricing');
 const { normalizeShipmentTracking } = require('../utils/shipmentTracking');
 const { ordersCounter } = require('../middleware/metrics');
 const { calcZoneShipping } = require('../utils/zoneShipping');
+const { calcOrderCharges } = require('../utils/orderCharges');
 
 // ─── Zone-based shipping rates (mirrors priceUtils.js defaults) ───────────────
 // These are the server-side defaults. The frontend uses localStorage overrides;
@@ -127,15 +128,13 @@ const placeOrder = async (req, res) => {
     }
 
     // ✅ Zone-based shipping — correct for Multan→Karachi, Pakistan→Dubai, etc.
-    const { fee: shippingFee, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city, settings.zoneRates);
+    const { fee: shippingFeePKR, totalWeight, zone: shippingZone } = calcZoneShipping(enrichedItems, country, city, settings.zoneRates);
     const productTotal = enrichedItems.reduce((s, i) => s + i.price * i.quantity, 0);
-    let codFee = 0;
     const discountedProductTotal = Math.max(0, productTotal - couponDiscount);
-    if (paymentMethod === 'COD' && (!settings.codThreshold || discountedProductTotal < settings.codThreshold))
-      codFee = settings.codFeeMode === 'percentage'
-        ? Math.round(discountedProductTotal * Number(settings.codFee) / 100)
-        : Number(settings.codFee) || 0;
-    const totalPrice   = discountedProductTotal + shippingFee + codFee;
+    // Shipping and COD fees are configured in PKR; convert them for USD orders.
+    const { shippingFee, codFee, totalPrice } = calcOrderCharges({
+      subtotal: discountedProductTotal, currency, shippingFeePKR, paymentMethod, settings,
+    });
 
     if (coupon) {
       const today = new Date().toISOString().slice(0, 10);

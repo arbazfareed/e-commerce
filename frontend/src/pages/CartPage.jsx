@@ -77,14 +77,16 @@ export default function CartPage() {
   const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codSettings.codEnabled));
   const couponDiscount = appliedCoupon?.discountAmount || 0;
   const discountedSubtotal = Math.max(0, subTotal - couponDiscount);
-  const codWaived = codSettings.codThreshold > 0 && discountedSubtotal >= codSettings.codThreshold;
-  const codFeePKR = payment === 'COD' && !codWaived
+  // Same rules as backend/utils/orderCharges.js: the COD threshold and flat fee are in PKR.
+  const subtotalPKR = isPak ? discountedSubtotal : discountedSubtotal * USD_RATE;
+  const codWaived = codSettings.codThreshold > 0 && subtotalPKR >= codSettings.codThreshold;
+  const codPercent = Number(codSettings.codFee || 0) / 100;
+  const codFee = payment === 'COD' && !codWaived
     ? codSettings.codFeeMode === 'percentage'
-      ? Math.round(discountedSubtotal * (Number(codSettings.codFee || 0) / 100))
-      : Number(codSettings.codFee || 0)
+      ? (isPak ? Math.round(discountedSubtotal * codPercent) : parseFloat((discountedSubtotal * codPercent).toFixed(2)))
+      : (isPak ? Number(codSettings.codFee || 0) : parseFloat((Number(codSettings.codFee || 0) / USD_RATE).toFixed(2)))
     : 0;
-  const codFee = isPak ? codFeePKR : parseFloat((codFeePKR / USD_RATE).toFixed(2));
-  const grandTotal  = discountedSubtotal + shipFee + codFee;
+  const grandTotal  = isPak ? discountedSubtotal + shipFee + codFee : parseFloat((discountedSubtotal + shipFee + codFee).toFixed(2));
   const totalQty    = safeItems.reduce((a, i) => a + (i.quantity||1), 0);
 
   const validateCoupon = async code => {
