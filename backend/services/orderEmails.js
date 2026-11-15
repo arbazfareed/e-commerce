@@ -70,6 +70,17 @@ ${itemsTable(order)}${adminLink ? `<p><a href="${escapeHtml(adminLink)}">Open or
   });
 };
 
+// Tell the store when products are running out.
+const sendLowStockAlert = async (items) => {
+  const { escapeHtml, layout, notifyStore } = emailService;
+  const lines = items.map(item => `${item.name}: ${item.stock} left`);
+  return notifyStore({
+    subject: `Low stock: ${items.map(item => item.name).join(', ').slice(0, 120)}`,
+    text: `These products are running low:\n${lines.join('\n')}\n\nUpdate stock in admin → Products.`,
+    html: layout(`<p><strong>These products are running low:</strong></p><ul>${lines.map(line => `<li>${escapeHtml(line)}</li>`).join('')}</ul><p>Update stock in admin → Products.</p>`),
+  });
+};
+
 const STATUS_TEXT = {
   Processing: 'We are preparing your order.',
   Shipped: 'Your order is on its way.',
@@ -96,4 +107,4 @@ ${link ? `<p><a href="${escapeHtml(link)}">View your order</a></p>` : ''}`),
   }, 'Order status');
 };
 
-module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert, money };
+module.exports = { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert, sendLowStockAlert, money };

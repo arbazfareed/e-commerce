@@ -48,3 +48,11 @@ test('the store inbox gets a copy of every new order with phone and address', as
   assert.match(sent[0].subject, /New order #01234567/);
   assert.match(sent[0].text, /03001234567/);
 });
+
+test('low stock alert lists each product and how many are left', async () => {
+  const { sendLowStockAlert } = require('../services/orderEmails');
+  sent.length = 0;
+  await sendLowStockAlert([{ name: 'Rose soap', stock: 2 }]);
+  assert.equal(sent[0].to, 'store');
+  assert.match(sent[0].text, /Rose soap: 2 left/);
+});
