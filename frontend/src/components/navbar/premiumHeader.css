@@ -245,3 +245,142 @@
   :root[data-theme='dark'] .premium-header .ph-admin-label { color: #a7f3d0; }
 }
 :root[data-theme='dark'] .ph-promo { background: linear-gradient(90deg, #04241a, #073826 45%, #08402d); color: #cfe9da; }
+
+/* ───────────── Premium polish (v2) ───────────── */
+
+/* Promo strip: one message at a time, fading in, with small progress dots */
+.ph-promo { position: relative; overflow: hidden; gap: 10px; }
+.ph-promo::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .08) 45%, transparent 60%);
+  background-size: 250% 100%; animation: phShimmer 6s linear infinite;
+}
+.ph-promo-text { display: inline-block; animation: phFadeUp .45s ease-out; }
+.ph-promo-dots { display: inline-flex; gap: 4px; margin-left: 6px; }
+.ph-promo-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, .3); transition: background .3s, width .3s; }
+.ph-promo-dots i.is-on { width: 14px; border-radius: 999px; background: #f2c98a; }
+@keyframes phShimmer { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+@keyframes phFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Brand wordmark */
+.ph-brand-gold {
+  background: linear-gradient(120deg, #a8743a 0%, #d9ac63 45%, #b8843f 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent !important;
+}
+.ph-brand-tag {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 6px;
+  background: #0b5d43; color: #f6fff9 !important; font-size: 10px; font-weight: 800; letter-spacing: .08em; vertical-align: 2px;
+}
+
+@media (min-width: 901px) {
+  /* Thin emerald-to-gold line along the bottom edge */
+  nav.site-nav.premium-header { transition: height .25s ease, box-shadow .25s ease, background .25s ease; }
+  nav.site-nav.premium-header::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(11, 93, 67, .35) 25%, rgba(217, 172, 99, .55) 50%, rgba(11, 93, 67, .35) 75%, transparent);
+    opacity: .7;
+  }
+  nav.site-nav.premium-header.is-scrolled {
+    height: 62px !important;
+    background: rgba(255, 255, 255, .9) !important;
+    box-shadow: 0 14px 34px -14px rgba(15, 45, 32, .28) !important;
+  }
+  .premium-header .brandText { transition: font-size .25s ease; }
+  .premium-header.is-scrolled .brandText { font-size: 18px !important; }
+  .premium-header .navbar-brand-group svg, .premium-header .navbar-brand-group img { transition: transform .25s ease; }
+  .premium-header.is-scrolled .navbar-brand-group svg, .premium-header.is-scrolled .navbar-brand-group img { transform: scale(.92); }
+
+  /* Links: animated underline instead of a filled pill */
+  .premium-header .site-nav-link::after {
+    content: ''; position: absolute; left: 14px; right: 14px; bottom: 5px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, #0f7a58, #d9ac63);
+    transform: scaleX(0); transform-origin: center; transition: transform .22s ease;
+  }
+  .premium-header .site-nav-link:hover::after, .premium-header .site-nav-link.is-active::after { transform: scaleX(1); }
+  .premium-header .site-nav-link.is-active { background: transparent !important; }
+  .premium-header .site-nav-link:hover { background: transparent !important; }
+
+  /* Search: keyboard hint and a softer glow on focus */
+  .premium-header .navbar-search-form { position: relative; }
+  .premium-header .ph-kbd {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px;
+    border: 1px solid #d5e3db; border-bottom-width: 2px; border-radius: 6px; background: #fff; color: #6b8579;
+    font: 700 11px ui-monospace, Menlo, monospace;
+  }
+  .premium-header .navbar-search-form:focus-within .ph-kbd { opacity: 0; }
+  .premium-header .navbar-search-form:focus-within { box-shadow: 0 0 0 4px rgba(16, 185, 129, .12), 0 10px 24px -14px rgba(15, 122, 88, .55) !important; }
+
+  /* Cart badge pops in */
+  .premium-header .ph-badge { animation: phPop .3s ease-out; box-shadow: 0 4px 10px -3px rgba(221, 122, 44, .7); }
+  @keyframes phPop { 0% { transform: scale(.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+  /* Register: emerald with a gold hairline and a light sweep on hover */
+  .premium-header .ph-register { position: relative; overflow: hidden; border: 1px solid rgba(217, 172, 99, .55); }
+  .premium-header .ph-register span { position: relative; z-index: 1; }
+  .premium-header .ph-register::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent);
+    transform: skewX(-20deg); transition: left .55s ease;
+  }
+  .premium-header .ph-register:hover::before { left: 120%; }
+
+  /* Account avatar with a gold ring */
+  .premium-header .ph-avatar { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #d9ac63; }
+}
+
+/* Category quick links under the header */
+.ph-categories { display: none; }
+@media (min-width: 901px) {
+  .ph-categories {
+    display: block; background: linear-gradient(180deg, #f7fbf8, #f2f8f4);
+    border-bottom: 1px solid rgba(11, 93, 67, .08);
+  }
+  .ph-categories-inner {
+    display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none;
+    padding: 8px clamp(16px, 3vw, 40px); max-width: 100%; box-sizing: border-box;
+  }
+  .ph-categories-inner::-webkit-scrollbar { display: none; }
+  .ph-categories a {
+    flex-shrink: 0; padding: 6px 14px; border-radius: 999px; border: 1px solid transparent;
+    color: #3b5248; font: 600 13px 'DM Sans', 'Segoe UI', sans-serif; text-decoration: none; white-space: nowrap;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .ph-categories a:hover { background: #fff; border-color: #d5e8dd; color: #0b5d43; }
+  .ph-categories a.is-active { background: #0b5d43; color: #fff; border-color: #0b5d43; }
+  .ph-categories a:focus-visible { outline: 2px solid #16845d; outline-offset: 2px; }
+}
+
+/* Dark theme for the polish */
+:root[data-theme='dark'] .ph-brand-tag { background: #1f6b4f; }
+@media (min-width: 901px) {
+  :root[data-theme='dark'] nav.site-nav.premium-header.is-scrolled { background: rgba(10, 22, 17, .92) !important; box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .7) !important; }
+  :root[data-theme='dark'] .premium-header .ph-kbd { background: #0f1d16; border-color: #2c4337; color: #8fb3a1; }
+  :root[data-theme='dark'] .premium-header .ph-avatar { box-shadow: 0 0 0 2px #0a1611, 0 0 0 3.5px #c79a4e; }
+  :root[data-theme='dark'] .ph-categories { background: linear-gradient(180deg, #0c1913, #0a1611); border-color: rgba(110, 231, 183, .08); }
+  :root[data-theme='dark'] .ph-categories a { color: #b9cfc2; }
+  :root[data-theme='dark'] .ph-categories a:hover { background: #13231b; border-color: #2c4337; color: #a7f3d0; }
+  :root[data-theme='dark'] .ph-categories a.is-active { background: #1f6b4f; border-color: #1f6b4f; color: #fff; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-promo::after, .ph-promo-text, .premium-header .ph-badge { animation: none !important; }
+  .premium-header .ph-register::before { display: none; }
+}
+@media (min-width: 901px) {
+  :root[data-theme='dark'] .premium-header .site-nav-links .site-nav-link,
+  :root[data-theme='dark'] .premium-header .site-nav-links .site-nav-link.is-active,
+  :root[data-theme='dark'] .premium-header .site-nav-links .site-nav-link:hover { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+}
+:root[data-theme='dark'] .site-nav .brandText .ph-brand-gold,
+.site-nav .brandText .ph-brand-gold {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(120deg, #a8743a 0%, #d9ac63 45%, #b8843f 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+:root[data-theme='dark'] .site-nav .brandText .ph-brand-gold { background-image: linear-gradient(120deg, #d4a45c 0%, #f0cf8d 45%, #d1a25a 100%); }
+/* Shoppers see only a small shield for the store tools entry. */
+@media (min-width: 901px) {
+  .premium-header .ph-admin-label { display: none; }
+  .premium-header .ph-admin-entry { width: 38px !important; height: 38px !important; padding: 0 !important; justify-content: center; }
+}

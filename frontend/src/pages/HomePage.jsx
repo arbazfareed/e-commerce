@@ -39,7 +39,8 @@ export default function HomePage() {
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [activeCat, setActiveCat] = useState('all');
+  // ?category=… (from the header's category links) opens that category.
+  const [activeCat, setActiveCat] = useState(() => searchParams.get('category') || 'all');
   const [activeSub, setActiveSub] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [minPrice, setMinPrice] = useState('');
@@ -65,6 +66,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setSearch(searchParams.get('search') || '');
+    if (searchParams.get('category')) setActiveCat(searchParams.get('category'));
   }, [searchParams]);
 
   useEffect(() => {
