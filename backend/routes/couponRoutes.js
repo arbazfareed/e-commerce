@@ -1,6 +1,8 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
+const { validateObjectIdParam } = require('../middleware/validateObjectId');
+router.param('id', validateObjectIdParam('Coupon'));
 const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
 const { listCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon } = require('../controllers/couponController');
 

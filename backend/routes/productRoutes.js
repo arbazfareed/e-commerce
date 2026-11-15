@@ -1,5 +1,7 @@
 const express = require('express');
 const router  = express.Router();
+const { validateObjectIdParam } = require('../middleware/validateObjectId');
+router.param('id', validateObjectIdParam('Product'));
 const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');

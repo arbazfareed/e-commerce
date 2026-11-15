@@ -87,7 +87,10 @@ const placeOrder = async (req, res) => {
     const enrichedItems = [];
 
     for (const item of products) {
-      const db = await Product.findById(item.product || item._id);
+      const productId = item?.product || item?._id;
+      if (!mongoose.isValidObjectId(productId))
+        return res.status(400).json({ message: 'Your cart contains an item that is no longer available.' });
+      const db = await Product.findById(productId);
       if (!db) return res.status(404).json({ message: `Product not found: ${item.name}` });
       if (db.isVisible === false)
         return res.status(400).json({ message: `"${db.name}" is no longer available.` });
