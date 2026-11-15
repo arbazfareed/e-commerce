@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import API from '../utils/axiosConfig';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function PasswordResetPage() {
+  usePageMeta('Reset password');
   const { token = '' } = useParams();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

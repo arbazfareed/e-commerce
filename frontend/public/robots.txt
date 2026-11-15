@@ -7,4 +7,4 @@ Disallow: /account
 Disallow: /track/
 Disallow: /reset-password/
 
-Sitemap: https://e-commerce-backend-afjdevops.vercel.app/sitemap.xml
+Sitemap: https://e-commerce-coral-eight-95.vercel.app/sitemap.xml

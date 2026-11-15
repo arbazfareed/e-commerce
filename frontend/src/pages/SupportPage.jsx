@@ -8,12 +8,14 @@ import AdminTicketCard from './support/AdminTicketCard';
 import MyTickets from './support/MyTickets';
 import { FAQS } from './support/supportConfig';
 import { S } from './support/supportStyles';
+import usePageMeta from '../hooks/usePageMeta';
 
 
 /* ═══════════════════════════════════════════════════════════════
    CUSTOMER SUPPORT PAGE  (default export)
    ═══════════════════════════════════════════════════════════════ */
 export default function SupportPage() {
+  usePageMeta('Help & support', 'Questions about an order, delivery or returns? Contact the IndusCart Valley team.');
   const { user }  = useAuth();
   const isAdmin   = user?.isAdmin;
 

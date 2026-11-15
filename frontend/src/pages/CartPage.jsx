@@ -11,6 +11,7 @@ import OrderConfirmation from './cart/OrderConfirmation';
 import EmptyCart from './cart/EmptyCart';
 import { getDeliveryCountries } from '../utils/countries';
 import { isValidPhone } from '../utils/phone';
+import usePageMeta from '../hooks/usePageMeta';
 
 
 const PAYMENTS = [
@@ -22,6 +23,7 @@ const PAYMENTS = [
 ];
 
 export default function CartPage() {
+  usePageMeta('Your bag');
   // useCart always returns safe defaults (never undefined)
   const { items = [], removeFromCart, updateQty, clearCart } = useCart();
   const { user }   = useAuth();

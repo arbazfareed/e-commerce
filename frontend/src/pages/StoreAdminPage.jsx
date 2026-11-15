@@ -6,6 +6,7 @@ import { formatPKR } from '../utils/priceUtils';
 import BusinessInsightsPanel from './admin/dashboard/BusinessInsightsPanel';
 import StoreProductForm from './store/StoreProductForm';
 import './store/storeAdmin.css';
+import usePageMeta from '../hooks/usePageMeta';
 
 const TABS = [
   ['overview', 'Overview'],
@@ -17,6 +18,7 @@ const TABS = [
 // Panel for a store owner (sub-admin). Everything here is limited to their own store
 // by the server; this page never calls main-admin endpoints.
 export default function StoreAdminPage() {
+  usePageMeta('My store');
   const { user, updateUser } = useAuth();
   const { section } = useParams();
   const navigate = useNavigate();

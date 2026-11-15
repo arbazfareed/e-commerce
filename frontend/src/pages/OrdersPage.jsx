@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR } from '../utils/priceUtils';
 import ShipmentTrackingCard from '../components/ShipmentTrackingCard';
+import usePageMeta from '../hooks/usePageMeta';
 
 const STATUS_CFG = {
   Pending:    { lightColor:'#c2410c', lightBg:'#fff7ed', darkColor:'#ffd7a8', darkBg:'rgba(125, 69, 29, 0.48)', dot:'#f97316', icon:'⏳' },
@@ -24,6 +25,7 @@ const StatusBadge = ({ status, isDark }) => {
 };
 
 export default function OrdersPage() {
+  usePageMeta('My orders');
   const [orders,  setOrders]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');

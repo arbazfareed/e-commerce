@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/axiosConfig';
 import BrandMark from '../components/BrandMark';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function LoginPage({ adminOnly = false }) {
+  usePageMeta(adminOnly ? 'Admin sign in' : 'Sign in');
   const { login }  = useAuth();
   const navigate   = useNavigate();
   const [email,    setEmail]    = useState('');

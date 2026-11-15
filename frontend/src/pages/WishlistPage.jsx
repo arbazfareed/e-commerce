@@ -3,8 +3,10 @@ import { useCart } from '../context/CartContext';
 import { assetUrl } from '../utils/axiosConfig';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
 import { useAuth } from '../context/AuthContext';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function WishlistPage() {
+  usePageMeta('Wishlist');
   const { wishlist, removeFromWishlist, addToCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();

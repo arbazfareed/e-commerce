@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import API from '../utils/axiosConfig';
+import usePageMeta from '../hooks/usePageMeta';
 
 const money = (amount, currency) => new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'en-PK', {
   style: 'currency', currency, maximumFractionDigits: currency === 'USD' ? 2 : 0,
 }).format(Number(amount || 0));
 
 export default function InvoicePage() {
+  usePageMeta('Invoice');
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');

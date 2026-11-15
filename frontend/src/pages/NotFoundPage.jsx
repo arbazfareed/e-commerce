@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function NotFoundPage() {
+  usePageMeta('Page not found');
   return (
     <main className="responsive-page" style={{ maxWidth: 720, margin: '10vh auto', padding: 24, textAlign: 'center' }}>
       <p style={{ fontSize: 14, fontWeight: 800, color: '#059669' }}>404 · PAGE NOT FOUND</p>

@@ -26,6 +26,7 @@ import AdminOrdersPanel from './admin/AdminOrdersPanel';
 import AdminSettingsPanel from './admin/AdminSettingsPanel';
 import AdminSupportPanel from './admin/AdminSupportPanel';
 import { changeOwnPassword, createProduct, deleteProduct, getAdminData, getApiErrorMessage, getSalesAnalytics, getStoreSettings, getSupportTickets, recordManualCashSale, replyToSupportTicket, resetCustomerPassword, saveStoreSettings as persistStoreSettings, updateOrderStatus, updateProduct, updateSupportTicketStatus } from './admin/adminApi';
+import usePageMeta from '../hooks/usePageMeta';
 
 const THEME_KEY = 'ic_theme_preference';
 const ADMIN_THEME_KEY = 'ic_admin_theme';
@@ -41,6 +42,7 @@ function readThemePreference() {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AdminPage() {
+  usePageMeta('Admin');
   const { user, logout } = useAuth();
   const navigate         = useNavigate();
   const { section }      = useParams();

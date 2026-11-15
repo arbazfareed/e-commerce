@@ -3,6 +3,7 @@ import API from '../utils/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import { getDeliveryCountries } from '../utils/countries';
 import { isValidPhone } from '../utils/phone';
+import usePageMeta from '../hooks/usePageMeta';
 
 const card = { width:'min(100%, 560px)', padding:'clamp(20px,4vw,32px)', border:'1px solid #d8e8de', borderRadius:20, background:'#fff', boxShadow:'0 18px 44px rgba(15,45,32,.08)', color:'#183329' };
 const label = { display:'grid', gap:6, marginBottom:14, color:'#334d40', fontSize:11, fontWeight:800, letterSpacing:.6, textTransform:'uppercase' };
@@ -11,6 +12,7 @@ const button = { minHeight:46, padding:'0 20px', border:0, borderRadius:10, back
 const note = ok => ({ margin:'0 0 14px', padding:'10px 12px', borderRadius:10, fontWeight:700, fontSize:13, border:`1px solid ${ok ? '#a7e6c1' : '#fecaca'}`, background: ok ? '#effcf4' : '#fff1f2', color: ok ? '#17633e' : '#9f1239' });
 
 export default function AccountPage() {
+  usePageMeta('My account');
   const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState({ name:user?.name || '', phone:user?.phone || '', city:user?.city || '', country:user?.country || 'Pakistan' });
   const [profileMsg, setProfileMsg] = useState(null);

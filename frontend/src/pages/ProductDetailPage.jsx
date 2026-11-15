@@ -4,6 +4,7 @@ import API, { assetUrl } from '../utils/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -11,6 +12,7 @@ export default function ProductDetailPage() {
   const { user } = useAuth();
   const { addToCart, addToRecentlyViewed } = useCart();
   const [product, setProduct] = useState(null);
+  usePageMeta(product?.name || null, product ? String(product.description || '').replace(/\s+/g, ' ').trim().slice(0, 160) : undefined);
   const [related, setRelated] = useState([]);
   const [alsoBought, setAlsoBought] = useState([]);
   const [selectedImage, setSelectedImage] = useState(0);

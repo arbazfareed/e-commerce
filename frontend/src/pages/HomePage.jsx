@@ -12,6 +12,7 @@ import { getHomePageStyles } from './home/homePageStyles';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice } from '../utils/priceUtils';
+import usePageMeta from '../hooks/usePageMeta';
 
 const MARKET_KEY = 'ic_market_mode';
 const BRAND_NAME = 'IndusCart Valley';
@@ -26,6 +27,7 @@ const CATEGORY_TREE = {
 };
 
 export default function HomePage() {
+  usePageMeta(null);
   const [searchParams] = useSearchParams();
   const { addToCart, recentlyViewed = [], addToRecentlyViewed = () => {} } = useCart();
   const { user } = useAuth();

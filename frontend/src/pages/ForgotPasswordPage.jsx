@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../utils/axiosConfig';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function ForgotPasswordPage() {
+  usePageMeta('Forgot password');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');

@@ -6,10 +6,12 @@ import S from './register/registerStyles';
 import { COUNTRIES } from './register/registerConfig';
 import RegisterFormContent from './register/RegisterFormContent';
 import RegisterStyles from './register/RegisterStyles';
+import usePageMeta from '../hooks/usePageMeta';
 
 
 
 export default function RegisterPage() {
+  usePageMeta('Create account', 'Create an IndusCart Valley account to track orders, save a wishlist and check out faster.');
   const { register } = useAuth();
   const navigate     = useNavigate();
 
