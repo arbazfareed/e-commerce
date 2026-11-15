@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { sendServerError } = require('../utils/httpErrors');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
 const SystemSettings = require('../models/SystemSettings');
@@ -115,7 +116,7 @@ const getProducts = async (req, res) => {
     });
     res.json(paginated ? { items: enriched, pagination: { page, pageSize, total, pages: Math.ceil(total / pageSize) } } : enriched);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
@@ -136,7 +137,7 @@ const getCategories = async (req, res) => {
     const categories = await Product.distinct('category', canIncludeHidden ? {} : { isVisible: { $ne: false } });
     res.json(categories.filter(Boolean).sort());
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
@@ -154,7 +155,7 @@ const getProductById = async (req, res) => {
       res.status(404).json({ message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
@@ -218,7 +219,8 @@ const createProduct = async (req, res) => {
     res.status(201).json(product);
   } catch (error) {
     console.error('createProduct error:', error);
-    res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: error.message });
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
@@ -286,7 +288,8 @@ const updateProduct = async (req, res) => {
     res.json(updated);
   } catch (error) {
     console.error('updateProduct error:', error);
-    res.status(error.name === 'ValidationError' ? 400 : 500).json({ message: error.message });
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
@@ -308,7 +311,7 @@ const deleteProduct = async (req, res) => {
       res.status(404).json({ message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 

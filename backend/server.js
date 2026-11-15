@@ -62,9 +62,10 @@ app.use(async (req, res, next) => {
     try {
       await connectDB();
     } catch (err) {
+      console.error('Database connection failed:', err.message);
       return res.status(503).json({
         error: 'Database connection failed',
-        message: err.message,
+        message: 'The store is temporarily unavailable. Please try again in a moment.',
       });
     }
   }
@@ -97,7 +98,15 @@ app.get('/health/ready', (req, res) => {
     database: ready ? 'connected' : 'disconnected',
   });
 });
+// Prometheus metrics. With METRICS_TOKEN set, send it as a Bearer token. Without it the
+// endpoint stays open for self-hosted Docker/k8s monitoring but is hidden on Vercel.
 app.get('/metrics', async (req, res, next) => {
+  const metricsToken = process.env.METRICS_TOKEN?.trim();
+  if (metricsToken) {
+    if (req.headers.authorization !== `Bearer ${metricsToken}`) return res.status(404).json({ message: 'Route not found.' });
+  } else if (process.env.VERCEL) {
+    return res.status(404).json({ message: 'Route not found.' });
+  }
   try {
     res.setHeader('Content-Type', client.register.contentType);
     res.end(await client.register.metrics());

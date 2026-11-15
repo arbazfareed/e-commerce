@@ -1,4 +1,5 @@
 const Order   = require('../models/Order');
+const { sendServerError } = require('../utils/httpErrors');
 const crypto = require('crypto');
 const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require('../services/orderEmails');
 const { getFrontendUrl } = require('../services/emailService');
@@ -211,13 +212,14 @@ const placeOrder = async (req, res) => {
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
     if (reservedCouponId) await Coupon.findByIdAndUpdate(reservedCouponId, { $inc: { usageCount: -1 } });
     console.error(e);
-    res.status(e.statusCode || 500).json({ message: e.message });
+    if (e.statusCode) return res.status(e.statusCode).json({ message: e.message });
+    sendServerError(res, e);
   }
 };
 
 const getMyOrders = async (req, res) => {
   try { res.json(await Order.find({ user: req.user._id }).sort({ createdAt:-1 })); }
-  catch (e) { res.status(500).json({ message: e.message }); }
+  catch (e) { sendServerError(res, e); }
 };
 
 const getOrderById = async (req, res) => {
@@ -228,7 +230,7 @@ const getOrderById = async (req, res) => {
     if (!isOwner && !req.user.isAdmin)
       return res.status(403).json({ message: 'Not authorized.' });
     res.json(o);
-  } catch (e) { res.status(500).json({ message: e.message }); }
+  } catch (e) { sendServerError(res, e); }
 };
 
 // Public, read-only view of one order for whoever holds its tracking link.
@@ -252,7 +254,7 @@ const getOrderByTrackingToken = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
   try { res.json(await Order.find().populate('user','name email').sort({ createdAt:-1 })); }
-  catch (e) { res.status(500).json({ message: e.message }); }
+  catch (e) { sendServerError(res, e); }
 };
 
 const getSalesAnalytics = async (req, res) => {
@@ -260,7 +262,7 @@ const getSalesAnalytics = async (req, res) => {
     const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 });
     res.json(buildSalesAnalytics(orders, new Date(), [3, 6, 9, 12]));
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    sendServerError(res, e);
   }
 };
 
@@ -311,7 +313,7 @@ const recordManualCashSale = async (req, res) => {
 
     res.status(201).json(manualOrder);
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    sendServerError(res, e);
   }
 };
 
@@ -344,7 +346,7 @@ const updateOrderStatus = async (req, res) => {
       await sendOrderStatusEmail(recipient || saved.toObject());
     }
     res.json(saved);
-  } catch (e) { res.status(500).json({ message: e.message }); }
+  } catch (e) { sendServerError(res, e); }
 };
 
 const updateOrderShipment = async (req, res) => {

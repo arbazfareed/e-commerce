@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { sendServerError } = require('../utils/httpErrors');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
@@ -62,9 +63,11 @@ const registerUser = async (req, res) => {
       token:   generateToken(user._id, user.tokenVersion),
     });
   } catch (error) {
-    console.error('Register error:', error);
-    // Send the real error message to frontend
-    res.status(500).json({ message: error.message });
+    if (error?.code === 11000)
+      return res.status(400).json({ message: 'An account with this email or username already exists.' });
+    if (error?.name === 'ValidationError')
+      return res.status(400).json({ message: Object.values(error.errors || {})[0]?.message || 'Please check your details.' });
+    sendServerError(res, error, 'Account could not be created. Please try again.');
   }
 };
 
@@ -99,8 +102,7 @@ const loginWithRole = async (req, res, isAdminLogin) => {
       res.status(401).json({ message: 'Invalid username/email or password.' });
     }
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error, 'Sign-in failed. Please try again.');
   }
 };
 
@@ -261,7 +263,7 @@ const getUserProfile = async (req, res) => {
       res.status(404).json({ message: 'User not found.' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendServerError(res, error);
   }
 };
 
