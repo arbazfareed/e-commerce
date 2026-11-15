@@ -16,6 +16,7 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage'));
 const OrderTrackPage = lazy(() => import('./pages/OrderTrackPage'));
 const InvoicePage = lazy(() => import('./pages/InvoicePage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const SupportPage = lazy(() => import('./pages/SupportPage'));
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -93,6 +94,7 @@ const ShopperPortalRoutes = () => (
       <Route path="/cart"           element={<CartPage />} />
       <Route path="/orders"         element={<PrivateRoute><OrdersPage /></PrivateRoute>} />
       <Route path="/wishlist"       element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
+      <Route path="/account"        element={<PrivateRoute><AccountPage /></PrivateRoute>} />
       <Route path="/orders/:id"     element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
       <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
       <Route path="/track/:id" element={<OrderTrackPage />} />
@@ -114,6 +116,7 @@ const SharedPortalRoutes = () => (
     <Route path="/cart" element={<CartPage />} />
     <Route path="/orders" element={<PrivateRoute><OrdersPage /></PrivateRoute>} />
     <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
+      <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
     <Route path="/orders/:id" element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
     <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
       <Route path="/track/:id" element={<OrderTrackPage />} />

@@ -75,10 +75,18 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => { setUser(null); localStorage.removeItem('user'); };
 
+  // Merge profile changes (or a fresh token) into the signed-in user.
+  const updateUser = (fields) => {
+    const stored = (() => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } })();
+    const next = { ...(stored || user || {}), ...fields };
+    setUser({ ...next, city: next.city || '' });
+    localStorage.setItem('user', JSON.stringify(next));
+  };
+
   if (!authReady) return null;
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout }}>
+    <AuthContext.Provider value={{ user, register, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

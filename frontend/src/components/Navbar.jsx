@@ -256,6 +256,9 @@ export default function Navbar({ adminPortal = false }) {
                 <Link to="/wishlist" className={`mobile-nav-link${on('/wishlist') ? ' is-active' : ''}`} aria-current={on('/wishlist') ? 'page' : undefined} onClick={() => setOpen(false)}>
                   <span className="mobile-nav-icon" aria-hidden="true">♥</span><span className="mobile-nav-text">Wishlist</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
                 </Link>
+                <Link to="/account" className={`mobile-nav-link${on('/account') ? ' is-active' : ''}`} aria-current={on('/account') ? 'page' : undefined} onClick={() => setOpen(false)}>
+                  <span className="mobile-nav-icon" aria-hidden="true">◉</span><span className="mobile-nav-text">My account</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>
+                </Link>
               </>}
               <Link to="/support" className={`mobile-nav-link${on('/support') ? ' is-active' : ''}`} aria-current={on('/support') ? 'page' : undefined} onClick={() => setOpen(false)}>
                 <span className="mobile-nav-icon" aria-hidden="true">◌</span><span className="mobile-nav-text">Support</span><span className="mobile-nav-arrow" aria-hidden="true">›</span>

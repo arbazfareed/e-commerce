@@ -3,6 +3,7 @@ const { sendServerError } = require('../utils/httpErrors');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
+const { isValidPhone, normalizePhone } = require('../utils/phone');
 
 // Helper: generate JWT token
 // `v` is the user's tokenVersion; protect() rejects tokens issued before a password change.
@@ -261,6 +262,37 @@ const completeCustomerPasswordReset = async (req, res) => {
   }
 };
 
+// ─── @PUT /api/auth/profile ────────────────────────────────────
+// Customers update their own name, phone, city and country (email and role cannot change here).
+const updateUserProfile = async (req, res) => {
+  const body = req.body || {};
+  const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : undefined);
+  const update = {};
+  if (body.name !== undefined) {
+    update.name = text(body.name, 80);
+    if (!update.name) return res.status(400).json({ message: 'Name cannot be empty.' });
+  }
+  if (body.city !== undefined) update.city = text(body.city, 80) ?? '';
+  if (body.country !== undefined) {
+    update.country = text(body.country, 60);
+    if (!update.country) return res.status(400).json({ message: 'Choose a country.' });
+  }
+  if (body.phone !== undefined) {
+    const phone = normalizePhone(text(body.phone, 40) || '');
+    const country = update.country || req.user.country || 'Pakistan';
+    if (phone && !isValidPhone(phone, country))
+      return res.status(400).json({ message: country.toLowerCase() === 'pakistan' ? 'Enter a valid mobile number, for example 0300 1234567.' : 'Enter a valid phone number with country code.' });
+    update.phone = phone;
+  }
+  try {
+    const user = await User.findByIdAndUpdate(req.user._id, { $set: update }, { new: true, runValidators: true }).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    return res.json({ _id: user._id, name: user.name, username: user.username, email: user.email, phone: user.phone, country: user.country, city: user.city, isAdmin: user.isAdmin });
+  } catch (error) {
+    sendServerError(res, error, 'Your profile could not be saved.');
+  }
+};
+
 // ─── @GET /api/auth/profile ────────────────────────────────────
 const getUserProfile = async (req, res) => {
   try {
@@ -277,4 +309,4 @@ const getUserProfile = async (req, res) => {
 
 const verifySession = (req, res) => res.json({ valid: true, user: req.user });
 
-module.exports = { registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession };
+module.exports = { updateUserProfile, registerUser, loginUser, loginAdminUser, changeOwnPassword, resetCustomerPassword, requestCustomerPasswordReset, completeCustomerPasswordReset, getUserProfile, verifySession };
