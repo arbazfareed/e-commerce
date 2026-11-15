@@ -1,7 +1,7 @@
 const Order   = require('../models/Order');
 const { sendServerError } = require('../utils/httpErrors');
 const crypto = require('crypto');
-const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert } = require('../services/orderEmails');
+const { sendOrderConfirmationEmail, sendOrderStatusEmail, sendNewOrderAlert, sendLowStockAlert } = require('../services/orderEmails');
 const { getFrontendUrl } = require('../services/emailService');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
@@ -26,6 +26,8 @@ const { isValidPhone, normalizePhone } = require('../utils/phone');
 
 // External payment adapters are not implemented yet, so shopper checkout accepts COD only.
 const PAYMENT_METHODS = new Set(['COD']);
+// Same as the admin dashboard's low-stock list: 4 or fewer left (under 5).
+const LOW_STOCK_LEVEL = 4;
 
 
 
@@ -40,6 +42,7 @@ const PAYMENT_METHODS = new Set(['COD']);
 
 const placeOrder = async (req, res) => {
   const reservedItems = [];
+  const lowStock = [];
   let reservedCouponId = null;
   try {
     const { products, address, paymentMethod } = req.body;
@@ -151,6 +154,9 @@ const placeOrder = async (req, res) => {
         throw error;
       }
       reservedItems.push(item);
+      // Remember products that just reached the low-stock level for the store alert.
+      if (reserved.stock <= LOW_STOCK_LEVEL && reserved.stock + item.quantity > LOW_STOCK_LEVEL)
+        lowStock.push({ name: reserved.name, stock: reserved.stock });
     }
 
     // ✅ Zone-based shipping — correct for Multan→Karachi, Pakistan→Dubai, etc.
@@ -211,6 +217,7 @@ const placeOrder = async (req, res) => {
       await Promise.all([
         sendOrderConfirmationEmail(emailOrder, { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' }),
         sendNewOrderAlert(emailOrder),
+        lowStock.length ? sendLowStockAlert(lowStock) : null,
       ]);
     } catch (emailError) {
       console.error('Order confirmation email error:', emailError.message);
