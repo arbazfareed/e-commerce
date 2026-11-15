@@ -48,6 +48,7 @@ export default function CartPage() {
   const [error,   setError]   = useState('');
   const [orderId, setOrderId] = useState(null);
   const [trackPath, setTrackPath] = useState('');
+  const [nextOrderCoupon, setNextOrderCoupon] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [checkoutSettings, setCheckoutSettings] = useState(null);
   const [couponInput, setCouponInput] = useState('');
@@ -167,6 +168,7 @@ export default function CartPage() {
       });
       setOrderId(data._id);
       setTrackPath(data.trackPath || '');
+      setNextOrderCoupon(data.nextOrderCoupon || null);
       setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));
       clearCart();
       setStep('success');
@@ -177,7 +179,7 @@ export default function CartPage() {
 
   // ── Success ───────────────────────────────────────────────
   if (step === 'success') return (
-    <OrderConfirmation {...{ S, navigate, orderId, payment, paymentStatus, trackPath, user }} />
+    <OrderConfirmation {...{ S, navigate, nextOrderCoupon, orderId, payment, paymentStatus, trackPath, user }} />
   );
 
   // ── Empty cart ────────────────────────────────────────────

@@ -180,6 +180,10 @@ export default function AdminSettingsPanel({
             <input style={S.inp} type="number" min="0" value={storeSettings.freeShippingThreshold || 0} onChange={e => setStoreSettings(s => ({ ...s, freeShippingThreshold:Number(e.target.value) }))} />
           </div>
           <div>
+            <label style={S.lbl}>Thank-you coupon for the next order (code, optional)</label>
+            <input style={S.inp} maxLength={40} placeholder="e.g. THANKYOU10" value={storeSettings.thankYouCouponCode || ''} onChange={e => setStoreSettings(s => ({ ...s, thankYouCouponCode:e.target.value.toUpperCase() }))} />
+          </div>
+          <div>
             <label style={S.lbl}>Courier provider</label>
             <select style={S.inp} value={storeSettings.courierProvider || ''} onChange={e => setStoreSettings(s => ({ ...s, courierProvider:e.target.value }))}>
               <option value="">No courier API</option><option value="PostEx">PostEx</option><option value="Trax">Trax</option><option value="TCS">TCS</option><option value="Leopards">Leopards</option><option value="Custom">Other provider (adapter needed)</option>

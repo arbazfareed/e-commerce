@@ -1,3 +1,4 @@
+const Coupon = require('../models/Coupon');
 const SystemSettings = require('../models/SystemSettings');
 const { resolveZoneRates, validateZoneRates } = require('../utils/zoneShipping');
 const emailService = require('../services/emailService');
@@ -12,6 +13,7 @@ const publicSettings = (settings) => ({
   codFee: settings.codFee,
   codThreshold: settings.codThreshold,
   freeShippingThreshold: settings.freeShippingThreshold || 0,
+  thankYouCouponCode: settings.thankYouCouponCode || '',
   usdRate: settings.usdRate || 278,
   zoneRates: resolveZoneRates(settings.zoneRates),
   courierProvider: settings.courierProvider,
@@ -90,6 +92,14 @@ const updateSettings = async (req, res) => {
   if (update.easypaisaMerchantId !== undefined && (typeof update.easypaisaMerchantId !== 'string' || update.easypaisaMerchantId.trim().length > 120))
     return res.status(400).json({ message: 'EasyPaisa merchant ID must be at most 120 characters.' });
 
+  if (req.body.thankYouCouponCode !== undefined) {
+    if (typeof req.body.thankYouCouponCode !== 'string' || req.body.thankYouCouponCode.trim().length > 40)
+      return res.status(400).json({ message: 'Thank-you coupon code must be at most 40 characters.' });
+    const code = req.body.thankYouCouponCode.trim().toUpperCase();
+    if (code && !(await Coupon.exists({ code, isActive: true })))
+      return res.status(400).json({ message: `Coupon ${code} does not exist or is switched off. Create it in Coupons first.` });
+    update.thankYouCouponCode = code;
+  }
   if (req.body.usdRate !== undefined) {
     const rate = Number(req.body.usdRate);
     if (!Number.isFinite(rate) || rate < 1 || rate > 100000)

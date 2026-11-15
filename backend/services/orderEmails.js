@@ -36,7 +36,7 @@ const safeSend = async (message, label) => {
   }
 };
 
-const sendOrderConfirmationEmail = async (order, { trackUrl } = {}) => {
+const sendOrderConfirmationEmail = async (order, { trackUrl, nextOrderCoupon } = {}) => {
   const to = recipientFor(order);
   if (!to) return false;
   const { escapeHtml, layout } = emailService;
@@ -47,10 +47,11 @@ const sendOrderConfirmationEmail = async (order, { trackUrl } = {}) => {
   return safeSend({
     to: to.email,
     subject: `Your IndusCart order ${shortId(order)} is confirmed`,
-    text: `Hello ${to.name},\n\nThank you for your order ${shortId(order)}. Total: ${money(order.totalPrice, order.currency)}.\n${payment}\nDelivery to: ${address}\n${trackUrl ? `\nTrack your order: ${trackUrl}\n` : ''}`,
+    text: `Hello ${to.name},\n\nThank you for your order ${shortId(order)}. Total: ${money(order.totalPrice, order.currency)}.\n${payment}\nDelivery to: ${address}\n${trackUrl ? `\nTrack your order: ${trackUrl}\n` : ''}${nextOrderCoupon ? `\nThank-you gift: ${nextOrderCoupon.text}. Use code ${nextOrderCoupon.code}.\n` : ''}`,
     html: layout(`<p>Hello ${escapeHtml(to.name)},</p><p>Thank you! Your order <strong>${shortId(order)}</strong> is confirmed.</p>
 ${itemsTable(order)}<p>${escapeHtml(payment)}</p><p style="color:#64748b">Delivery to: ${escapeHtml(address)}</p>
-${trackUrl ? `<p><a href="${escapeHtml(trackUrl)}" style="display:inline-block;padding:12px 18px;background:#087f5b;color:#fff;border-radius:8px;text-decoration:none;font-weight:700">Track your order</a></p>` : ''}`),
+${trackUrl ? `<p><a href="${escapeHtml(trackUrl)}" style="display:inline-block;padding:12px 18px;background:#087f5b;color:#fff;border-radius:8px;text-decoration:none;font-weight:700">Track your order</a></p>` : ''}
+${nextOrderCoupon ? `<div style="margin-top:18px;padding:14px;border:2px dashed #10b981;border-radius:12px;background:#f0fdf4"><p style="margin:0 0 4px;font-weight:700">A thank-you gift: ${escapeHtml(nextOrderCoupon.text)}</p><p style="margin:0">Use code <strong style="font-size:18px;letter-spacing:1px">${escapeHtml(nextOrderCoupon.code)}</strong>${nextOrderCoupon.expiresAt ? ` before ${escapeHtml(nextOrderCoupon.expiresAt)}` : ''}.</p></div>` : ''}`),
   }, 'Order confirmation');
 };
 
