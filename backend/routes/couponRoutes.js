@@ -1,8 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { validateObjectIdParam } = require('../middleware/validateObjectId');
-router.param('id', validateObjectIdParam('Coupon'));
+const { requireValidId } = require('../middleware/validateObjectId');
 const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
 const { listCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon } = require('../controllers/couponController');
 
@@ -17,7 +16,7 @@ const couponValidationLimiter = rateLimit({
 router.post('/validate', optionalProtect, couponValidationLimiter, validateCoupon);
 router.get('/', protect, admin, listCoupons);
 router.post('/', protect, admin, createCoupon);
-router.put('/:id', protect, admin, updateCoupon);
-router.delete('/:id', protect, admin, deleteCoupon);
+router.put('/:id', protect, admin, requireValidId('Coupon'), updateCoupon);
+router.delete('/:id', protect, admin, requireValidId('Coupon'), deleteCoupon);
 
 module.exports = router;

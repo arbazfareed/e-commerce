@@ -1,8 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router  = express.Router();
-const { validateObjectIdParam } = require('../middleware/validateObjectId');
-router.param('id', validateObjectIdParam('Order'));
+const { requireValidId } = require('../middleware/validateObjectId');
 
 const {
   placeOrder,
@@ -51,15 +50,15 @@ const trackingLimiter = rateLimit({
 });
 
 // GET  /api/orders/:id/track?token=… → read-only order view for the holder of the tracking link
-router.get('/:id/track',      trackingLimiter, getOrderByTrackingToken);
+router.get('/:id/track', trackingLimiter, requireValidId('Order'), getOrderByTrackingToken);
 
 // GET  /api/orders/:id        → single order (owner or admin)
-router.get('/:id',            protect, getOrderById);
+router.get('/:id', protect, requireValidId('Order'), getOrderById);
 
 // PUT /api/orders/:id/shipment → admin: save manual courier tracking details
-router.put('/:id/shipment',   protect, admin, updateOrderShipment);
+router.put('/:id/shipment', protect, admin, requireValidId('Order'), updateOrderShipment);
 
 // PUT  /api/orders/:id/status → admin: update order status
-router.put('/:id/status',     protect, admin, updateOrderStatus);
+router.put('/:id/status', protect, admin, requireValidId('Order'), updateOrderStatus);
 
 module.exports = router;
