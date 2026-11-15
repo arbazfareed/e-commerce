@@ -1,8 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router  = express.Router();
-const { validateObjectIdParam } = require('../middleware/validateObjectId');
-router.param('id', validateObjectIdParam('Ticket'));
+const { requireValidId } = require('../middleware/validateObjectId');
 const ctrl    = require('../controllers/supportController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -28,9 +27,9 @@ router.get('/tickets/my',           protect,        ctrl.getMyTickets);
 router.get('/tickets',              protect, admin, ctrl.getAllTickets);
 
 // Admin updates ticket status
-router.put('/tickets/:id/status',   protect, admin, ctrl.updateStatus);
+router.put('/tickets/:id/status', protect, admin, requireValidId('Ticket'), ctrl.updateStatus);
 
 // Admin replies to a ticket
-router.put('/tickets/:id/reply',    protect, admin, ctrl.replyTicket);
+router.put('/tickets/:id/reply', protect, admin, requireValidId('Ticket'), ctrl.replyTicket);
 
 module.exports = router;

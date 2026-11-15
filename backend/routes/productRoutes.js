@@ -1,7 +1,6 @@
 const express = require('express');
 const router  = express.Router();
-const { validateObjectIdParam } = require('../middleware/validateObjectId');
-router.param('id', validateObjectIdParam('Product'));
+const { requireValidId } = require('../middleware/validateObjectId');
 const multer  = require('multer');
 const path    = require('path');
 const fs      = require('fs');
@@ -57,15 +56,15 @@ router.get('/subcategories', optionalProtect, getSubcategories);
 router.get('/',    optionalProtect, getProducts);
 
 // GET  /api/products/:id      → single product (public)
-router.get('/:id', getProductById);
+router.get('/:id', requireValidId('Product'), getProductById);
 
 // POST /api/products          → admin: create product (up to five images)
 router.post('/',   protect, admin, handleProductImageUpload, validateImageUploads, createProduct);
 
 // PUT  /api/products/:id      → admin: update product
-router.put('/:id', protect, admin, handleProductImageUpload, validateImageUploads, updateProduct);
+router.put('/:id', protect, admin, handleProductImageUpload, validateImageUploads, requireValidId('Product'), updateProduct);
 
 // DELETE /api/products/:id    → admin: delete product
-router.delete('/:id', protect, admin, deleteProduct);
+router.delete('/:id', protect, admin, requireValidId('Product'), deleteProduct);
 
 module.exports = router;
