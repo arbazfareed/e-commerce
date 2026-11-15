@@ -148,7 +148,7 @@ export default function RegisterFormContent({
             <input
               className="inp" style={S.inp}
               id="register-password"
-              type="password" minLength={8} placeholder="At least 8 characters"
+              type="password" minLength={12} placeholder="At least 12 characters"
               value={form.password} onChange={set('password')} required
             />
           </div>
