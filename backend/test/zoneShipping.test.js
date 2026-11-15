@@ -21,3 +21,23 @@ test('zone shipping uses the configured destination rates and item weight', () =
     zone: 'middle_east',
   });
 });
+
+test('server shipping zones match the storefront country list', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { detectZone, ZONE_MAP, PAK_CITIES } = require('../utils/zoneShipping');
+  const frontendFile = path.join(__dirname, '..', '..', 'frontend', 'src', 'utils', 'shippingUtils.js');
+  if (fs.existsSync(frontendFile)) {
+    const source = fs.readFileSync(frontendFile, 'utf8');
+    const block = source.match(/const ZONE_MAP = \{([\s\S]*?)\n\};/)[1];
+    const pairs = [...block.matchAll(/'?([a-z][a-z ]*?)'?\s*:\s*'([a-z_]+)'/g)];
+    assert.ok(pairs.length > 50);
+    for (const [, country, zone] of pairs) assert.equal(ZONE_MAP[country], zone, country);
+    const cities = source.match(/const PAK_CITIES = new Set\(\[([\s\S]*?)\]\);/)[1].match(/'([^']+)'/g).map(c => c.slice(1, -1));
+    for (const city of cities) assert.ok(PAK_CITIES.has(city), city);
+  }
+  assert.equal(detectZone('Belgium', 'Brussels'), 'europe');
+  assert.equal(detectZone('Mexico', ''), 'north_america');
+  assert.equal(detectZone('India', 'Hyderabad'), 'south_asia');
+  assert.equal(detectZone('Pakistan', 'Hyderabad'), 'domestic_pak');
+});
