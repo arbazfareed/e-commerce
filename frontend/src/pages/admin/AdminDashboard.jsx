@@ -9,6 +9,7 @@ import AdminMarketSplit from './dashboard/AdminMarketSplit';
 import AdminOrderStatusPanel from './dashboard/AdminOrderStatusPanel';
 import AdminLowStockPanel from './dashboard/AdminLowStockPanel';
 import AdminInventoryPanel from './dashboard/AdminInventoryPanel';
+import BusinessInsightsPanel from './dashboard/BusinessInsightsPanel';
 
 export default function AdminDashboard({
   aiPulse,
@@ -57,6 +58,8 @@ export default function AdminDashboard({
         </div>
         <button className="admin-green-button" style={{ ...S.greenBtn, boxShadow:'0 10px 20px rgba(76, 201, 157, 0.22)' }} onClick={() => openSection('add')}>+ Add Product</button>
       </div>
+
+      <BusinessInsightsPanel themeMode={themeMode} />
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginBottom:18 }}>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>

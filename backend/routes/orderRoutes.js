@@ -10,6 +10,7 @@ const {
   getOrderByTrackingToken,
   getAllOrders,
   getSalesAnalytics,
+  getBusinessAnalytics,
   recordManualCashSale,
   updateOrderStatus,
   updateOrderShipment,
@@ -34,6 +35,9 @@ router.get('/my',             protect, getMyOrders);
 
 // GET  /api/orders/analytics  → admin: sales history and channel breakdown
 router.get('/analytics',      protect, admin, getSalesAnalytics);
+
+// GET  /api/orders/business   → admin: KPIs with growth, customers, stock, cities, coupons, suggestions
+router.get('/business',       protect, admin, getBusinessAnalytics);
 
 // POST /api/orders/manual-cash → admin: record manual cash collected at delivery
 router.post('/manual-cash',   protect, admin, recordManualCashSale);
