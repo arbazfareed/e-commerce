@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const { sendServerError } = require('../utils/httpErrors');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
+const mongoose = require('mongoose');
 const SystemSettings = require('../models/SystemSettings');
 const path    = require('path');
 const fs      = require('fs');
@@ -154,6 +155,34 @@ const getProductById = async (req, res) => {
     } else {
       res.status(404).json({ message: 'Product not found' });
     }
+  } catch (error) {
+    sendServerError(res, error);
+  }
+};
+
+// ─── @GET /api/products/:id/also-bought ────────────────────────
+// Products most often ordered together with this one (completed or open orders only).
+const getAlsoBought = async (req, res) => {
+  try {
+    const productId = new mongoose.Types.ObjectId(req.params.id);
+    const pairs = await Order.aggregate([
+      { $match: { 'products.product': productId, status: { $nin: ['Cancelled', 'Returned'] } } },
+      { $sort: { createdAt: -1 } },
+      { $limit: 2000 },
+      { $unwind: '$products' },
+      { $match: { 'products.product': { $ne: productId, $exists: true } } },
+      { $group: { _id: '$products.product', together: { $sum: 1 } } },
+      { $sort: { together: -1 } },
+      { $limit: 12 },
+    ]);
+    if (!pairs.length) return res.json([]);
+    const products = await Product.find({ _id: { $in: pairs.map(p => p._id) }, isVisible: { $ne: false }, stock: { $gt: 0 } })
+      .select('name pricePKR priceUSD discountPercent discountStartDate discountEndDate images category isLocal stock').lean();
+    const byId = new Map(products.map(p => [String(p._id), p]));
+    const result = pairs.map(p => byId.get(String(p._id))).filter(Boolean).slice(0, 4)
+      .map(p => ({ ...p, images: (p.images || []).slice(0, 1) }));
+    res.set('Cache-Control', 'public, max-age=600');
+    res.json(result);
   } catch (error) {
     sendServerError(res, error);
   }
@@ -316,6 +345,7 @@ const deleteProduct = async (req, res) => {
 };
 
 module.exports = {
+  getAlsoBought,
   getProducts,
   getCategories,
   getSubcategories,
