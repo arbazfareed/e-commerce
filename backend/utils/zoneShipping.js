@@ -9,42 +9,76 @@ const DEFAULT_ZONE_RATES = {
   australia:     { baseRate:2000,  perKg: 450,  minFee:2000  },
   rest_of_world: { baseRate:2500,  perKg: 600,  minFee:2500  },
 };
+// Keep in sync with frontend/src/utils/shippingUtils.js (checked by test/zoneShipping.test.js).
 const ZONE_MAP = {
-  india:'south_asia', bangladesh:'south_asia', 'sri lanka':'south_asia',
-  nepal:'south_asia', bhutan:'south_asia', maldives:'south_asia',
-  uae:'middle_east', 'united arab emirates':'middle_east', dubai:'middle_east',
-  'saudi arabia':'middle_east', qatar:'middle_east', kuwait:'middle_east',
-  bahrain:'middle_east', oman:'middle_east', jordan:'middle_east',
-  lebanon:'middle_east', iraq:'middle_east', iran:'middle_east',
-  china:'east_asia', japan:'east_asia', 'south korea':'east_asia',
-  korea:'east_asia', 'hong kong':'east_asia', taiwan:'east_asia',
-  singapore:'east_asia', malaysia:'east_asia', indonesia:'east_asia',
-  thailand:'east_asia', vietnam:'east_asia', philippines:'east_asia',
-  uk:'europe', 'united kingdom':'europe', germany:'europe', france:'europe',
-  italy:'europe', spain:'europe', netherlands:'europe', sweden:'europe',
-  norway:'europe', denmark:'europe', finland:'europe', poland:'europe',
-  austria:'europe', switzerland:'europe', portugal:'europe', turkey:'europe',
-  russia:'europe',
-  usa:'north_america', 'united states':'north_america',
-  'united states of america':'north_america', us:'north_america', canada:'north_america',
-  australia:'australia', 'new zealand':'australia',
+  // South Asia
+  india: 'south_asia', bangladesh: 'south_asia', 'sri lanka': 'south_asia',
+  nepal: 'south_asia', bhutan: 'south_asia', maldives: 'south_asia',
+
+  // Middle East
+  uae: 'middle_east', 'united arab emirates': 'middle_east',
+  'saudi arabia': 'middle_east', qatar: 'middle_east',
+  kuwait: 'middle_east', bahrain: 'middle_east', oman: 'middle_east',
+  jordan: 'middle_east', lebanon: 'middle_east', iraq: 'middle_east',
+  iran: 'middle_east', yemen: 'middle_east', syria: 'middle_east',
+  dubai: 'middle_east', // sometimes entered as city-name only
+
+  // East Asia
+  china: 'east_asia', japan: 'east_asia', 'south korea': 'east_asia',
+  korea: 'east_asia', 'hong kong': 'east_asia', taiwan: 'east_asia',
+  'macao': 'east_asia', mongolia: 'east_asia',
+
+  // Southeast Asia (lumped with east_asia)
+  singapore: 'east_asia', malaysia: 'east_asia', indonesia: 'east_asia',
+  thailand: 'east_asia', vietnam: 'east_asia', philippines: 'east_asia',
+  myanmar: 'east_asia', cambodia: 'east_asia', laos: 'east_asia',
+  brunei: 'east_asia',
+
+  // Europe
+  uk: 'europe', 'united kingdom': 'europe', germany: 'europe',
+  france: 'europe', italy: 'europe', spain: 'europe', netherlands: 'europe',
+  belgium: 'europe', sweden: 'europe', norway: 'europe', denmark: 'europe',
+  finland: 'europe', poland: 'europe', austria: 'europe', switzerland: 'europe',
+  portugal: 'europe', greece: 'europe', turkey: 'europe', russia: 'europe',
+  ukraine: 'europe', czechia: 'europe', 'czech republic': 'europe',
+  hungary: 'europe', romania: 'europe', croatia: 'europe', ireland: 'europe',
+  scotland: 'europe', wales: 'europe', england: 'europe',
+
+  // North America
+  usa: 'north_america', 'united states': 'north_america',
+  'united states of america': 'north_america', us: 'north_america',
+  canada: 'north_america', mexico: 'north_america',
+
+  // Australia / Oceania
+  australia: 'australia', 'new zealand': 'australia', fiji: 'australia',
+  'papua new guinea': 'australia',
+
+  // Africa
+  egypt: 'rest_of_world', nigeria: 'rest_of_world', 'south africa': 'rest_of_world',
+  kenya: 'rest_of_world', ethiopia: 'rest_of_world', ghana: 'rest_of_world',
+  tanzania: 'rest_of_world', morocco: 'rest_of_world', algeria: 'rest_of_world',
+  tunisia: 'rest_of_world', libya: 'rest_of_world', sudan: 'rest_of_world',
 };
 const PAK_CITIES = new Set([
   'karachi','lahore','islamabad','rawalpindi','faisalabad','multan','peshawar',
   'quetta','sialkot','gujranwala','hyderabad','bahawalpur','sargodha','abbottabad',
-  'sukkur','larkana','sahiwal','rahim yar khan','kot addu','attock','jhelum',
-  'muzaffargarh','dera ghazi khan','gujrat','khanewal','lodhran','narowal',
-  'mianwali','bahawalnagar','vehari','toba tek singh','muzaffarabad','turbat',
-  'khuzdar','hub','chaman','zhob','gwadar','mardan','mingora','kohat',
-  'mansehra','haripur','nowshera','swat','charsadda','swabi','bannu',
+  'sukkur','larkana','sheikhupura','jhang','dera ghazi khan','gujrat','sahiwal',
+  'wah','mardan','mingora','kasur','rahim yar khan','sadiqabad','okara','chiniot',
+  'kamoke','hafizabad','mirpur khas','nawabshah','khanewal','muzaffarabad',
+  'kot addu','attock','jhelum','chakwal','mianwali','bahawalnagar','vehari',
+  'narowal','khushab','toba tek singh','lodhran','pakpattan','mandi bahauddin',
+  'layyah','muzaffargarh','dera ismail khan','kohat','mansehra','haripur',
+  'nowshera','swat','charsadda','swabi','bannu','lakki marwat',
+  'turbat','khuzdar','hub','chaman','zhob','gwadar',
 ]);
 const detectZone = (toCountry = 'Pakistan', toCity = '') => {
   const tc    = (toCountry || '').trim().toLowerCase();
   const tCity = (toCity    || '').trim().toLowerCase();
+  // Same order as the storefront so the cart and the saved order agree.
   if (tc === 'pakistan') return 'domestic_pak';
-  if (PAK_CITIES.has(tCity)) return 'domestic_pak';
   if (ZONE_MAP[tc])    return ZONE_MAP[tc];
   if (ZONE_MAP[tCity]) return ZONE_MAP[tCity];
+  if (PAK_CITIES.has(tCity)) return 'domestic_pak';
   return 'rest_of_world';
 };
 const calcZoneShipping = (items, toCountry, toCity) => {
@@ -64,4 +98,4 @@ const calcZoneShipping = (items, toCountry, toCity) => {
   return { fee, totalWeight: roundedWeight, zone };
 };
 
-module.exports = { calcZoneShipping };
+module.exports = { calcZoneShipping, detectZone, ZONE_MAP, PAK_CITIES, DEFAULT_ZONE_RATES };
