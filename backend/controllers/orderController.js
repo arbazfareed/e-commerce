@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { getActiveDiscountPercent, getDiscountedUnitPrice } = require('../utils/discountPricing');
 const { buildSalesAnalytics } = require('../utils/salesAnalytics');
+const { buildBusinessAnalytics } = require('../utils/businessAnalytics');
 const { validateManualCashSale } = require('../utils/manualCashSale');
 const SystemSettings = require('../models/SystemSettings');
 const Coupon = require('../models/Coupon');
@@ -275,13 +276,42 @@ const getAllOrders = async (req, res) => {
   catch (e) { sendServerError(res, e); }
 };
 
+// Revenue charts count only orders that still stand (not Cancelled/Returned), in PKR.
+const toPKROrder = (order, usdRate) => {
+  if (order.currency !== 'USD') return order;
+  return {
+    ...order,
+    totalPrice: (Number(order.totalPrice) || 0) * usdRate,
+    products: (order.products || []).map(item => ({ ...item, price: (Number(item.price) || 0) * usdRate })),
+  };
+};
+
 const getSalesAnalytics = async (req, res) => {
   try {
-    const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 });
-    res.json(buildSalesAnalytics(orders, new Date(), [3, 6, 9, 12]));
+    const [orders, settings] = await Promise.all([
+      Order.find({ status: { $nin: ['Cancelled', 'Returned'] } }).populate('user', 'name email').sort({ createdAt: -1 }).lean(),
+      SystemSettings.findOne({ key: 'global' }).select('usdRate').lean(),
+    ]);
+    const usdRate = Number(settings?.usdRate) > 0 ? Number(settings.usdRate) : 278;
+    res.json(buildSalesAnalytics(orders.map(order => toPKROrder(order, usdRate)), new Date(), [3, 6, 9, 12]));
   } catch (e) {
     sendServerError(res, e);
   }
+};
+
+// GET /api/orders/business?days=30 → KPIs, customers, stock, cities, coupons and suggestions.
+const getBusinessAnalytics = async (req, res) => {
+  try {
+    const days = Number(req.query.days) || 30;
+    const [orders, products, coupons, settings] = await Promise.all([
+      Order.find().select('user guestContact products.product products.name products.price products.quantity productTotal shippingFee codFee couponCode couponDiscount currency totalPrice address.city address.country paymentMethod isPaid status isManualCash createdAt')
+        .populate('user', 'name email').lean(),
+      Product.find().select('name stock isVisible createdAt pricePKR').lean(),
+      Coupon.find().select('code isActive expiresAt').lean(),
+      SystemSettings.findOne({ key: 'global' }).select('usdRate').lean(),
+    ]);
+    res.json(buildBusinessAnalytics({ orders, products, coupons, usdRate: settings?.usdRate, days, now: new Date() }));
+  } catch (e) { sendServerError(res, e); }
 };
 
 const recordManualCashSale = async (req, res) => {
@@ -398,6 +428,7 @@ module.exports = {
   getOrderByTrackingToken,
   getAllOrders,
   getSalesAnalytics,
+  getBusinessAnalytics,
   recordManualCashSale,
   updateOrderStatus,
   updateOrderShipment,
