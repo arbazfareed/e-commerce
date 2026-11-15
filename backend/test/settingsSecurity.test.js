@@ -37,3 +37,10 @@ test('international shopping defaults on for existing stores and follows the sav
   assert.equal(publicSettings({ internationalEnabled: false }).internationalEnabled, false);
   assert.equal(checkoutSettings({ internationalEnabled: false }).internationalEnabled, false);
 });
+test('checkout settings share the stored USD rate and zone rates with the storefront', () => {
+  const settings = checkoutSettings({ codEnabled: true, usdRate: 290, zoneRates: { europe: { baseRate: 2000, perKg: 400, minFee: 2000 } } });
+  assert.equal(settings.usdRate, 290);
+  assert.equal(settings.zoneRates.europe.baseRate, 2000);
+  assert.equal(settings.zoneRates.domestic_pak.baseRate, 80);
+  assert.equal(checkoutSettings({}).usdRate, 278);
+});

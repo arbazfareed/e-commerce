@@ -8,6 +8,10 @@ const systemSettingsSchema = new mongoose.Schema({
   codFee: { type: Number, min: 0, default: 0 },
   // COD fees are waived when the product total reaches this value (0 disables the threshold).
   codThreshold: { type: Number, min: 0, default: 0 },
+  // 1 USD = usdRate PKR. Used to convert PKR shipping and COD fees on USD orders.
+  usdRate: { type: Number, min: 1, max: 100000, default: 278 },
+  // Admin overrides for zone shipping rates, merged over the defaults in utils/zoneShipping.js.
+  zoneRates: { type: mongoose.Schema.Types.Mixed, default: null },
   courierProvider: { type: String, trim: true, default: '' },
   courierEnabled: { type: Boolean, default: false },
   courierMode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' },

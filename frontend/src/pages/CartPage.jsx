@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart }  from '../context/CartContext';
 import { useAuth }  from '../context/AuthContext';
 import API, { assetUrl } from '../utils/axiosConfig';
-import { formatPKR, formatUSD, calcZoneShipping, getActiveDiscountPercent, getDiscountedPrice, getUSDRate } from '../utils/priceUtils';
+import { applyStoreRates, formatPKR, formatUSD, calcZoneShipping, getActiveDiscountPercent, getDiscountedPrice, getUSDRate } from '../utils/priceUtils';
 import { S } from './cart/cartStyles';
 import CartMainColumn from './cart/CartMainColumn';
 import CartSummary from './cart/CartSummary';
@@ -51,7 +51,7 @@ export default function CartPage() {
 
   useEffect(() => {
     API.get('/api/settings/public')
-      .then(({ data }) => setCheckoutSettings(data))
+      .then(({ data }) => { applyStoreRates(data); setCheckoutSettings(data); })
       .catch(() => setCheckoutSettings(null));
   }, []);
 

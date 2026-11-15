@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import BrandMark from '../components/BrandMark';
 import { assetUrl } from '../utils/axiosConfig';
 import { optimizeImageFile } from '../utils/imageCompressor';
-import { formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
+import { applyStoreRates, formatPKR, formatUSD, getActiveDiscountPercent, getDiscountedPrice, getWeightRates, saveWeightRates, getShippingRates, saveShippingRates, getUSDRate, saveUSDRate, pkrToUSD, getZoneRates, saveZoneRates, ZONE_LABELS } from '../utils/priceUtils';
 import { CATEGORY_TREE, EMPTY_FORM, STATUS_CFG, STATUS_LIST } from './admin/adminConfig';
 
 import { Badge, CategoryPicker, ImagePicker, MarketBadge, MarketPicker, Toast } from './admin/AdminPrimitives';
@@ -180,7 +180,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user?.isAdmin) return;
     getStoreSettings()
-      .then(({ data }) => setStoreSettings(s => ({ ...s, ...data })))
+      .then(({ data }) => {
+        setStoreSettings(s => ({ ...s, ...data }));
+        applyStoreRates(data);
+        if (Number(data?.usdRate) > 0) setUsdRate(String(data.usdRate));
+        if (data?.zoneRates) setZoneRates(data.zoneRates);
+      })
       .catch(error => flash(getApiErrorMessage(error, 'Failed to load store settings'), false));
   }, [user]);
 
@@ -192,6 +197,9 @@ export default function AdminPage() {
   const saveStoreSettings = async () => {
     try {
       const payload = { ...storeSettings };
+      // Exchange and zone rates have their own Save buttons; never resend stale copies here.
+      delete payload.usdRate;
+      delete payload.zoneRates;
       delete payload.courierApiKeyConfigured;
       delete payload.easypaisaApiKeyConfigured;
       delete payload.credentialEncryptionReady;
@@ -376,15 +384,29 @@ export default function AdminPage() {
     saveShippingRates(shipRates); setShipSaved(true);
     setTimeout(() => setShipSaved(false), 2500); flash('Shipping rates saved!');
   };
-  const saveRate = () => {
+  // Rates are saved on the server so every shopper and every order uses them.
+  const saveRate = async () => {
     const r = parseFloat(usdRate);
-    if (!r || r <= 0) { flash('Enter a valid exchange rate', false); return; }
-    saveUSDRate(r); setUsdSaved(true);
-    setTimeout(() => setUsdSaved(false), 2500); flash(`Rate saved: 1 USD = Rs ${r}`);
+    if (!r || r < 1) { flash('Enter a valid exchange rate', false); return; }
+    try {
+      const { data } = await persistStoreSettings({ usdRate: r });
+      applyStoreRates(data);
+      setUsdSaved(true);
+      setTimeout(() => setUsdSaved(false), 2500); flash(`Rate saved: 1 USD = Rs ${r}`);
+    } catch (err) {
+      flash(getApiErrorMessage(err, 'Failed to save exchange rate'), false);
+    }
   };
-  const saveZone = () => {
-    saveZoneRates(zoneRates); setZoneSaved(true);
-    setTimeout(() => setZoneSaved(false), 2500); flash('Zone shipping rates saved!');
+  const saveZone = async () => {
+    try {
+      const { data } = await persistStoreSettings({ zoneRates });
+      applyStoreRates(data);
+      if (data?.zoneRates) setZoneRates(data.zoneRates);
+      setZoneSaved(true);
+      setTimeout(() => setZoneSaved(false), 2500); flash('Zone shipping rates saved!');
+    } catch (err) {
+      flash(getApiErrorMessage(err, 'Failed to save zone shipping rates'), false);
+    }
   };
 
 

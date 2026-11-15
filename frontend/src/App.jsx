@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import API from './utils/axiosConfig';
+import { applyStoreRates } from './utils/priceUtils';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -124,6 +127,15 @@ const AppRoutes = () => {
   const adminPortal = appMode === 'admin';
   const location = useLocation();
   const isAdminDashboard = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
+
+  // Load the store's shipping and currency rates once so prices match what the server charges.
+  useEffect(() => {
+    let active = true;
+    Promise.resolve(API.get('/api/settings/public'))
+      .then(response => { if (active) applyStoreRates(response?.data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
