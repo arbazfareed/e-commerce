@@ -170,6 +170,12 @@ test('guest COD checkout persists contact details and keeps order retrieval priv
     assert.equal(savedOrder.guestContact.name, 'Integration Guest');
     assert.equal((await Product.findById(product._id)).stock, 2);
     assert.equal((await request(server, `/api/orders/${orderId}`)).status, 401);
+    assert.ok(created.body.trackingToken);
+    assert.equal(created.body.trackingTokenHash, undefined);
+    const tracked = await request(server, `/api/orders/${orderId}/track?token=${created.body.trackingToken}`);
+    assert.equal(tracked.status, 200);
+    assert.equal(tracked.body.guestContact.email, undefined);
+    assert.equal((await request(server, `/api/orders/${orderId}/track?token=wrong-token-wrong-token-1234`)).status, 404);
     assert.equal((await request(server, '/api/orders/my')).status, 401);
   } finally {
     if (server) await new Promise(resolve => server.close(resolve));

@@ -95,6 +95,7 @@ const ShopperPortalRoutes = () => (
       <Route path="/wishlist"       element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
       <Route path="/orders/:id"     element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
       <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
+      <Route path="/track/:id" element={<OrderTrackPage />} />
       <Route path="/support"        element={<SupportPage />} />
       <Route path="/admin/*" element={<Navigate to={import.meta.env.VITE_ADMIN_PORTAL_URL || `${window.location.protocol}//${window.location.hostname}:3001/admin/login`} replace />} />
       <Route path="*"               element={<NotFoundPage />} />
@@ -115,6 +116,7 @@ const SharedPortalRoutes = () => (
     <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
     <Route path="/orders/:id" element={<PrivateRoute><OrderTrackPage /></PrivateRoute>} />
     <Route path="/orders/:id/invoice" element={<PrivateRoute><InvoicePage /></PrivateRoute>} />
+      <Route path="/track/:id" element={<OrderTrackPage />} />
     <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
     <Route path="/admin/:section" element={<AdminRoute><AdminPage /></AdminRoute>} />
     <Route path="/support" element={<SupportPage />} />

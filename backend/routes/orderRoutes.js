@@ -6,6 +6,7 @@ const {
   placeOrder,
   getMyOrders,
   getOrderById,
+  getOrderByTrackingToken,
   getAllOrders,
   getSalesAnalytics,
   recordManualCashSale,
@@ -38,6 +39,17 @@ router.post('/manual-cash',   protect, admin, recordManualCashSale);
 
 // GET  /api/orders            → admin: all orders
 router.get('/',               protect, admin, getAllOrders);
+
+const trackingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { message: 'Too many tracking requests. Please try again later.' },
+});
+
+// GET  /api/orders/:id/track?token=… → read-only order view for the holder of the tracking link
+router.get('/:id/track',      trackingLimiter, getOrderByTrackingToken);
 
 // GET  /api/orders/:id        → single order (owner or admin)
 router.get('/:id',            protect, getOrderById);

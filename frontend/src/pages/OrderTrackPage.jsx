@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import API, { assetUrl } from '../utils/axiosConfig';
 import { formatPKR } from '../utils/priceUtils';
 import ShipmentTrackingCard from '../components/ShipmentTrackingCard';
@@ -25,6 +25,8 @@ const StatusBadge = ({ status, isDark }) => {
 
 export default function OrdersPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const trackingToken = searchParams.get('token') || '';
   const [orders,  setOrders]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
@@ -45,11 +47,16 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => {
-    API.get('/api/orders/my')
-      .then(r => setOrders(id ? r.data.filter(order => order._id === id) : r.data))
-      .catch(() => setError('We could not load this order. Please refresh and try again.'))
+    // A tracking link (from the confirmation page or email) works without signing in.
+    const request = trackingToken && id
+      ? API.get(`/api/orders/${id}/track`, { params: { token: trackingToken } }).then(r => setOrders([r.data]))
+      : API.get('/api/orders/my').then(r => setOrders(id ? r.data.filter(order => order._id === id) : r.data));
+    request
+      .catch(err => setError(err.response?.status === 404
+        ? 'We could not find this order. Check that you opened the full tracking link.'
+        : 'We could not load this order. Please refresh and try again.'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, trackingToken]);
 
   if (loading) return (
     <div className="responsive-page track-page" style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', fontFamily:"'DM Sans',sans-serif" }}>
