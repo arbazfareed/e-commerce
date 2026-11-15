@@ -4,6 +4,7 @@ export default function OrderConfirmation({
   orderId,
   payment,
   paymentStatus,
+  trackPath = '',
   user
 }) {
   return (
@@ -25,9 +26,14 @@ export default function OrderConfirmation({
               ? `Payment via ${payment} is confirmed.`
               : `Payment via ${payment} is pending. This order flow has not captured your payment.`}
         </p>
-        {!user && <p style={{ margin:'0 0 20px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>Save your order number for reference. Guest orders are not shown in account order history.</p>}
+        {!user && <p style={{ margin:'0 0 20px', fontSize:13, color:'#64748b', lineHeight:1.5 }}>
+          {trackPath
+            ? 'We emailed you a confirmation with your tracking link. You can also bookmark the Track order button below.'
+            : 'Save your order number for reference. Guest orders are not shown in account order history.'}
+        </p>}
         <div style={{ display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap' }}>
           {user && <button style={S.greenBtn} onClick={() => navigate('/orders')}>📦 View My Orders</button>}
+          {!user && trackPath && <button style={S.greenBtn} onClick={() => navigate(trackPath)}>📦 Track order</button>}
           <button style={S.ghostBtn} onClick={() => navigate('/')}>Continue Shopping</button>
         </div>
       </div>

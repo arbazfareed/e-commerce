@@ -84,6 +84,8 @@ const orderSchema = new mongoose.Schema(
     cashCollectedAt: { type: Date },
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     notes: { type: String, default: '' },
+    // SHA-256 of the secret in the guest tracking link (the secret itself is never stored).
+    trackingTokenHash: { type: String, select: false },
 
     // ─── Order Status ─────────────────────────────────────────
     status: {

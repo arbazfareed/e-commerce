@@ -47,6 +47,7 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false);
   const [error,   setError]   = useState('');
   const [orderId, setOrderId] = useState(null);
+  const [trackPath, setTrackPath] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [checkoutSettings, setCheckoutSettings] = useState(null);
   const [couponInput, setCouponInput] = useState('');
@@ -159,6 +160,7 @@ export default function CartPage() {
         ...(!user ? { guestContact: { name:guestContact.name.trim(), email:guestContact.email.trim(), phone:addr.phone.trim() } } : {}),
       });
       setOrderId(data._id);
+      setTrackPath(data.trackPath || '');
       setPaymentStatus(data.paymentStatus || (data.isPaid ? 'paid' : 'pending'));
       clearCart();
       setStep('success');
@@ -169,7 +171,7 @@ export default function CartPage() {
 
   // ── Success ───────────────────────────────────────────────
   if (step === 'success') return (
-    <OrderConfirmation {...{ S, navigate, orderId, payment, paymentStatus, user }} />
+    <OrderConfirmation {...{ S, navigate, orderId, payment, paymentStatus, trackPath, user }} />
   );
 
   // ── Empty cart ────────────────────────────────────────────

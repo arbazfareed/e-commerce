@@ -1,4 +1,7 @@
 const Order   = require('../models/Order');
+const crypto = require('crypto');
+const { sendOrderConfirmationEmail, sendOrderStatusEmail } = require('../services/orderEmails');
+const { getFrontendUrl } = require('../services/emailService');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { getActiveDiscountPercent, getDiscountedUnitPrice } = require('../utils/discountPricing');
@@ -173,7 +176,10 @@ const placeOrder = async (req, res) => {
       reservedCouponId = coupon._id;
     }
 
+    // Secret link so guests (and signed-in shoppers) can track the order without logging in.
+    const trackingToken = crypto.randomBytes(24).toString('base64url');
     const order = await Order.create({
+      trackingTokenHash: crypto.createHash('sha256').update(trackingToken).digest('hex'),
       user: req.user?._id || null, guestContact, products: enrichedItems,
       productTotal, shippingFee, codFee, couponCode: coupon?.code || '', couponDiscount, currency, totalWeight, shippingZone, totalPrice,
       address: cleanAddress, paymentMethod, paymentChannel,
@@ -191,7 +197,15 @@ const placeOrder = async (req, res) => {
         console.error('Courier dispatch failed:', error.message);
         return Order.findByIdAndUpdate(order._id, { courierDispatchStatus: 'failed' });
       });
-    res.status(201).json(order);
+    const trackPath = `/track/${order._id}?token=${trackingToken}`;
+    const frontendUrl = getFrontendUrl();
+    await sendOrderConfirmationEmail(
+      { ...order.toObject(), user: req.user ? { name: req.user.name, email: req.user.email } : null },
+      { trackUrl: frontendUrl ? `${frontendUrl}${trackPath}` : '' },
+    );
+    const body = order.toObject();
+    delete body.trackingTokenHash;
+    res.status(201).json({ ...body, trackingToken, trackPath });
   } catch (e) {
     for (const item of reservedItems)
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
@@ -215,6 +229,25 @@ const getOrderById = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized.' });
     res.json(o);
   } catch (e) { res.status(500).json({ message: e.message }); }
+};
+
+// Public, read-only view of one order for whoever holds its tracking link.
+const PUBLIC_ORDER_FIELDS = '_id products productTotal shippingFee codFee couponCode couponDiscount currency totalWeight shippingZone totalPrice address paymentMethod paymentStatus isPaid paidAt courierDispatchStatus shippingProvider trackingNumber trackingUrl trackingUpdatedAt status createdAt updatedAt guestContact.name';
+const getOrderByTrackingToken = async (req, res) => {
+  const token = typeof req.query?.token === 'string' ? req.query.token : '';
+  if (!mongoose.isValidObjectId(req.params.id) || token.length < 20 || token.length > 100)
+    return res.status(404).json({ message: 'Order not found. Check the tracking link.' });
+  try {
+    const order = await Order.findById(req.params.id).select(`${PUBLIC_ORDER_FIELDS} +trackingTokenHash`).lean();
+    const expected = order?.trackingTokenHash ? Buffer.from(order.trackingTokenHash, 'hex') : null;
+    const given = crypto.createHash('sha256').update(token).digest();
+    if (!expected || expected.length !== given.length || !crypto.timingSafeEqual(expected, given))
+      return res.status(404).json({ message: 'Order not found. Check the tracking link.' });
+    delete order.trackingTokenHash;
+    res.json(order);
+  } catch (e) {
+    res.status(500).json({ message: 'Order could not be loaded.' });
+  }
 };
 
 const getAllOrders = async (req, res) => {
@@ -302,7 +335,12 @@ const updateOrderStatus = async (req, res) => {
       o.paymentStatus = 'paid';
       o.paidAt = new Date();
     }
-    res.json(await o.save());
+    const saved = await o.save();
+    if (previousStatus !== nextStatus) {
+      const recipient = await Order.findById(saved._id).populate('user', 'name email').lean();
+      await sendOrderStatusEmail(recipient || saved.toObject());
+    }
+    res.json(saved);
   } catch (e) { res.status(500).json({ message: e.message }); }
 };
 
@@ -330,6 +368,7 @@ module.exports = {
   placeOrder,
   getMyOrders,
   getOrderById,
+  getOrderByTrackingToken,
   getAllOrders,
   getSalesAnalytics,
   recordManualCashSale,
