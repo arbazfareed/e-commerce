@@ -9,6 +9,7 @@ import CartMainColumn from './cart/CartMainColumn';
 import CartSummary from './cart/CartSummary';
 import OrderConfirmation from './cart/OrderConfirmation';
 import EmptyCart from './cart/EmptyCart';
+import { getDeliveryCountries } from '../utils/countries';
 
 
 const PAYMENTS = [
@@ -25,18 +26,18 @@ export default function CartPage() {
   const { user }   = useAuth();
   const navigate   = useNavigate();
 
-  const isPak = !user || user.country === 'Pakistan';
-  const fmt   = (n) => isPak ? formatPKR(n ?? 0) : formatUSD(n ?? 0);
-  const getItemPrice = (item) => isPak
-    ? getDiscountedPrice(item.pricePKR, getActiveDiscountPercent(item), 'PKR')
-    : getDiscountedPrice(item.priceUSD, getActiveDiscountPercent(item), 'USD');
-
   const [step,    setStep]    = useState('cart');
   const [addr,    setAddr]    = useState({
     street:  '',
     city:    user?.city    || '',
     country: user?.country || 'Pakistan',
   });
+  // Prices follow the delivery country, which is what the server charges.
+  const isPak = (addr.country || 'Pakistan').trim().toLowerCase() === 'pakistan';
+  const fmt   = (n) => isPak ? formatPKR(n ?? 0) : formatUSD(n ?? 0);
+  const getItemPrice = (item) => isPak
+    ? getDiscountedPrice(item.pricePKR, getActiveDiscountPercent(item), 'PKR')
+    : getDiscountedPrice(item.priceUSD, getActiveDiscountPercent(item), 'USD');
   const [guestContact, setGuestContact] = useState({ name:'', email:'', phone:'' });
   const [payment, setPayment] = useState('COD');
   const [placing, setPlacing] = useState(false);
@@ -61,7 +62,7 @@ export default function CartPage() {
 
   // Safe totals — always work even if items is []
   const safeItems  = Array.isArray(items) ? items : [];
-  const cartSignature = safeItems.map(item => `${item._id}:${item.quantity}:${item.selectedColor || ''}:${item.selectedSize || ''}`).join('|');
+  const cartSignature = safeItems.map(item => `${item._id}:${item.quantity}:${item.selectedColor || ''}:${item.selectedSize || ''}`).join('|') + `|${addr.country}`; // country changes the coupon currency
   const couponProducts = safeItems.map(item => ({ product: item._id, quantity: item.quantity || 1, selectedColor: item.selectedColor || '', selectedSize: item.selectedSize || '' }));
   const subTotal   = safeItems.reduce((s, i) => s + getItemPrice(i) * (i.quantity||1), 0);
   // ✅ Zone-based shipping: detects domestic (Multan→Karachi), Middle East, US, etc.
@@ -73,6 +74,7 @@ export default function CartPage() {
   const USD_RATE    = getUSDRate();  // reads from localStorage (admin-configurable)
   const shipFee     = isPak ? shipFeePKR : parseFloat((shipFeePKR / USD_RATE).toFixed(2));
   const codSettings = checkoutSettings || { codEnabled: true, codFeeMode: 'flat', codFee: 0, codThreshold: 0 };
+  const countryOptions = getDeliveryCountries({ internationalEnabled: checkoutSettings?.internationalEnabled !== false, current: addr.country });
   const supportedPaymentMethods = checkoutSettings?.supportedPaymentMethods || ['COD'];
   const availablePaymentOptions = PAYMENTS.filter(option => supportedPaymentMethods.includes(option.id) && (option.id !== 'COD' || codSettings.codEnabled));
   const couponDiscount = appliedCoupon?.discountAmount || 0;
@@ -193,7 +195,7 @@ export default function CartPage() {
       <div className="cart-layout" style={S.layout}>
 
         {/* ── LEFT COLUMN ──────────────────────────────────── */}
-        <CartMainColumn {...{ S, addr, assetUrl, availablePaymentOptions, error, fmt, getActiveDiscountPercent, getItemPrice, guestContact, isPak, payment, removeFromCart, safeItems, setAddr, setGuestContact, setPayment, step, updateQty, user }} />
+        <CartMainColumn {...{ S, addr, countryOptions, assetUrl, availablePaymentOptions, error, fmt, getActiveDiscountPercent, getItemPrice, guestContact, isPak, payment, removeFromCart, safeItems, setAddr, setGuestContact, setPayment, step, updateQty, user }} />
 
         {/* ── ORDER SUMMARY SIDEBAR ────────────────────────── */}
         <CartSummary {...{ S, appliedCoupon, applyCoupon, assetUrl, codFee, codWaived, couponChecking, couponDiscount, couponError, couponInput, fmt, getItemPrice, grandTotal, handlePlaceOrder, payment, placing, safeItems, setAppliedCoupon, setCouponError, setCouponInput, setStep, shipBreak, shipCalc, shipFee, step, subTotal, totalQty }} />
